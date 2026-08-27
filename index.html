@@ -16,18 +16,22 @@ button{padding:10px 15px;background:#2563eb;color:#fff;border:0;border-radius:5p
 table{width:100%;border-collapse:collapse;background:#fff;font-size:14px}
 th,td{border:1px solid #ddd;padding:8px}th{background:#2563eb;color:#fff}
 .masuk{color:green;font-weight:bold}.keluar{color:red;font-weight:bold}
+#errBox{display:none;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;padding:12px;border-radius:8px;margin:10px 0;font-size:14px;white-space:pre-wrap;word-break:break-word}
+#debugBox{background:#f1f5f9;color:#334155;padding:10px;border-radius:8px;margin-top:10px;font-size:12px;word-break:break-all}
 </style>
 </head>
 <body>
 
 <!-- LOGIN -->
-<div id="loginView" class="content" style="max-width:350px;margin-top:80px">
+<div id="loginView" class="content" style="max-width:350px;margin-top:60px">
 <h2>🔐 Login Group</h2>
+<div id="errBox"></div>
 <form onsubmit="login(event)">
 <input id="luser" placeholder="Username" required>
 <input id="lpass" type="password" placeholder="Password" required>
-<button>Login</button>
+<button id="btnLogin">Login</button>
 </form>
+<div id="debugBox">API target: <span id="apiShown"></span></div>
 </div>
 
 <!-- APP -->
@@ -42,6 +46,7 @@ th,td{border:1px solid #ddd;padding:8px}th{background:#2563eb;color:#fff}
 <a onclick="logout()" id="userTag">Logout</a>
 </div>
 <div class="content">
+<div id="errBox2"></div>
 
 <div id="dash">
 <h2>Selamat datang, <span id="namaMe"></span></h2>
@@ -93,26 +98,73 @@ th,td{border:1px solid #ddd;padding:8px}th{background:#2563eb;color:#fff}
 </div>
 
 <script>
-const API = "https://kegiatan-api.newbrigademudasoropati.workers.dev"; // ← GANTI dengan URL Worker Anda!
+// ======== GANTI SESUAI URL WORKER KAMU (tanpa garis miring / di akhir) ========
+const API = "https://kegiatan-api.newbrigademudasoropati.workers.dev";
+// ================================================================================
+
 let token = localStorage.getItem("token") || "";
 let me = {};
+
+document.getElementById("apiShown").textContent = API;
+
+function showErr(boxId, msg) {
+  const b = document.getElementById(boxId);
+  b.textContent = "⚠️ " + msg;
+  b.style.display = "block";
+}
+function clearErr(boxId) {
+  const b = document.getElementById(boxId);
+  b.style.display = "none";
+  b.textContent = "";
+}
 
 const h = () => ({ "Content-Type":"application/json", "Authorization":"Bearer "+token });
 const rp = n => "Rp " + Number(n).toLocaleString("id-ID");
 
 async function api(path, opt={}) {
-  const r = await fetch(API+path, { headers:h(), ...opt });
-  if (r.status===401) { logout(); throw "unauthorized"; }
-  return r.json();
+  let r;
+  try {
+    r = await fetch(API+path, { headers:h(), ...opt });
+  } catch (netErr) {
+    throw new Error("Tidak bisa menghubungi server (" + API + path + "). Cek koneksi internet atau URL API. Detail: " + netErr.message);
+  }
+  let d;
+  try {
+    d = await r.json();
+  } catch {
+    throw new Error("Server tidak mengembalikan JSON yang valid (status " + r.status + ").");
+  }
+  if (r.status === 401) { logout(); throw new Error("Sesi habis, silakan login lagi."); }
+  if (!r.ok) throw new Error(d.error || ("Error " + r.status));
+  return d;
 }
 
 async function login(e) {
   e.preventDefault();
-  const r = await fetch(API+"/login", { method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ username:luser.value, password:lpass.value }) });
-  const d = await r.json();
-  if (d.token) { localStorage.setItem("token", d.token); location.reload(); }
-  else alert(d.error);
+  clearErr("errBox");
+  const btn = document.getElementById("btnLogin");
+  btn.disabled = true; btn.textContent = "Memproses...";
+  try {
+    const r = await fetch(API+"/login", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ username: luser.value, password: lpass.value })
+    });
+    let d;
+    try {
+      d = await r.json();
+    } catch {
+      throw new Error("Server merespon status " + r.status + " tapi bukan JSON. Kemungkinan URL API salah atau Worker error.");
+    }
+    if (!r.ok) throw new Error(d.error || ("Login gagal (status " + r.status + ")"));
+    if (!d.token) throw new Error("Server tidak mengirim token.");
+    localStorage.setItem("token", d.token);
+    location.reload();
+  } catch (err) {
+    showErr("errBox", err.message || String(err));
+  } finally {
+    btn.disabled = false; btn.textContent = "Login";
+  }
 }
 
 function logout() { localStorage.removeItem("token"); location.reload(); }
@@ -126,7 +178,11 @@ async function start() {
   loginView.style.display="none"; appView.style.display="block";
   userTag.textContent = "Logout ("+me.nama+" - "+me.role+")";
   namaMe.textContent = me.nama;
-  await Promise.all([loadKeu(), loadSpj(), loadProp(), loadLog()]);
+  try {
+    await Promise.all([loadKeu(), loadSpj(), loadProp(), loadLog()]);
+  } catch (err) {
+    showErr("errBox2", err.message || String(err));
+  }
 }
 
 function show(id) {
@@ -154,11 +210,17 @@ async function loadKeu() {
 }
 async function addKeu(e) {
   e.preventDefault();
-  await api("/keuangan", { method:"POST", body: JSON.stringify({
-    tanggal:kTgl.value, keterangan:kKet.value, jenis:kJenis.value, jumlah:+kJml.value }) });
-  kTgl.value=kKet.value=kJml.value=""; loadKeu();
+  try {
+    await api("/keuangan", { method:"POST", body: JSON.stringify({
+      tanggal:kTgl.value, keterangan:kKet.value, jenis:kJenis.value, jumlah:+kJml.value }) });
+    kTgl.value=kKet.value=kJml.value=""; loadKeu();
+  } catch (err) { showErr("errBox2", err.message); }
 }
-async function delKeu(id) { if(confirm("Hapus?")) { await api("/keuangan?id="+id, {method:"DELETE"}); loadKeu(); } }
+async function delKeu(id) {
+  if(!confirm("Hapus?")) return;
+  try { await api("/keuangan?id="+id, {method:"DELETE"}); loadKeu(); }
+  catch (err) { showErr("errBox2", err.message); }
+}
 
 // ===== SPJ =====
 async function loadSpj() {
@@ -175,12 +237,15 @@ async function loadSpj() {
 }
 async function addSpj(e) {
   e.preventDefault();
-  await api("/spj", { method:"POST", body: JSON.stringify({
-    no_spj:sNo.value, tanggal:sTgl.value, kegiatan:sKeg.value, rincian:sRin.value, nominal:+sNom.value }) });
-  sNo.value=sTgl.value=sKeg.value=sRin.value=sNom.value=""; loadSpj();
+  try {
+    await api("/spj", { method:"POST", body: JSON.stringify({
+      no_spj:sNo.value, tanggal:sTgl.value, kegiatan:sKeg.value, rincian:sRin.value, nominal:+sNom.value }) });
+    sNo.value=sTgl.value=sKeg.value=sRin.value=sNom.value=""; loadSpj();
+  } catch (err) { showErr("errBox2", err.message); }
 }
 async function setStatus(id, status) {
-  await api("/spj/status", { method:"POST", body: JSON.stringify({id, status}) }); loadSpj();
+  try { await api("/spj/status", { method:"POST", body: JSON.stringify({id, status}) }); loadSpj(); }
+  catch (err) { showErr("errBox2", err.message); }
 }
 
 // ===== PROPOSAL =====
@@ -193,8 +258,10 @@ async function loadProp() {
 }
 async function addProp(e) {
   e.preventDefault();
-  await api("/proposal", { method:"POST", body: JSON.stringify({ judul:pJudul.value, isi:pIsi.value }) });
-  pJudul.value=pIsi.value=""; loadProp();
+  try {
+    await api("/proposal", { method:"POST", body: JSON.stringify({ judul:pJudul.value, isi:pIsi.value }) });
+    pJudul.value=pIsi.value=""; loadProp();
+  } catch (err) { showErr("errBox2", err.message); }
 }
 
 // ===== LOG =====
