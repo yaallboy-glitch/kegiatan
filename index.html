@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Manajemen Group</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
@@ -316,42 +316,204 @@ function fmtPeriode(range) {
   return "Periode: Semua data";
 }
 
+// ---- palet & helper styling (meniru desain "Laporan Keuangan Profesional") ----
+const XC = {
+  DARK: 'FF171717', RED: 'FFC00000', LIGHT: 'FFF3F4F6',
+  BORDER: 'FFD1D5DB', ZEBRA: 'FFFAFAFA', WHITE: 'FFFFFFFF'
+};
+const RP_FMT = '"Rp" #,##0';
+
+function xMergeStyle(ws, r1, c1, r2, c2, opt = {}) {
+  if (r1 !== r2 || c1 !== c2) ws.mergeCells(r1, c1, r2, c2);
+  for (let r = r1; r <= r2; r++) {
+    for (let c = c1; c <= c2; c++) {
+      const cell = ws.getCell(r, c);
+      if (opt.fill) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: opt.fill } };
+      if (opt.font) cell.font = opt.font;
+      if (opt.align) cell.alignment = opt.align;
+    }
+  }
+  const top = ws.getCell(r1, c1);
+  if (opt.value !== undefined) top.value = opt.value;
+  if (opt.numFmt) top.numFmt = opt.numFmt;
+}
+
+function xTitleBlock(ws, title, subtitle, colCount) {
+  ws.mergeCells(1, 1, 2, colCount);
+  const t = ws.getCell(1, 1);
+  t.value = title;
+  t.font = { size: 20, bold: true, color: { argb: XC.WHITE } };
+  t.alignment = { horizontal: 'center', vertical: 'middle' };
+  for (let r = 1; r <= 2; r++) for (let c = 1; c <= colCount; c++)
+    ws.getCell(r, c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XC.DARK } };
+  ws.getRow(1).height = 26; ws.getRow(2).height = 26;
+
+  ws.mergeCells(3, 1, 3, colCount);
+  const s = ws.getCell(3, 1);
+  s.value = subtitle;
+  s.font = { size: 10, color: { argb: 'FF666666' } };
+  s.alignment = { horizontal: 'center' };
+}
+
+function xHeaderRow(ws, rowIdx, labels) {
+  labels.forEach((lab, i) => {
+    const cell = ws.getCell(rowIdx, i + 1);
+    cell.value = lab;
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XC.DARK } };
+    cell.font = { bold: true, color: { argb: XC.WHITE } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+  });
+}
+
+function xZebraBorder(ws, rowIdx, colCount, zebra) {
+  for (let c = 1; c <= colCount; c++) {
+    const cell = ws.getRow(rowIdx).getCell(c);
+    cell.border = { bottom: { style: 'thin', color: { argb: XC.BORDER } } };
+    if (zebra) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XC.ZEBRA } };
+  }
+}
+
+const HDR_ROW = 10; // baris tabel mulai (sama seperti template acuan)
+
 async function exportExcel() {
   try {
     const data = await getExportData();
-    const wb = XLSX.utils.book_new();
+    const wb = new ExcelJS.Workbook();
+    wb.creator = "GroupApp";
+    wb.created = new Date();
 
     let masuk = 0, keluar = 0;
-    const keuRows = data.keuangan.map(r => {
-      if (r.jenis === "masuk") masuk += r.jumlah; else keluar += r.jumlah;
-      return {
-        Tanggal: r.tanggal, Keterangan: r.keterangan, Jenis: r.jenis,
-        Jumlah: r.jumlah, "Dicatat Oleh": r.created_by
-      };
+    data.keuangan.forEach(r => r.jenis === "masuk" ? masuk += r.jumlah : keluar += r.jumlah);
+    const totalSpj = data.spj.length;
+    const totalNominalSpj = data.spj.reduce((a, r) => a + (r.nominal || 0), 0);
+    const pendingSpj = data.spj.filter(r => r.status === "pending").length;
+
+    // ===== SHEET 1: LAPORAN KEUANGAN =====
+    const wsKeu = wb.addWorksheet("Laporan Keuangan");
+    wsKeu.columns = [{ width: 6 }, { width: 14 }, { width: 34 }, { width: 18 }, { width: 18 }, { width: 18 }];
+    xTitleBlock(wsKeu, "LAPORAN KEUANGAN", fmtPeriode(data.range), 6);
+
+    xMergeStyle(wsKeu, 5, 1, 5, 2, { value: "TOTAL UANG MASUK", fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "center" } });
+    xMergeStyle(wsKeu, 5, 3, 5, 4, { value: "TOTAL UANG KELUAR", fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "center" } });
+    xMergeStyle(wsKeu, 5, 5, 5, 6, { value: "SALDO AKHIR", fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "center" } });
+    xMergeStyle(wsKeu, 6, 1, 7, 2, { value: masuk, fill: XC.LIGHT, font: { bold: true, size: 15 }, align: { horizontal: "center", vertical: "middle" }, numFmt: RP_FMT });
+    xMergeStyle(wsKeu, 6, 3, 7, 4, { value: keluar, fill: XC.LIGHT, font: { bold: true, size: 15 }, align: { horizontal: "center", vertical: "middle" }, numFmt: RP_FMT });
+    xMergeStyle(wsKeu, 6, 5, 7, 6, { value: masuk - keluar, fill: XC.LIGHT, font: { bold: true, size: 15 }, align: { horizontal: "center", vertical: "middle" }, numFmt: RP_FMT });
+    wsKeu.getRow(6).height = 24; wsKeu.getRow(7).height = 24;
+
+    xHeaderRow(wsKeu, HDR_ROW, ["No", "Tanggal", "Keterangan", "Uang Masuk", "Uang Keluar", "Saldo"]);
+    let saldo = 0;
+    data.keuangan.forEach((r, idx) => {
+      const rowIdx = HDR_ROW + 1 + idx;
+      const mVal = r.jenis === "masuk" ? r.jumlah : 0;
+      const kVal = r.jenis === "keluar" ? r.jumlah : 0;
+      saldo += mVal - kVal;
+      const row = wsKeu.getRow(rowIdx);
+      row.getCell(1).value = idx + 1;
+      row.getCell(2).value = r.tanggal;
+      row.getCell(3).value = r.keterangan;
+      row.getCell(4).value = mVal || null;
+      row.getCell(5).value = kVal || null;
+      row.getCell(6).value = saldo;
+      row.getCell(4).numFmt = RP_FMT; row.getCell(5).numFmt = RP_FMT; row.getCell(6).numFmt = RP_FMT;
+      row.getCell(1).alignment = { horizontal: "center" };
+      xZebraBorder(wsKeu, rowIdx, 6, idx % 2 === 1);
     });
-    keuRows.push({});
-    keuRows.push({ Tanggal: "", Keterangan: "TOTAL MASUK", Jenis: "", Jumlah: masuk, "Dicatat Oleh": "" });
-    keuRows.push({ Tanggal: "", Keterangan: "TOTAL KELUAR", Jenis: "", Jumlah: keluar, "Dicatat Oleh": "" });
-    keuRows.push({ Tanggal: "", Keterangan: "SALDO AKHIR", Jenis: "", Jumlah: masuk - keluar, "Dicatat Oleh": "" });
 
-    const wsKeu = XLSX.utils.json_to_sheet(keuRows);
-    XLSX.utils.book_append_sheet(wb, wsKeu, "Keuangan");
+    // ===== SHEET 2: SPJ =====
+    const wsSpj = wb.addWorksheet("SPJ");
+    wsSpj.columns = [{ width: 6 }, { width: 16 }, { width: 14 }, { width: 32 }, { width: 18 }, { width: 16 }, { width: 18 }];
+    xTitleBlock(wsSpj, "LAPORAN SPJ", fmtPeriode(data.range), 7);
 
-    const spjRows = data.spj.map(r => ({
-      "No SPJ": r.no_spj, Tanggal: r.tanggal, Kegiatan: r.kegiatan,
-      Rincian: r.rincian, Nominal: r.nominal, Status: r.status, "Dicatat Oleh": r.created_by
-    }));
-    const wsSpj = XLSX.utils.json_to_sheet(spjRows);
-    XLSX.utils.book_append_sheet(wb, wsSpj, "SPJ");
+    xMergeStyle(wsSpj, 5, 1, 5, 2, { value: "TOTAL SPJ", fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "center" } });
+    xMergeStyle(wsSpj, 5, 3, 5, 5, { value: "TOTAL NOMINAL", fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "center" } });
+    xMergeStyle(wsSpj, 5, 6, 5, 7, { value: "MENUNGGU PERSETUJUAN", fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "center" } });
+    xMergeStyle(wsSpj, 6, 1, 7, 2, { value: totalSpj, fill: XC.LIGHT, font: { bold: true, size: 15 }, align: { horizontal: "center", vertical: "middle" } });
+    xMergeStyle(wsSpj, 6, 3, 7, 5, { value: totalNominalSpj, fill: XC.LIGHT, font: { bold: true, size: 15 }, align: { horizontal: "center", vertical: "middle" }, numFmt: RP_FMT });
+    xMergeStyle(wsSpj, 6, 6, 7, 7, { value: pendingSpj, fill: XC.LIGHT, font: { bold: true, size: 15 }, align: { horizontal: "center", vertical: "middle" } });
+    wsSpj.getRow(6).height = 24; wsSpj.getRow(7).height = 24;
 
-    const propRows = data.proposal.map(r => ({
-      Judul: r.judul, Status: r.status, "Dibuat Oleh": r.created_by, "Diubah Oleh": r.updated_by || "-"
-    }));
-    const wsProp = XLSX.utils.json_to_sheet(propRows);
-    XLSX.utils.book_append_sheet(wb, wsProp, "Proposal");
+    xHeaderRow(wsSpj, HDR_ROW, ["No", "No SPJ", "Tanggal", "Kegiatan", "Nominal", "Status", "Dicatat Oleh"]);
+    const statusColor = { disetujui: "FF15803D", ditolak: "FFB91C1C", pending: "FFB45309" };
+    data.spj.forEach((r, idx) => {
+      const rowIdx = HDR_ROW + 1 + idx;
+      const row = wsSpj.getRow(rowIdx);
+      row.getCell(1).value = idx + 1;
+      row.getCell(2).value = r.no_spj;
+      row.getCell(3).value = r.tanggal;
+      row.getCell(4).value = r.kegiatan;
+      row.getCell(5).value = r.nominal; row.getCell(5).numFmt = RP_FMT;
+      row.getCell(6).value = r.status;
+      row.getCell(6).font = { bold: true, color: { argb: statusColor[r.status] || "FF444444" } };
+      row.getCell(6).alignment = { horizontal: "center" };
+      row.getCell(7).value = r.created_by;
+      row.getCell(1).alignment = { horizontal: "center" };
+      xZebraBorder(wsSpj, rowIdx, 7, idx % 2 === 1);
+    });
 
-    const fname = "laporan_" + (data.range.start || "semua") + "_" + (data.range.end || "data") + ".xlsx";
-    XLSX.writeFile(wb, fname);
+    // ===== SHEET 3: PROPOSAL =====
+    const wsProp = wb.addWorksheet("Proposal");
+    wsProp.columns = [{ width: 6 }, { width: 40 }, { width: 16 }, { width: 20 }, { width: 20 }];
+    xTitleBlock(wsProp, "LAPORAN PROPOSAL", "Daftar proposal kegiatan kelompok", 5);
+    xMergeStyle(wsProp, 5, 1, 5, 5, { value: "TOTAL PROPOSAL: " + data.proposal.length, fill: XC.RED, font: { bold: true, size: 11, color: { argb: XC.WHITE } }, align: { horizontal: "center" } });
+
+    xHeaderRow(wsProp, HDR_ROW, ["No", "Judul", "Status", "Dibuat Oleh", "Diubah Oleh"]);
+    data.proposal.forEach((r, idx) => {
+      const rowIdx = HDR_ROW + 1 + idx;
+      const row = wsProp.getRow(rowIdx);
+      row.getCell(1).value = idx + 1;
+      row.getCell(2).value = r.judul;
+      row.getCell(3).value = r.status;
+      row.getCell(3).alignment = { horizontal: "center" };
+      row.getCell(4).value = r.created_by;
+      row.getCell(5).value = r.updated_by || "-";
+      row.getCell(1).alignment = { horizontal: "center" };
+      xZebraBorder(wsProp, rowIdx, 5, idx % 2 === 1);
+    });
+
+    // ===== SHEET 4: REKAP =====
+    const wsRekap = wb.addWorksheet("Rekap");
+    wsRekap.columns = [{ width: 30 }, { width: 22 }];
+    wsRekap.mergeCells(1, 1, 1, 2);
+    const rt = wsRekap.getCell(1, 1);
+    rt.value = "REKAP KESELURUHAN";
+    rt.fill = { type: "pattern", pattern: "solid", fgColor: { argb: XC.DARK } };
+    rt.font = { bold: true, size: 14, color: { argb: XC.WHITE } };
+    rt.alignment = { horizontal: "center", vertical: "middle" };
+    wsRekap.getRow(1).height = 24;
+    wsRekap.mergeCells(2, 1, 2, 2);
+    const rs = wsRekap.getCell(2, 1);
+    rs.value = fmtPeriode(data.range);
+    rs.font = { italic: true, size: 10, color: { argb: "FF666666" } };
+    rs.alignment = { horizontal: "center" };
+
+    const rekapRows = [
+      ["Total Uang Masuk", masuk, RP_FMT],
+      ["Total Uang Keluar", keluar, RP_FMT],
+      ["Saldo Akhir", masuk - keluar, RP_FMT],
+      ["Total SPJ", totalSpj, null],
+      ["SPJ Menunggu Persetujuan", pendingSpj, null],
+      ["Total Nominal SPJ", totalNominalSpj, RP_FMT],
+      ["Total Proposal", data.proposal.length, null],
+    ];
+    rekapRows.forEach(([label, val, fmt], idx) => {
+      const r = idx + 4;
+      wsRekap.getCell(r, 1).value = label;
+      wsRekap.getCell(r, 2).value = val;
+      if (fmt) wsRekap.getCell(r, 2).numFmt = fmt;
+      wsRekap.getCell(r, 1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: XC.LIGHT } };
+      wsRekap.getCell(r, 2).fill = { type: "pattern", pattern: "solid", fgColor: { argb: XC.LIGHT } };
+      wsRekap.getCell(r, 2).font = { bold: true };
+    });
+
+    const buffer = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "laporan_" + (data.range.start || "semua") + "_" + (data.range.end || "data") + ".xlsx";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   } catch (err) {
     showErr("expErr", err.message || String(err));
   }
@@ -366,26 +528,46 @@ async function exportPDF() {
     let masuk = 0, keluar = 0;
     data.keuangan.forEach(r => { r.jenis === "masuk" ? masuk += r.jumlah : keluar += r.jumlah; });
 
-    doc.setFontSize(16);
-    doc.text("Laporan Kegiatan Kelompok", 14, 16);
-    doc.setFontSize(10);
-    doc.text(fmtPeriode(data.range), 14, 23);
-    doc.text("Dicetak: " + new Date().toLocaleString("id-ID"), 14, 28);
+    const DARK = [23, 23, 23], RED = [192, 0, 0], LIGHT = [243, 244, 246];
 
+    // Header gelap judul
+    doc.setFillColor(...DARK);
+    doc.rect(0, 0, 210, 22, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.text("LAPORAN KEGIATAN KELOMPOK", 105, 13, { align: "center" });
+    doc.setTextColor(80, 80, 80);
+    doc.setFontSize(9);
+    doc.text(fmtPeriode(data.range) + "  |  Dicetak: " + new Date().toLocaleString("id-ID"), 105, 27, { align: "center" });
+    doc.setTextColor(0, 0, 0);
+
+    // Kotak ringkasan (merah + abu terang)
+    const boxes = [["TOTAL MASUK", rp(masuk)], ["TOTAL KELUAR", rp(keluar)], ["SALDO AKHIR", rp(masuk - keluar)]];
+    const boxW = 60, boxX0 = 15, boxY = 32;
+    boxes.forEach((b, i) => {
+      const x = boxX0 + i * (boxW + 5);
+      doc.setFillColor(...RED);
+      doc.rect(x, boxY, boxW, 8, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8);
+      doc.text(b[0], x + boxW / 2, boxY + 5.5, { align: "center" });
+      doc.setFillColor(...LIGHT);
+      doc.rect(x, boxY + 8, boxW, 10, "F");
+      doc.setTextColor(23, 23, 23);
+      doc.setFontSize(11);
+      doc.text(b[1], x + boxW / 2, boxY + 15, { align: "center" });
+    });
+
+    doc.setTextColor(0, 0, 0);
     doc.setFontSize(13);
-    doc.text("Keuangan", 14, 38);
+    doc.text("Keuangan", 14, 60);
     doc.autoTable({
-      startY: 42,
+      startY: 64,
       head: [["Tanggal", "Keterangan", "Jenis", "Jumlah", "Oleh"]],
       body: data.keuangan.map(r => [r.tanggal, r.keterangan, r.jenis, rp(r.jumlah), r.created_by]),
       styles: { fontSize: 9 },
-      headStyles: { fillColor: [37, 99, 235] }
+      headStyles: { fillColor: DARK }
     });
-    let y = doc.lastAutoTable.finalY + 6;
-    doc.setFontSize(10);
-    doc.text("Total Masuk: " + rp(masuk), 14, y);
-    doc.text("Total Keluar: " + rp(keluar), 14, y + 5);
-    doc.text("Saldo Akhir: " + rp(masuk - keluar), 14, y + 10);
 
     doc.addPage();
     doc.setFontSize(13);
@@ -395,7 +577,7 @@ async function exportPDF() {
       head: [["No SPJ", "Tanggal", "Kegiatan", "Nominal", "Status", "Oleh"]],
       body: data.spj.map(r => [r.no_spj, r.tanggal, r.kegiatan, rp(r.nominal), r.status, r.created_by]),
       styles: { fontSize: 9 },
-      headStyles: { fillColor: [37, 99, 235] }
+      headStyles: { fillColor: DARK }
     });
 
     doc.addPage();
@@ -406,7 +588,7 @@ async function exportPDF() {
       head: [["Judul", "Status", "Dibuat Oleh", "Diubah Oleh"]],
       body: data.proposal.map(r => [r.judul, r.status, r.created_by, r.updated_by || "-"]),
       styles: { fontSize: 9 },
-      headStyles: { fillColor: [37, 99, 235] }
+      headStyles: { fillColor: DARK }
     });
 
     const fname = "laporan_" + (data.range.start || "semua") + "_" + (data.range.end || "data") + ".pdf";
@@ -436,30 +618,38 @@ async function exportWord() {
     const html = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head><meta charset="utf-8"><title>Laporan</title></head>
-      <body style="font-family:Arial;font-size:13px">
-        <h1>Laporan Kegiatan Kelompok</h1>
-        <p>${fmtPeriode(data.range)}<br>Dicetak: ${new Date().toLocaleString("id-ID")}</p>
+      <body style="font-family:Arial;font-size:13px;color:#171717">
+        <div style="background:#171717;color:#fff;padding:16px;text-align:center;font-size:22px;font-weight:bold">LAPORAN KEGIATAN KELOMPOK</div>
+        <p style="text-align:center;color:#666;font-size:12px">${fmtPeriode(data.range)}<br>Dicetak: ${new Date().toLocaleString("id-ID")}</p>
 
-        <h2>Keuangan</h2>
-        <table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%">
-          <tr style="background:#2563eb;color:#fff"><th>Tanggal</th><th>Keterangan</th><th>Jenis</th><th>Jumlah</th><th>Oleh</th></tr>
+        <table cellspacing="0" cellpadding="8" style="border-collapse:collapse;width:100%;margin:14px 0">
+          <tr>
+            <td style="background:#C00000;color:#fff;font-weight:bold;text-align:center;width:33%">TOTAL UANG MASUK</td>
+            <td style="background:#C00000;color:#fff;font-weight:bold;text-align:center;width:33%">TOTAL UANG KELUAR</td>
+            <td style="background:#C00000;color:#fff;font-weight:bold;text-align:center;width:34%">SALDO AKHIR</td>
+          </tr>
+          <tr>
+            <td style="background:#F3F4F6;font-weight:bold;text-align:center;font-size:16px">${rp(masuk)}</td>
+            <td style="background:#F3F4F6;font-weight:bold;text-align:center;font-size:16px">${rp(keluar)}</td>
+            <td style="background:#F3F4F6;font-weight:bold;text-align:center;font-size:16px">${rp(masuk - keluar)}</td>
+          </tr>
+        </table>
+
+        <h2 style="color:#171717">Keuangan</h2>
+        <table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%;font-size:12px">
+          <tr style="background:#171717;color:#fff"><th>Tanggal</th><th>Keterangan</th><th>Jenis</th><th>Jumlah</th><th>Oleh</th></tr>
           ${keuRows}
         </table>
-        <p>
-          <b>Total Masuk:</b> ${rp(masuk)}<br>
-          <b>Total Keluar:</b> ${rp(keluar)}<br>
-          <b>Saldo Akhir:</b> ${rp(masuk - keluar)}
-        </p>
 
-        <h2>SPJ</h2>
-        <table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%">
-          <tr style="background:#2563eb;color:#fff"><th>No SPJ</th><th>Tanggal</th><th>Kegiatan</th><th>Nominal</th><th>Status</th><th>Oleh</th></tr>
+        <h2 style="color:#171717">SPJ</h2>
+        <table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%;font-size:12px">
+          <tr style="background:#171717;color:#fff"><th>No SPJ</th><th>Tanggal</th><th>Kegiatan</th><th>Nominal</th><th>Status</th><th>Oleh</th></tr>
           ${spjRows}
         </table>
 
-        <h2>Proposal</h2>
-        <table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%">
-          <tr style="background:#2563eb;color:#fff"><th>Judul</th><th>Status</th><th>Dibuat Oleh</th><th>Diubah Oleh</th></tr>
+        <h2 style="color:#171717">Proposal</h2>
+        <table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%;font-size:12px">
+          <tr style="background:#171717;color:#fff"><th>Judul</th><th>Status</th><th>Dibuat Oleh</th><th>Diubah Oleh</th></tr>
           ${propRows}
         </table>
       </body>
