@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manajemen Group</title>
+<style>
+body{font-family:Arial;margin:0;background:#f4f6f9}
+.nav{background:#1e3a5f;padding:15px;color:#fff;display:flex;flex-wrap:wrap;gap:15px}
+.nav a{color:#fff;cursor:pointer;text-decoration:none}
+.content{padding:20px;max-width:900px;margin:auto}
+.card{background:#fff;padding:15px;border-radius:8px;display:inline-block;margin:8px;min-width:150px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+form{background:#fff;padding:15px;border-radius:8px;margin:10px 0}
+input,select,textarea{padding:8px;margin:4px 0;width:100%;box-sizing:border-box}
+button{padding:10px 15px;background:#2563eb;color:#fff;border:0;border-radius:5px;cursor:pointer;margin-top:5px}
+table{width:100%;border-collapse:collapse;background:#fff;font-size:14px}
+th,td{border:1px solid #ddd;padding:8px}th{background:#2563eb;color:#fff}
+.masuk{color:green;font-weight:bold}.keluar{color:red;font-weight:bold}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginView" class="content" style="max-width:350px;margin-top:80px">
+<h2>🔐 Login Group</h2>
+<form onsubmit="login(event)">
+<input id="luser" placeholder="Username" required>
+<input id="lpass" type="password" placeholder="Password" required>
+<button>Login</button>
+</form>
+</div>
+
+<!-- APP -->
+<div id="appView" style="display:none">
+<div class="nav">
+<b>📅 GroupApp</b>
+<a onclick="show('dash')">Dashboard</a>
+<a onclick="show('keu')">Keuangan</a>
+<a onclick="show('spj')">SPJ</a>
+<a onclick="show('prop')">Proposal</a>
+<a onclick="show('log')">Log</a>
+<a onclick="logout()" id="userTag">Logout</a>
+</div>
+<div class="content">
+
+<div id="dash">
+<h2>Selamat datang, <span id="namaMe"></span></h2>
+<div id="cards"></div>
+</div>
+
+<div id="keu" hidden>
+<h3>💰 Laporan Keuangan</h3>
+<form onsubmit="addKeu(event)">
+<input type="date" id="kTgl" required>
+<input id="kKet" placeholder="Keterangan" required>
+<select id="kJenis"><option value="masuk">Masuk</option><option value="keluar">Keluar</option></select>
+<input type="number" id="kJml" placeholder="Jumlah" required>
+<button>💾 Simpan</button>
+</form>
+<div id="keuTotal"></div>
+<table id="tKeu"><tr><th>Tanggal</th><th>Ket</th><th>Jenis</th><th>Jumlah</th><th>Oleh</th><th></th></tr></table>
+</div>
+
+<div id="spj" hidden>
+<h3>📄 SPJ</h3>
+<form onsubmit="addSpj(event)">
+<input id="sNo" placeholder="No. SPJ" required>
+<input type="date" id="sTgl" required>
+<input id="sKeg" placeholder="Kegiatan" required>
+<textarea id="sRin" placeholder="Rincian"></textarea>
+<input type="number" id="sNom" placeholder="Nominal" required>
+<button>💾 Simpan</button>
+</form>
+<table id="tSpj"><tr><th>No</th><th>Kegiatan</th><th>Nominal</th><th>Status</th><th>Oleh</th><th>Aksi</th></tr></table>
+</div>
+
+<div id="prop" hidden>
+<h3>📋 Proposal</h3>
+<form onsubmit="addProp(event)">
+<input id="pJudul" placeholder="Judul Proposal" required>
+<textarea id="pIsi" rows="8" placeholder="Tulis isi proposal..." required></textarea>
+<button>💾 Simpan</button>
+</form>
+<table id="tProp"><tr><th>Judul</th><th>Status</th><th>Oleh</th><th>Diubah Oleh</th></tr></table>
+</div>
+
+<div id="log" hidden>
+<h3>📜 Log Aktivitas</h3>
+<table id="tLog"><tr><th>Waktu</th><th>Username</th><th>Aktivitas</th></tr></table>
+</div>
+
+</div>
+</div>
+
+<script>
+const API = "https://groupapp-api.username.workers.dev"; // ← GANTI dengan URL Worker Anda!
+let token = localStorage.getItem("token") || "";
+let me = {};
+
+const h = () => ({ "Content-Type":"application/json", "Authorization":"Bearer "+token });
+const rp = n => "Rp " + Number(n).toLocaleString("id-ID");
+
+async function api(path, opt={}) {
+  const r = await fetch(API+path, { headers:h(), ...opt });
+  if (r.status===401) { logout(); throw "unauthorized"; }
+  return r.json();
+}
+
+async function login(e) {
+  e.preventDefault();
+  const r = await fetch(API+"/login", { method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ username:luser.value, password:lpass.value }) });
+  const d = await r.json();
+  if (d.token) { localStorage.setItem("token", d.token); location.reload(); }
+  else alert(d.error);
+}
+
+function logout() { localStorage.removeItem("token"); location.reload(); }
+
+async function start() {
+  if (!token) return;
+  try {
+    const payload = atob(token).split("|");
+    me = { username:payload[0], nama:payload[1], role:payload[2] };
+  } catch { return logout(); }
+  loginView.style.display="none"; appView.style.display="block";
+  userTag.textContent = "Logout ("+me.nama+" - "+me.role+")";
+  namaMe.textContent = me.nama;
+  await Promise.all([loadKeu(), loadSpj(), loadProp(), loadLog()]);
+}
+
+function show(id) {
+  ["dash","keu","spj","prop","log"].forEach(x => document.getElementById(x).hidden = (x!==id));
+}
+
+// ===== KEUANGAN =====
+async function loadKeu() {
+  const rows = await api("/keuangan");
+  const t = document.getElementById("tKeu");
+  t.rows.length = 1;
+  let masuk=0, keluar=0;
+  rows.forEach(r => {
+    r.jenis==="masuk" ? masuk+=r.jumlah : keluar+=r.jumlah;
+    t.insertRow(-1).innerHTML =
+      `<td>r.tanggal</td><td>{r.tanggal}</td><td>r.tanggal</td><td>{r.keterangan}</td><td class="r.jenis">{r.jenis}">r.jenis">{r.jenis}</td>
+       <td>rp(r.jumlah)</td><td>{rp(r.jumlah)}</td><td>rp(r.jumlah)</td><td>{r.created_by}</td>
+       <td><a onclick="delKeu(${r.id})">🗑️</a></td>`;
+  });
+  keuTotal.innerHTML = `<div class="card">Masuk: <span class="masuk">${rp(masuk)}</span></div>
+    <div class="card">Keluar: <span class="keluar">${rp(keluar)}</span></div>
+    <div class="card">Saldo: <b>${rp(masuk-keluar)}</b></div>`;
+  cards.innerHTML = `<div class="card"><h3>💰 Saldo</h3>${rp(masuk-keluar)}</div>
+    <div class="card"><h3>📄 SPJ</h3>${document.getElementById("tSpj").rows.length-1} dokumen</div>`;
+}
+async function addKeu(e) {
+  e.preventDefault();
+  await api("/keuangan", { method:"POST", body: JSON.stringify({
+    tanggal:kTgl.value, keterangan:kKet.value, jenis:kJenis.value, jumlah:+kJml.value }) });
+  kTgl.value=kKet.value=kJml.value=""; loadKeu();
+}
+async function delKeu(id) { if(confirm("Hapus?")) { await api("/keuangan?id="+id, {method:"DELETE"}); loadKeu(); } }
+
+// ===== SPJ =====
+async function loadSpj() {
+  const rows = await api("/spj");
+  const t = document.getElementById("tSpj");
+  t.rows.length = 1;
+  rows.forEach(r => {
+    const aksi = me.role==="admin" && r.status==="pending"
+      ? `<a onclick="setStatus(r.id,′disetujui′)">✅</a><aonclick="setStatus({r.id},'disetujui')">✅</a> <a onclick="setStatus(r.id,′disetujui′)">✅</a><aonclick="setStatus({r.id},'ditolak')">❌</a>` : "";
+    t.insertRow(-1).innerHTML =
+      `<td>r.nospj</td><td>{r.no_spj}</td><td>r.nos​pj</td><td>{r.kegiatan}</td><td>${rp(r.nominal)}</td>
+       <td><b>r.status</b></td><td>{r.status}</b></td><td>r.status</b></td><td>{r.created_by}</td><td>${aksi}</td>`;
+  });
+}
+async function addSpj(e) {
+  e.preventDefault();
+  await api("/spj", { method:"POST", body: JSON.stringify({
+    no_spj:sNo.value, tanggal:sTgl.value, kegiatan:sKeg.value, rincian:sRin.value, nominal:+sNom.value }) });
+  sNo.value=sTgl.value=sKeg.value=sRin.value=sNom.value=""; loadSpj();
+}
+async function setStatus(id, status) {
+  await api("/spj/status", { method:"POST", body: JSON.stringify({id, status}) }); loadSpj();
+}
+
+// ===== PROPOSAL =====
+async function loadProp() {
+  const rows = await api("/proposal");
+  const t = document.getElementById("tProp");
+  t.rows.length = 1;
+  rows.forEach(r => t.insertRow(-1).innerHTML =
+    `<td>r.judul</td><td><b>{r.judul}</td><td><b>r.judul</td><td><b>{r.status}</b></td><td>r.createdby</td><td>{r.created_by}</td><td>r.createdb​y</td><td>{r.updated_by||"-"}</td>`);
+}
+async function addProp(e) {
+  e.preventDefault();
+  await api("/proposal", { method:"POST", body: JSON.stringify({ judul:pJudul.value, isi:pIsi.value }) });
+  pJudul.value=pIsi.value=""; loadProp();
+}
+
+// ===== LOG =====
+async function loadLog() {
+  const rows = await api("/log");
+  const t = document.getElementById("tLog");
+  t.rows.length = 1;
+  rows.forEach(r => t.insertRow(-1).innerHTML =
+    `<td>r.waktu</td><td><b>{r.waktu}</td><td><b>r.waktu</td><td><b>{r.username}</b></td><td>${r.aktivitas}</td>`);
+}
+
+start();
+</script>
+</body>
+</html>
