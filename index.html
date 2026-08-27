@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Manajemen Group</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 body{font-family:Arial;margin:0;background:#f4f6f9}
 .nav{background:#1e3a5f;padding:15px;color:#fff;display:flex;flex-wrap:wrap;gap:15px}
@@ -13,11 +16,17 @@ body{font-family:Arial;margin:0;background:#f4f6f9}
 form{background:#fff;padding:15px;border-radius:8px;margin:10px 0}
 input,select,textarea{padding:8px;margin:4px 0;width:100%;box-sizing:border-box}
 button{padding:10px 15px;background:#2563eb;color:#fff;border:0;border-radius:5px;cursor:pointer;margin-top:5px}
+button.secondary{background:#16a34a}
+button.word{background:#1d4ed8}
+button:disabled{opacity:.5;cursor:not-allowed}
 table{width:100%;border-collapse:collapse;background:#fff;font-size:14px}
 th,td{border:1px solid #ddd;padding:8px}th{background:#2563eb;color:#fff}
 .masuk{color:green;font-weight:bold}.keluar{color:red;font-weight:bold}
 #errBox{display:none;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;padding:12px;border-radius:8px;margin:10px 0;font-size:14px;white-space:pre-wrap;word-break:break-word}
 #debugBox{background:#f1f5f9;color:#334155;padding:10px;border-radius:8px;margin-top:10px;font-size:12px;word-break:break-all}
+.errBox{display:none;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;padding:12px;border-radius:8px;margin:10px 0;font-size:14px;white-space:pre-wrap;word-break:break-word}
+.exportRow{display:flex;gap:10px;flex-wrap:wrap}
+.exportRow button{flex:1;min-width:120px}
 </style>
 </head>
 <body>
@@ -43,10 +52,11 @@ th,td{border:1px solid #ddd;padding:8px}th{background:#2563eb;color:#fff}
 <a onclick="show('spj')">SPJ</a>
 <a onclick="show('prop')">Proposal</a>
 <a onclick="show('log')">Log</a>
+<a onclick="show('exp')">Export</a>
 <a onclick="logout()" id="userTag">Logout</a>
 </div>
 <div class="content">
-<div id="errBox2"></div>
+<div id="errBox2" class="errBox"></div>
 
 <div id="dash">
 <h2>Selamat datang, <span id="namaMe"></span></h2>
@@ -94,6 +104,24 @@ th,td{border:1px solid #ddd;padding:8px}th{background:#2563eb;color:#fff}
 <table id="tLog"><tr><th>Waktu</th><th>Username</th><th>Aktivitas</th></tr></table>
 </div>
 
+<div id="exp" hidden>
+<h3>📦 Export Laporan</h3>
+<p style="color:#666;font-size:14px">Fitur ini hanya bisa diakses oleh username tertentu yang sudah diizinkan admin. Data yang diexport mencakup Keuangan, SPJ, dan Proposal.</p>
+<form onsubmit="return false">
+<label style="font-size:13px;color:#444">Dari tanggal</label>
+<input type="date" id="expStart">
+<label style="font-size:13px;color:#444">Sampai tanggal</label>
+<input type="date" id="expEnd">
+<p style="font-size:12px;color:#888">Kosongkan kedua tanggal untuk export semua data.</p>
+</form>
+<div id="expErr" class="errBox"></div>
+<div class="exportRow">
+<button class="secondary" onclick="exportExcel()">📊 Export Excel</button>
+<button onclick="exportPDF()">📕 Export PDF</button>
+<button class="word" onclick="exportWord()">📄 Export Word</button>
+</div>
+</div>
+
 </div>
 </div>
 
@@ -119,7 +147,7 @@ function clearErr(boxId) {
 }
 
 const h = () => ({ "Content-Type":"application/json", "Authorization":"Bearer "+token });
-const rp = n => "Rp " + Number(n).toLocaleString("id-ID");
+const rp = n => "Rp " + Number(n||0).toLocaleString("id-ID");
 
 async function api(path, opt={}) {
   let r;
@@ -186,7 +214,7 @@ async function start() {
 }
 
 function show(id) {
-  ["dash","keu","spj","prop","log"].forEach(x => document.getElementById(x).hidden = (x!==id));
+  ["dash","keu","spj","prop","log","exp"].forEach(x => document.getElementById(x).hidden = (x!==id));
 }
 
 // ===== KEUANGAN =====
@@ -271,6 +299,184 @@ async function loadLog() {
   t.rows.length = 1;
   rows.forEach(r => t.insertRow(-1).innerHTML =
     `<td>${r.waktu}</td><td><b>${r.username}</b></td><td>${r.aktivitas}</td>`);
+}
+
+// ===== EXPORT =====
+async function getExportData() {
+  clearErr("expErr");
+  const start = document.getElementById("expStart").value;
+  const end = document.getElementById("expEnd").value;
+  let qs = "";
+  if (start && end) qs = "?start=" + start + "&end=" + end;
+  return await api("/export/data" + qs);
+}
+
+function fmtPeriode(range) {
+  if (range.start && range.end) return "Periode: " + range.start + " s/d " + range.end;
+  return "Periode: Semua data";
+}
+
+async function exportExcel() {
+  try {
+    const data = await getExportData();
+    const wb = XLSX.utils.book_new();
+
+    let masuk = 0, keluar = 0;
+    const keuRows = data.keuangan.map(r => {
+      if (r.jenis === "masuk") masuk += r.jumlah; else keluar += r.jumlah;
+      return {
+        Tanggal: r.tanggal, Keterangan: r.keterangan, Jenis: r.jenis,
+        Jumlah: r.jumlah, "Dicatat Oleh": r.created_by
+      };
+    });
+    keuRows.push({});
+    keuRows.push({ Tanggal: "", Keterangan: "TOTAL MASUK", Jenis: "", Jumlah: masuk, "Dicatat Oleh": "" });
+    keuRows.push({ Tanggal: "", Keterangan: "TOTAL KELUAR", Jenis: "", Jumlah: keluar, "Dicatat Oleh": "" });
+    keuRows.push({ Tanggal: "", Keterangan: "SALDO AKHIR", Jenis: "", Jumlah: masuk - keluar, "Dicatat Oleh": "" });
+
+    const wsKeu = XLSX.utils.json_to_sheet(keuRows);
+    XLSX.utils.book_append_sheet(wb, wsKeu, "Keuangan");
+
+    const spjRows = data.spj.map(r => ({
+      "No SPJ": r.no_spj, Tanggal: r.tanggal, Kegiatan: r.kegiatan,
+      Rincian: r.rincian, Nominal: r.nominal, Status: r.status, "Dicatat Oleh": r.created_by
+    }));
+    const wsSpj = XLSX.utils.json_to_sheet(spjRows);
+    XLSX.utils.book_append_sheet(wb, wsSpj, "SPJ");
+
+    const propRows = data.proposal.map(r => ({
+      Judul: r.judul, Status: r.status, "Dibuat Oleh": r.created_by, "Diubah Oleh": r.updated_by || "-"
+    }));
+    const wsProp = XLSX.utils.json_to_sheet(propRows);
+    XLSX.utils.book_append_sheet(wb, wsProp, "Proposal");
+
+    const fname = "laporan_" + (data.range.start || "semua") + "_" + (data.range.end || "data") + ".xlsx";
+    XLSX.writeFile(wb, fname);
+  } catch (err) {
+    showErr("expErr", err.message || String(err));
+  }
+}
+
+async function exportPDF() {
+  try {
+    const data = await getExportData();
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    let masuk = 0, keluar = 0;
+    data.keuangan.forEach(r => { r.jenis === "masuk" ? masuk += r.jumlah : keluar += r.jumlah; });
+
+    doc.setFontSize(16);
+    doc.text("Laporan Kegiatan Kelompok", 14, 16);
+    doc.setFontSize(10);
+    doc.text(fmtPeriode(data.range), 14, 23);
+    doc.text("Dicetak: " + new Date().toLocaleString("id-ID"), 14, 28);
+
+    doc.setFontSize(13);
+    doc.text("Keuangan", 14, 38);
+    doc.autoTable({
+      startY: 42,
+      head: [["Tanggal", "Keterangan", "Jenis", "Jumlah", "Oleh"]],
+      body: data.keuangan.map(r => [r.tanggal, r.keterangan, r.jenis, rp(r.jumlah), r.created_by]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [37, 99, 235] }
+    });
+    let y = doc.lastAutoTable.finalY + 6;
+    doc.setFontSize(10);
+    doc.text("Total Masuk: " + rp(masuk), 14, y);
+    doc.text("Total Keluar: " + rp(keluar), 14, y + 5);
+    doc.text("Saldo Akhir: " + rp(masuk - keluar), 14, y + 10);
+
+    doc.addPage();
+    doc.setFontSize(13);
+    doc.text("SPJ", 14, 16);
+    doc.autoTable({
+      startY: 20,
+      head: [["No SPJ", "Tanggal", "Kegiatan", "Nominal", "Status", "Oleh"]],
+      body: data.spj.map(r => [r.no_spj, r.tanggal, r.kegiatan, rp(r.nominal), r.status, r.created_by]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [37, 99, 235] }
+    });
+
+    doc.addPage();
+    doc.setFontSize(13);
+    doc.text("Proposal", 14, 16);
+    doc.autoTable({
+      startY: 20,
+      head: [["Judul", "Status", "Dibuat Oleh", "Diubah Oleh"]],
+      body: data.proposal.map(r => [r.judul, r.status, r.created_by, r.updated_by || "-"]),
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [37, 99, 235] }
+    });
+
+    const fname = "laporan_" + (data.range.start || "semua") + "_" + (data.range.end || "data") + ".pdf";
+    doc.save(fname);
+  } catch (err) {
+    showErr("expErr", err.message || String(err));
+  }
+}
+
+async function exportWord() {
+  try {
+    const data = await getExportData();
+    let masuk = 0, keluar = 0;
+    const keuRows = data.keuangan.map(r => {
+      r.jenis === "masuk" ? masuk += r.jumlah : keluar += r.jumlah;
+      return `<tr><td>${r.tanggal}</td><td>${r.keterangan}</td><td>${r.jenis}</td><td>${rp(r.jumlah)}</td><td>${r.created_by}</td></tr>`;
+    }).join("");
+
+    const spjRows = data.spj.map(r =>
+      `<tr><td>${r.no_spj}</td><td>${r.tanggal}</td><td>${r.kegiatan}</td><td>${rp(r.nominal)}</td><td>${r.status}</td><td>${r.created_by}</td></tr>`
+    ).join("");
+
+    const propRows = data.proposal.map(r =>
+      `<tr><td>${r.judul}</td><td>${r.status}</td><td>${r.created_by}</td><td>${r.updated_by || "-"}</td></tr>`
+    ).join("");
+
+    const html = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head><meta charset="utf-8"><title>Laporan</title></head>
+      <body style="font-family:Arial;font-size:13px">
+        <h1>Laporan Kegiatan Kelompok</h1>
+        <p>${fmtPeriode(data.range)}<br>Dicetak: ${new Date().toLocaleString("id-ID")}</p>
+
+        <h2>Keuangan</h2>
+        <table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%">
+          <tr style="background:#2563eb;color:#fff"><th>Tanggal</th><th>Keterangan</th><th>Jenis</th><th>Jumlah</th><th>Oleh</th></tr>
+          ${keuRows}
+        </table>
+        <p>
+          <b>Total Masuk:</b> ${rp(masuk)}<br>
+          <b>Total Keluar:</b> ${rp(keluar)}<br>
+          <b>Saldo Akhir:</b> ${rp(masuk - keluar)}
+        </p>
+
+        <h2>SPJ</h2>
+        <table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%">
+          <tr style="background:#2563eb;color:#fff"><th>No SPJ</th><th>Tanggal</th><th>Kegiatan</th><th>Nominal</th><th>Status</th><th>Oleh</th></tr>
+          ${spjRows}
+        </table>
+
+        <h2>Proposal</h2>
+        <table border="1" cellspacing="0" cellpadding="5" style="border-collapse:collapse;width:100%">
+          <tr style="background:#2563eb;color:#fff"><th>Judul</th><th>Status</th><th>Dibuat Oleh</th><th>Diubah Oleh</th></tr>
+          ${propRows}
+        </table>
+      </body>
+      </html>`;
+
+    const blob = new Blob(['\ufeff', html], { type: "application/msword" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "laporan_" + (data.range.start || "semua") + "_" + (data.range.end || "data") + ".doc";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    showErr("expErr", err.message || String(err));
+  }
 }
 
 start();
