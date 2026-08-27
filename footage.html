@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Karang Taruna | Footage</title>
+<style>
+:root{
+  --bg:#0a0a0b;--bg-soft:#0d0d0f;--card:#161618;--card2:#1b1b1e;--border:#2a2a2e;
+  --gold:#e0ac2b;--gold-soft:#caa23c33;--gold-dark:#8a6d1f;
+  --text:#f4f4f5;--text-dim:#9ca0a8;--text-dim2:#6b6f76;
+}
+*{box-sizing:border-box}
+body{font-family:'Segoe UI',Arial,sans-serif;margin:0;background:var(--bg);color:var(--text)}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit}
+
+.layout{display:flex;min-height:100vh}
+.sidebar{width:250px;flex:0 0 250px;background:var(--bg-soft);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:22px 16px;position:sticky;top:0;height:100vh}
+.brand{display:flex;flex-direction:column;align-items:center;text-align:center;padding-bottom:20px;margin-bottom:14px;border-bottom:1px solid var(--border)}
+.brand .logo{width:60px;height:60px;border-radius:50%;background:linear-gradient(145deg,#f4d675,#b8860b);display:flex;align-items:center;justify-content:center;font-weight:800;color:#1a1a1a;font-size:18px;margin-bottom:10px;border:3px solid #0a0a0b;box-shadow:0 0 0 2px var(--gold)}
+.brand b{font-size:15px;letter-spacing:.4px}
+.brand span{font-size:10.5px;color:var(--gold);letter-spacing:.6px;margin-top:2px}
+.navlink{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:9px;color:var(--text-dim);font-size:14px;font-weight:500;cursor:pointer;margin-bottom:4px;border:0;background:transparent;width:100%;text-align:left}
+.navlink svg{flex:0 0 18px;width:18px;height:18px}
+.navlink:hover{background:var(--card2);color:var(--text)}
+.navlink.active{background:linear-gradient(90deg,#e0ac2b,#c9932a);color:#181205;font-weight:700}
+.navSpacer{flex:1}
+.profileBox{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:var(--card2);border:1px solid var(--border)}
+.profileBox .avatar{width:34px;height:34px;border-radius:50%;background:var(--gold-soft);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:0 0 34px}
+.profileBox .who{flex:1;min-width:0}
+.profileBox .who b{display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.profileBox .who small{color:var(--text-dim2);font-size:10.5px}
+.logoutBtn{background:transparent;border:0;color:var(--text-dim2);cursor:pointer;padding:4px}
+.logoutBtn:hover{color:#ef4444}
+
+.main{flex:1;min-width:0;padding:26px 30px 40px}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:16px;flex-wrap:wrap}
+.topbar h1{font-size:22px;margin:0}
+.topbar h1 span{color:var(--gold)}
+.topbar p{margin:4px 0 0;color:var(--text-dim);font-size:13.5px}
+
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center}
+.searchBox{flex:1;min-width:200px;display:flex;align-items:center;gap:8px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:9px 12px}
+.searchBox input{background:transparent;border:0;outline:0;color:var(--text);font-size:13.5px;width:100%}
+.searchBox svg{color:var(--text-dim2);flex:0 0 auto}
+.pillGroup{display:flex;gap:8px}
+.pillBtn{border:1px solid var(--gold-dark);color:var(--gold);background:transparent;padding:9px 16px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.pillBtn.active,.pillBtn:hover{background:var(--gold);color:#181205}
+
+.panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px}
+.footGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.footItem .thumb{aspect-ratio:1/1;border-radius:12px;background:linear-gradient(150deg,#2a2413,#3a2f14);display:flex;align-items:center;justify-content:center;color:var(--gold-dark);margin-bottom:7px}
+.footItem b{display:block;font-size:13px}
+.footItem small{color:var(--text-dim2);font-size:11.5px}
+
+@media(max-width:920px){.footGrid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">KT</div>
+      <b>KARANG TARUNA</b>
+      <span>BERSATU &bull; BERKARYA &bull; BERDAYA</span>
+    </div>
+
+    <a class="navlink" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>
+      Dashboard
+    </a>
+    <a class="navlink" href="index.html#bendahara">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/><path d="M6 14h4"/></svg>
+      Bendahara
+    </a>
+    <a class="navlink" href="file.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>
+      File
+    </a>
+    <a class="navlink active" href="footage.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="15" height="12" rx="2"/><path d="M17 10l5-3v10l-5-3"/></svg>
+      Footage
+    </a>
+
+    <div class="navSpacer"></div>
+    <div class="profileBox">
+      <div class="avatar" id="avatarInit">A</div>
+      <div class="who">
+        <b id="profName">Admin</b>
+        <small id="profRole">Administrator</small>
+      </div>
+      <button class="logoutBtn" title="Logout" onclick="logout()">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>Manajemen <span>Footage</span></h1>
+        <p>Kelola foto dan video dokumentasi kegiatan Karang Taruna.</p>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="searchBox">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+        <input id="footSearch" placeholder="Cari footage...">
+      </div>
+      <div class="pillGroup">
+        <button class="pillBtn active" onclick="setTab('foto',this)">Foto</button>
+        <button class="pillBtn" onclick="setTab('video',this)">Video</button>
+      </div>
+      <button class="pillBtn" onclick="alert('Sambungkan tombol ini ke endpoint upload API Footage kamu.')">+ Unggah</button>
+    </div>
+
+    <div class="panel">
+      <div class="footGrid" id="footageGrid">
+        <!-- TODO: sambungkan ke API Footage kamu sendiri, contoh:
+             const rows = await api('/footage?type=foto');
+             lalu render tiap item dengan struktur .footItem di bawah ini -->
+        <div class="footItem"><div class="thumb"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M22 16l-5.5-5-8.5 8"/></svg></div><b>Bakti Sosial</b><small>20 Mei 2025</small></div>
+        <div class="footItem"><div class="thumb"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M22 16l-5.5-5-8.5 8"/></svg></div><b>Rapat Rutin</b><small>18 Mei 2025</small></div>
+        <div class="footItem"><div class="thumb"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M22 16l-5.5-5-8.5 8"/></svg></div><b>Kerja Bakti</b><small>15 Mei 2025</small></div>
+        <div class="footItem"><div class="thumb"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M22 16l-5.5-5-8.5 8"/></svg></div><b>Pentas Seni</b><small>12 Mei 2025</small></div>
+        <div class="footItem"><div class="thumb"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M22 16l-5.5-5-8.5 8"/></svg></div><b>Turnamen Voli</b><small>10 Mei 2025</small></div>
+        <div class="footItem"><div class="thumb"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M22 16l-5.5-5-8.5 8"/></svg></div><b>Halal Bihalal</b><small>8 Mei 2025</small></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// Modul ini berdiri sendiri (terpisah dari index.html) supaya bisa disambungkan
+// ke endpoint API Footage kamu sendiri kapan saja, tanpa mengubah index.html.
+const token = localStorage.getItem("token") || "";
+if (!token) { location.href = "index.html"; }
+
+try {
+  const payload = atob(token).split("|");
+  const me = { username: payload[0], nama: payload[1], role: payload[2] };
+  document.getElementById("profName").textContent = me.nama;
+  document.getElementById("profRole").textContent = me.role;
+  document.getElementById("avatarInit").textContent = (me.nama || "?").trim().charAt(0).toUpperCase();
+} catch { location.href = "index.html"; }
+
+function logout() { localStorage.removeItem("token"); location.href = "index.html"; }
+
+function setTab(type, btn) {
+  document.querySelectorAll('.pillGroup .pillBtn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // TODO: panggil ulang fetch data footage sesuai `type` ('foto' / 'video')
+}
+</script>
+</body>
+</html>
