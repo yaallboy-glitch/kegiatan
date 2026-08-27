@@ -142,8 +142,8 @@ async function loadKeu() {
   rows.forEach(r => {
     r.jenis==="masuk" ? masuk+=r.jumlah : keluar+=r.jumlah;
     t.insertRow(-1).innerHTML =
-      `<td>r.tanggal</td><td>{r.tanggal}</td><td>r.tanggal</td><td>{r.keterangan}</td><td class="r.jenis">{r.jenis}">r.jenis">{r.jenis}</td>
-       <td>rp(r.jumlah)</td><td>{rp(r.jumlah)}</td><td>rp(r.jumlah)</td><td>{r.created_by}</td>
+      `<td>${r.tanggal}</td><td>${r.keterangan}</td><td class="${r.jenis}">${r.jenis}</td>
+       <td>${rp(r.jumlah)}</td><td>${r.created_by}</td>
        <td><a onclick="delKeu(${r.id})">🗑️</a></td>`;
   });
   keuTotal.innerHTML = `<div class="card">Masuk: <span class="masuk">${rp(masuk)}</span></div>
@@ -167,10 +167,10 @@ async function loadSpj() {
   t.rows.length = 1;
   rows.forEach(r => {
     const aksi = me.role==="admin" && r.status==="pending"
-      ? `<a onclick="setStatus(r.id,′disetujui′)">✅</a><aonclick="setStatus({r.id},'disetujui')">✅</a> <a onclick="setStatus(r.id,′disetujui′)">✅</a><aonclick="setStatus({r.id},'ditolak')">❌</a>` : "";
+      ? `<a onclick="setStatus(${r.id},'disetujui')">✅</a> <a onclick="setStatus(${r.id},'ditolak')">❌</a>` : "";
     t.insertRow(-1).innerHTML =
-      `<td>r.nospj</td><td>{r.no_spj}</td><td>r.nos​pj</td><td>{r.kegiatan}</td><td>${rp(r.nominal)}</td>
-       <td><b>r.status</b></td><td>{r.status}</b></td><td>r.status</b></td><td>{r.created_by}</td><td>${aksi}</td>`;
+      `<td>${r.no_spj}</td><td>${r.kegiatan}</td><td>${rp(r.nominal)}</td>
+       <td><b>${r.status}</b></td><td>${r.created_by}</td><td>${aksi}</td>`;
   });
 }
 async function addSpj(e) {
@@ -189,7 +189,7 @@ async function loadProp() {
   const t = document.getElementById("tProp");
   t.rows.length = 1;
   rows.forEach(r => t.insertRow(-1).innerHTML =
-    `<td>r.judul</td><td><b>{r.judul}</td><td><b>r.judul</td><td><b>{r.status}</b></td><td>r.createdby</td><td>{r.created_by}</td><td>r.createdb​y</td><td>{r.updated_by||"-"}</td>`);
+    `<td><b>${r.judul}</b></td><td>${r.status}</td><td>${r.created_by}</td><td>${r.updated_by||"-"}</td>`);
 }
 async function addProp(e) {
   e.preventDefault();
@@ -203,7 +203,7 @@ async function loadLog() {
   const t = document.getElementById("tLog");
   t.rows.length = 1;
   rows.forEach(r => t.insertRow(-1).innerHTML =
-    `<td>r.waktu</td><td><b>{r.waktu}</td><td><b>r.waktu</td><td><b>{r.username}</b></td><td>${r.aktivitas}</td>`);
+    `<td>${r.waktu}</td><td><b>${r.username}</b></td><td>${r.aktivitas}</td>`);
 }
 
 start();
