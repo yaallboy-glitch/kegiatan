@@ -3,763 +3,266 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Manajemen Group</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<style>
-body{font-family:Arial;margin:0;background:#f4f6f9}
-.nav{background:#1e3a5f;padding:15px;color:#fff;display:flex;flex-wrap:wrap;gap:15px}
-.nav a{color:#fff;cursor:pointer;text-decoration:none}
-.content{padding:20px;max-width:900px;margin:auto}
-.card{background:#fff;padding:15px;border-radius:8px;display:inline-block;margin:8px;min-width:150px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
-form{background:#fff;padding:15px;border-radius:8px;margin:10px 0}
-input,select,textarea{padding:8px;margin:4px 0;width:100%;box-sizing:border-box}
-button{padding:10px 15px;background:#2563eb;color:#fff;border:0;border-radius:5px;cursor:pointer;margin-top:5px}
-button.secondary{background:#16a34a}
-button.word{background:#1d4ed8}
-button:disabled{opacity:.5;cursor:not-allowed}
-table{width:100%;border-collapse:collapse;background:#fff;font-size:14px}
-th,td{border:1px solid #ddd;padding:8px}th{background:#2563eb;color:#fff}
-.masuk{color:green;font-weight:bold}.keluar{color:red;font-weight:bold}
-#errBox{display:none;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;padding:12px;border-radius:8px;margin:10px 0;font-size:14px;white-space:pre-wrap;word-break:break-word}
-#debugBox{background:#f1f5f9;color:#334155;padding:10px;border-radius:8px;margin-top:10px;font-size:12px;word-break:break-all}
-.errBox{display:none;background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;padding:12px;border-radius:8px;margin:10px 0;font-size:14px;white-space:pre-wrap;word-break:break-word}
-.exportRow{display:flex;gap:10px;flex-wrap:wrap}
-.exportRow button{flex:1;min-width:120px}
-</style>
+<title>Beranda — Karang Taruna BMS</title>
+<link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-
-<!-- LOGIN -->
-<div id="loginView" class="content" style="max-width:350px;margin-top:60px">
-<h2>🔐 Login Group</h2>
-<div id="errBox"></div>
-<form onsubmit="login(event)">
-<input id="luser" placeholder="Username" required>
-<input id="lpass" type="password" placeholder="Password" required>
-<button id="btnLogin">Login</button>
-</form>
-<div id="debugBox">API target: <span id="apiShown"></span></div>
-</div>
-
-<!-- APP -->
-<div id="appView" style="display:none">
-<div class="nav">
-<b>📅 GroupApp</b>
-<a onclick="show('dash')">Dashboard</a>
-<a onclick="show('keu')">Keuangan</a>
-<a onclick="show('spj')">SPJ</a>
-<a onclick="show('prop')">Proposal</a>
-<a onclick="show('log')">Log</a>
-<a onclick="show('exp')">Export</a>
-<a onclick="logout()" id="userTag">Logout</a>
-</div>
-<div class="content">
-<div id="errBox2" class="errBox"></div>
-
-<div id="dash">
-<h2>Selamat datang, <span id="namaMe"></span></h2>
-<div id="cards"></div>
-</div>
-
-<div id="keu" hidden>
-<h3>💰 Laporan Keuangan</h3>
-<form onsubmit="addKeu(event)">
-<input type="date" id="kTgl" required>
-<input id="kKet" placeholder="Keterangan" required>
-<select id="kJenis"><option value="masuk">Masuk</option><option value="keluar">Keluar</option></select>
-<input type="number" id="kJml" placeholder="Jumlah" required>
-<button>💾 Simpan</button>
-</form>
-<div id="keuTotal"></div>
-<table id="tKeu"><tr><th>Tanggal</th><th>Ket</th><th>Jenis</th><th>Jumlah</th><th>Oleh</th><th></th></tr></table>
-</div>
-
-<div id="spj" hidden>
-<h3>📄 SPJ</h3>
-<form onsubmit="addSpj(event)">
-<input id="sNo" placeholder="No. SPJ" required>
-<input type="date" id="sTgl" required>
-<input id="sKeg" placeholder="Kegiatan" required>
-<textarea id="sRin" placeholder="Rincian"></textarea>
-<input type="number" id="sNom" placeholder="Nominal" required>
-<button>💾 Simpan</button>
-</form>
-<table id="tSpj"><tr><th>No</th><th>Kegiatan</th><th>Nominal</th><th>Status</th><th>Oleh</th><th>Aksi</th></tr></table>
-</div>
-
-<div id="prop" hidden>
-<h3>📋 Proposal</h3>
-<form onsubmit="addProp(event)">
-<input id="pJudul" placeholder="Judul Proposal" required>
-<textarea id="pIsi" rows="8" placeholder="Tulis isi proposal..." required></textarea>
-<button>💾 Simpan</button>
-</form>
-<table id="tProp"><tr><th>Judul</th><th>Status</th><th>Oleh</th><th>Diubah Oleh</th></tr></table>
-</div>
-
-<div id="log" hidden>
-<h3>📜 Log Aktivitas</h3>
-<table id="tLog"><tr><th>Waktu</th><th>Username</th><th>Aktivitas</th></tr></table>
-</div>
-
-<div id="exp" hidden>
-<h3>📦 Export Laporan</h3>
-<p style="color:#666;font-size:14px">Fitur ini hanya bisa diakses oleh username tertentu yang sudah diizinkan admin. Data yang diexport mencakup Keuangan, SPJ, dan Proposal.</p>
-<form onsubmit="return false">
-<label style="font-size:13px;color:#444">Judul Laporan (opsional)</label>
-<input id="expTitle" placeholder="Contoh: Laporan Keuangan Lomba Agustusan">
-<label style="font-size:13px;color:#444">Dari tanggal</label>
-<input type="date" id="expStart">
-<label style="font-size:13px;color:#444">Sampai tanggal</label>
-<input type="date" id="expEnd">
-<p style="font-size:12px;color:#888">Kosongkan kedua tanggal untuk export semua data. Judul kosong akan pakai judul default.</p>
-</form>
-<div id="expErr" class="errBox"></div>
-<div class="exportRow">
-<button class="secondary" onclick="exportExcel()">📊 Export Excel</button>
-<button onclick="exportPDF()">📕 Export PDF</button>
-<button class="word" onclick="exportWord()">📄 Export Word</button>
-</div>
-</div>
-
-</div>
-</div>
-
-<script>
-// ======== GANTI SESUAI URL WORKER KAMU (tanpa garis miring / di akhir) ========
-const API = "https://kegiatan-api.newbrigademudasoropati.workers.dev";
-// ================================================================================
-
-let token = localStorage.getItem("token") || "";
-let me = {};
-
-document.getElementById("apiShown").textContent = API;
-
-function showErr(boxId, msg) {
-  const b = document.getElementById(boxId);
-  b.textContent = "⚠️ " + msg;
-  b.style.display = "block";
-}
-function clearErr(boxId) {
-  const b = document.getElementById(boxId);
-  b.style.display = "none";
-  b.textContent = "";
-}
-
-const h = () => ({ "Content-Type":"application/json", "Authorization":"Bearer "+token });
-const rp = n => "Rp " + Number(n||0).toLocaleString("id-ID");
-
-async function api(path, opt={}) {
-  let r;
-  try {
-    r = await fetch(API+path, { headers:h(), ...opt });
-  } catch (netErr) {
-    throw new Error("Tidak bisa menghubungi server (" + API + path + "). Cek koneksi internet atau URL API. Detail: " + netErr.message);
-  }
-  let d;
-  try {
-    d = await r.json();
-  } catch {
-    throw new Error("Server tidak mengembalikan JSON yang valid (status " + r.status + ").");
-  }
-  if (r.status === 401) { logout(); throw new Error("Sesi habis, silakan login lagi."); }
-  if (!r.ok) throw new Error(d.error || ("Error " + r.status));
-  return d;
-}
-
-async function login(e) {
-  e.preventDefault();
-  clearErr("errBox");
-  const btn = document.getElementById("btnLogin");
-  btn.disabled = true; btn.textContent = "Memproses...";
-  try {
-    const r = await fetch(API+"/login", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ username: luser.value, password: lpass.value })
-    });
-    let d;
-    try {
-      d = await r.json();
-    } catch {
-      throw new Error("Server merespon status " + r.status + " tapi bukan JSON. Kemungkinan URL API salah atau Worker error.");
-    }
-    if (!r.ok) throw new Error(d.error || ("Login gagal (status " + r.status + ")"));
-    if (!d.token) throw new Error("Server tidak mengirim token.");
-    localStorage.setItem("token", d.token);
-    location.reload();
-  } catch (err) {
-    showErr("errBox", err.message || String(err));
-  } finally {
-    btn.disabled = false; btn.textContent = "Login";
-  }
-}
-
-function logout() { localStorage.removeItem("token"); location.reload(); }
-
-async function start() {
-  if (!token) return;
-  try {
-    const payload = atob(token).split("|");
-    me = { username:payload[0], nama:payload[1], role:payload[2] };
-  } catch { return logout(); }
-  loginView.style.display="none"; appView.style.display="block";
-  userTag.textContent = "Logout ("+me.nama+" - "+me.role+")";
-  namaMe.textContent = me.nama;
-  try {
-    await Promise.all([loadKeu(), loadSpj(), loadProp(), loadLog()]);
-  } catch (err) {
-    showErr("errBox2", err.message || String(err));
-  }
-}
-
-function show(id) {
-  ["dash","keu","spj","prop","log","exp"].forEach(x => document.getElementById(x).hidden = (x!==id));
-}
-
-// ===== KEUANGAN =====
-async function loadKeu() {
-  const rows = await api("/keuangan");
-  const t = document.getElementById("tKeu");
-  t.rows.length = 1;
-  let masuk=0, keluar=0;
-  rows.forEach(r => {
-    r.jenis==="masuk" ? masuk+=r.jumlah : keluar+=r.jumlah;
-    t.insertRow(-1).innerHTML =
-      `<td>${r.tanggal}</td><td>${r.keterangan}</td><td class="${r.jenis}">${r.jenis}</td>
-       <td>${rp(r.jumlah)}</td><td>${r.created_by}</td>
-       <td><a onclick="delKeu(${r.id})">🗑️</a></td>`;
-  });
-  keuTotal.innerHTML = `<div class="card">Masuk: <span class="masuk">${rp(masuk)}</span></div>
-    <div class="card">Keluar: <span class="keluar">${rp(keluar)}</span></div>
-    <div class="card">Saldo: <b>${rp(masuk-keluar)}</b></div>`;
-  cards.innerHTML = `<div class="card"><h3>💰 Saldo</h3>${rp(masuk-keluar)}</div>
-    <div class="card"><h3>📄 SPJ</h3>${document.getElementById("tSpj").rows.length-1} dokumen</div>`;
-}
-async function addKeu(e) {
-  e.preventDefault();
-  try {
-    await api("/keuangan", { method:"POST", body: JSON.stringify({
-      tanggal:kTgl.value, keterangan:kKet.value, jenis:kJenis.value, jumlah:+kJml.value }) });
-    kTgl.value=kKet.value=kJml.value=""; loadKeu();
-  } catch (err) { showErr("errBox2", err.message); }
-}
-async function delKeu(id) {
-  if(!confirm("Hapus?")) return;
-  try { await api("/keuangan?id="+id, {method:"DELETE"}); loadKeu(); }
-  catch (err) { showErr("errBox2", err.message); }
-}
-
-// ===== SPJ =====
-async function loadSpj() {
-  const rows = await api("/spj");
-  const t = document.getElementById("tSpj");
-  t.rows.length = 1;
-  rows.forEach(r => {
-    const aksi = me.role==="admin" && r.status==="pending"
-      ? `<a onclick="setStatus(${r.id},'disetujui')">✅</a> <a onclick="setStatus(${r.id},'ditolak')">❌</a>` : "";
-    t.insertRow(-1).innerHTML =
-      `<td>${r.no_spj}</td><td>${r.kegiatan}</td><td>${rp(r.nominal)}</td>
-       <td><b>${r.status}</b></td><td>${r.created_by}</td><td>${aksi}</td>`;
-  });
-}
-async function addSpj(e) {
-  e.preventDefault();
-  try {
-    await api("/spj", { method:"POST", body: JSON.stringify({
-      no_spj:sNo.value, tanggal:sTgl.value, kegiatan:sKeg.value, rincian:sRin.value, nominal:+sNom.value }) });
-    sNo.value=sTgl.value=sKeg.value=sRin.value=sNom.value=""; loadSpj();
-  } catch (err) { showErr("errBox2", err.message); }
-}
-async function setStatus(id, status) {
-  try { await api("/spj/status", { method:"POST", body: JSON.stringify({id, status}) }); loadSpj(); }
-  catch (err) { showErr("errBox2", err.message); }
-}
-
-// ===== PROPOSAL =====
-async function loadProp() {
-  const rows = await api("/proposal");
-  const t = document.getElementById("tProp");
-  t.rows.length = 1;
-  rows.forEach(r => t.insertRow(-1).innerHTML =
-    `<td><b>${r.judul}</b></td><td>${r.status}</td><td>${r.created_by}</td><td>${r.updated_by||"-"}</td>`);
-}
-async function addProp(e) {
-  e.preventDefault();
-  try {
-    await api("/proposal", { method:"POST", body: JSON.stringify({ judul:pJudul.value, isi:pIsi.value }) });
-    pJudul.value=pIsi.value=""; loadProp();
-  } catch (err) { showErr("errBox2", err.message); }
-}
-
-// ===== LOG =====
-async function loadLog() {
-  const rows = await api("/log");
-  const t = document.getElementById("tLog");
-  t.rows.length = 1;
-  rows.forEach(r => t.insertRow(-1).innerHTML =
-    `<td>${r.waktu}</td><td><b>${r.username}</b></td><td>${r.aktivitas}</td>`);
-}
-
-// ===== EXPORT =====
-async function getExportData() {
-  clearErr("expErr");
-  const start = document.getElementById("expStart").value;
-  const end = document.getElementById("expEnd").value;
-  let qs = "";
-  if (start && end) qs = "?start=" + start + "&end=" + end;
-  return await api("/export/data" + qs);
-}
-
-function fmtPeriode(range) {
-  if (range.start && range.end) return "Periode: " + range.start + " s/d " + range.end;
-  return "Periode: Semua data";
-}
-
-function getReportTitle() {
-  const v = (document.getElementById("expTitle").value || "").trim();
-  return v ? v.toUpperCase() : "LAPORAN KEGIATAN KELOMPOK";
-}
-
-// ---- palet & helper styling (meniru desain "Laporan Keuangan Profesional") ----
-const XC = {
-  DARK: 'FF171717', RED: 'FFC00000', LIGHT: 'FFF3F4F6',
-  BORDER: 'FFD1D5DB', ZEBRA: 'FFFAFAFA', WHITE: 'FFFFFFFF'
-};
-const RP_FMT = '"Rp" #,##0';
-
-function xMergeStyle(ws, r1, c1, r2, c2, opt = {}) {
-  if (r1 !== r2 || c1 !== c2) ws.mergeCells(r1, c1, r2, c2);
-  for (let r = r1; r <= r2; r++) {
-    for (let c = c1; c <= c2; c++) {
-      const cell = ws.getCell(r, c);
-      if (opt.fill) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: opt.fill } };
-      if (opt.font) cell.font = opt.font;
-      if (opt.align) cell.alignment = opt.align;
-    }
-  }
-  const top = ws.getCell(r1, c1);
-  if (opt.value !== undefined) top.value = opt.value;
-  if (opt.numFmt) top.numFmt = opt.numFmt;
-}
-
-function xTitleBlock(ws, title, subtitle, colCount) {
-  ws.mergeCells(1, 1, 2, colCount);
-  const t = ws.getCell(1, 1);
-  t.value = title;
-  t.font = { size: 20, bold: true, color: { argb: XC.WHITE } };
-  t.alignment = { horizontal: 'center', vertical: 'middle' };
-  for (let r = 1; r <= 2; r++) for (let c = 1; c <= colCount; c++)
-    ws.getCell(r, c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XC.DARK } };
-  ws.getRow(1).height = 26; ws.getRow(2).height = 26;
-
-  ws.mergeCells(3, 1, 3, colCount);
-  const s = ws.getCell(3, 1);
-  s.value = subtitle;
-  s.font = { size: 10, color: { argb: 'FF666666' } };
-  s.alignment = { horizontal: 'center' };
-}
-
-function xHeaderRow(ws, rowIdx, labels) {
-  labels.forEach((lab, i) => {
-    const cell = ws.getCell(rowIdx, i + 1);
-    cell.value = lab;
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XC.DARK } };
-    cell.font = { bold: true, color: { argb: XC.WHITE } };
-    cell.alignment = { horizontal: 'center', vertical: 'middle' };
-  });
-}
-
-function xZebraBorder(ws, rowIdx, colCount, zebra) {
-  for (let c = 1; c <= colCount; c++) {
-    const cell = ws.getRow(rowIdx).getCell(c);
-    cell.border = { bottom: { style: 'thin', color: { argb: XC.BORDER } } };
-    if (zebra) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XC.ZEBRA } };
-  }
-}
-
-const HDR_ROW = 10; // baris tabel mulai (sama seperti template acuan)
-
-async function exportExcel() {
-  try {
-    const data = await getExportData();
-    const wb = new ExcelJS.Workbook();
-    wb.creator = "GroupApp";
-    wb.created = new Date();
-
-    let masuk = 0, keluar = 0;
-    data.keuangan.forEach(r => r.jenis === "masuk" ? masuk += r.jumlah : keluar += r.jumlah);
-    const totalSpj = data.spj.length;
-    const totalNominalSpj = data.spj.reduce((a, r) => a + (r.nominal || 0), 0);
-    const pendingSpj = data.spj.filter(r => r.status === "pending").length;
-
-    // ===== SHEET 1: LAPORAN KEUANGAN =====
-    const wsKeu = wb.addWorksheet("Laporan Keuangan");
-    wsKeu.columns = [{ width: 6 }, { width: 14 }, { width: 34 }, { width: 18 }, { width: 18 }, { width: 18 }];
-    xTitleBlock(wsKeu, "LAPORAN KEUANGAN", fmtPeriode(data.range), 6);
-
-    xMergeStyle(wsKeu, 5, 1, 5, 2, { value: "TOTAL UANG MASUK", fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "center" } });
-    xMergeStyle(wsKeu, 5, 3, 5, 4, { value: "TOTAL UANG KELUAR", fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "center" } });
-    xMergeStyle(wsKeu, 5, 5, 5, 6, { value: "SALDO AKHIR", fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "center" } });
-    xMergeStyle(wsKeu, 6, 1, 7, 2, { value: masuk, fill: XC.LIGHT, font: { bold: true, size: 15 }, align: { horizontal: "center", vertical: "middle" }, numFmt: RP_FMT });
-    xMergeStyle(wsKeu, 6, 3, 7, 4, { value: keluar, fill: XC.LIGHT, font: { bold: true, size: 15 }, align: { horizontal: "center", vertical: "middle" }, numFmt: RP_FMT });
-    xMergeStyle(wsKeu, 6, 5, 7, 6, { value: masuk - keluar, fill: XC.LIGHT, font: { bold: true, size: 15 }, align: { horizontal: "center", vertical: "middle" }, numFmt: RP_FMT });
-    wsKeu.getRow(6).height = 24; wsKeu.getRow(7).height = 24;
-
-    xHeaderRow(wsKeu, HDR_ROW, ["No", "Tanggal", "Keterangan", "Uang Masuk", "Uang Keluar", "Saldo"]);
-    let saldo = 0;
-    data.keuangan.forEach((r, idx) => {
-      const rowIdx = HDR_ROW + 1 + idx;
-      const mVal = r.jenis === "masuk" ? r.jumlah : 0;
-      const kVal = r.jenis === "keluar" ? r.jumlah : 0;
-      saldo += mVal - kVal;
-      const row = wsKeu.getRow(rowIdx);
-      row.getCell(1).value = idx + 1;
-      row.getCell(2).value = r.tanggal;
-      row.getCell(3).value = r.keterangan;
-      row.getCell(4).value = mVal || null;
-      row.getCell(5).value = kVal || null;
-      row.getCell(6).value = saldo;
-      row.getCell(4).numFmt = RP_FMT; row.getCell(5).numFmt = RP_FMT; row.getCell(6).numFmt = RP_FMT;
-      row.getCell(1).alignment = { horizontal: "center" };
-      xZebraBorder(wsKeu, rowIdx, 6, idx % 2 === 1);
-    });
-
-    // ===== SHEET 2: SPJ =====
-    const wsSpj = wb.addWorksheet("SPJ");
-    wsSpj.columns = [{ width: 6 }, { width: 16 }, { width: 14 }, { width: 32 }, { width: 18 }, { width: 16 }, { width: 18 }];
-    xTitleBlock(wsSpj, "LAPORAN SPJ", fmtPeriode(data.range), 7);
-
-    xMergeStyle(wsSpj, 5, 1, 5, 2, { value: "TOTAL SPJ", fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "center" } });
-    xMergeStyle(wsSpj, 5, 3, 5, 5, { value: "TOTAL NOMINAL", fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "center" } });
-    xMergeStyle(wsSpj, 5, 6, 5, 7, { value: "MENUNGGU PERSETUJUAN", fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "center" } });
-    xMergeStyle(wsSpj, 6, 1, 7, 2, { value: totalSpj, fill: XC.LIGHT, font: { bold: true, size: 15 }, align: { horizontal: "center", vertical: "middle" } });
-    xMergeStyle(wsSpj, 6, 3, 7, 5, { value: totalNominalSpj, fill: XC.LIGHT, font: { bold: true, size: 15 }, align: { horizontal: "center", vertical: "middle" }, numFmt: RP_FMT });
-    xMergeStyle(wsSpj, 6, 6, 7, 7, { value: pendingSpj, fill: XC.LIGHT, font: { bold: true, size: 15 }, align: { horizontal: "center", vertical: "middle" } });
-    wsSpj.getRow(6).height = 24; wsSpj.getRow(7).height = 24;
-
-    xHeaderRow(wsSpj, HDR_ROW, ["No", "No SPJ", "Tanggal", "Kegiatan", "Nominal", "Status", "Dicatat Oleh"]);
-    const statusColor = { disetujui: "FF15803D", ditolak: "FFB91C1C", pending: "FFB45309" };
-    data.spj.forEach((r, idx) => {
-      const rowIdx = HDR_ROW + 1 + idx;
-      const row = wsSpj.getRow(rowIdx);
-      row.getCell(1).value = idx + 1;
-      row.getCell(2).value = r.no_spj;
-      row.getCell(3).value = r.tanggal;
-      row.getCell(4).value = r.kegiatan;
-      row.getCell(5).value = r.nominal; row.getCell(5).numFmt = RP_FMT;
-      row.getCell(6).value = r.status;
-      row.getCell(6).font = { bold: true, color: { argb: statusColor[r.status] || "FF444444" } };
-      row.getCell(6).alignment = { horizontal: "center" };
-      row.getCell(7).value = r.created_by;
-      row.getCell(1).alignment = { horizontal: "center" };
-      xZebraBorder(wsSpj, rowIdx, 7, idx % 2 === 1);
-    });
-
-    // ===== SHEET 3: PROPOSAL =====
-    const wsProp = wb.addWorksheet("Proposal");
-    wsProp.columns = [{ width: 6 }, { width: 40 }, { width: 16 }, { width: 20 }, { width: 20 }];
-    xTitleBlock(wsProp, "LAPORAN PROPOSAL", "Daftar proposal kegiatan kelompok", 5);
-    xMergeStyle(wsProp, 5, 1, 5, 5, { value: "TOTAL PROPOSAL: " + data.proposal.length, fill: XC.RED, font: { bold: true, size: 11, color: { argb: XC.WHITE } }, align: { horizontal: "center" } });
-
-    xHeaderRow(wsProp, HDR_ROW, ["No", "Judul", "Status", "Dibuat Oleh", "Diubah Oleh"]);
-    data.proposal.forEach((r, idx) => {
-      const rowIdx = HDR_ROW + 1 + idx;
-      const row = wsProp.getRow(rowIdx);
-      row.getCell(1).value = idx + 1;
-      row.getCell(2).value = r.judul;
-      row.getCell(3).value = r.status;
-      row.getCell(3).alignment = { horizontal: "center" };
-      row.getCell(4).value = r.created_by;
-      row.getCell(5).value = r.updated_by || "-";
-      row.getCell(1).alignment = { horizontal: "center" };
-      xZebraBorder(wsProp, rowIdx, 5, idx % 2 === 1);
-    });
-
-    // ===== SHEET 4: REKAP =====
-    const wsRekap = wb.addWorksheet("Rekap");
-    wsRekap.columns = [{ width: 30 }, { width: 22 }];
-    wsRekap.mergeCells(1, 1, 1, 2);
-    const rt = wsRekap.getCell(1, 1);
-    rt.value = "REKAP KESELURUHAN";
-    rt.fill = { type: "pattern", pattern: "solid", fgColor: { argb: XC.DARK } };
-    rt.font = { bold: true, size: 14, color: { argb: XC.WHITE } };
-    rt.alignment = { horizontal: "center", vertical: "middle" };
-    wsRekap.getRow(1).height = 24;
-    wsRekap.mergeCells(2, 1, 2, 2);
-    const rs = wsRekap.getCell(2, 1);
-    rs.value = fmtPeriode(data.range);
-    rs.font = { italic: true, size: 10, color: { argb: "FF666666" } };
-    rs.alignment = { horizontal: "center" };
-
-    const rekapRows = [
-      ["Total Uang Masuk", masuk, RP_FMT],
-      ["Total Uang Keluar", keluar, RP_FMT],
-      ["Saldo Akhir", masuk - keluar, RP_FMT],
-      ["Total SPJ", totalSpj, null],
-      ["SPJ Menunggu Persetujuan", pendingSpj, null],
-      ["Total Nominal SPJ", totalNominalSpj, RP_FMT],
-      ["Total Proposal", data.proposal.length, null],
-    ];
-    rekapRows.forEach(([label, val, fmt], idx) => {
-      const r = idx + 4;
-      wsRekap.getCell(r, 1).value = label;
-      wsRekap.getCell(r, 2).value = val;
-      if (fmt) wsRekap.getCell(r, 2).numFmt = fmt;
-      wsRekap.getCell(r, 1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: XC.LIGHT } };
-      wsRekap.getCell(r, 2).fill = { type: "pattern", pattern: "solid", fgColor: { argb: XC.LIGHT } };
-      wsRekap.getCell(r, 2).font = { bold: true };
-    });
-
-    const buffer = await wb.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "laporan_" + (data.range.start || "semua") + "_" + (data.range.end || "data") + ".xlsx";
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  } catch (err) {
-    showErr("expErr", err.message || String(err));
-  }
-}
-
-function pdfSectionHeader(doc, icon, text, y, accentColor) {
-  doc.setFillColor(...accentColor);
-  doc.roundedRect(14, y - 5, 3.2, 6.5, 1, 1, "F");
-  doc.setTextColor(23, 23, 23);
-  doc.setFontSize(13);
-  doc.setFont(undefined, "bold");
-  doc.text(icon + "  " + text, 20, y);
-  doc.setFont(undefined, "normal");
-  doc.setDrawColor(225, 225, 225);
-  doc.setLineWidth(0.3);
-  doc.line(14, y + 3, 196, y + 3);
-}
-
-function pdfFooter(doc, orgLine) {
-  const pageCount = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setDrawColor(225, 225, 225);
-    doc.setLineWidth(0.2);
-    doc.line(14, 285, 196, 285);
-    doc.setFontSize(7.5);
-    doc.setTextColor(150, 150, 150);
-    doc.text(orgLine, 14, 290);
-    doc.text("Halaman " + i + " dari " + pageCount, 196, 290, { align: "right" });
-  }
-}
-
-async function exportPDF() {
-  try {
-    const data = await getExportData();
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    const title = getReportTitle();
-
-    let masuk = 0, keluar = 0;
-    data.keuangan.forEach(r => { r.jenis === "masuk" ? masuk += r.jumlah : keluar += r.jumlah; });
-
-    const DARK = [23, 23, 23], RED = [192, 0, 0], LIGHT = [243, 244, 246], GOLD = [217, 164, 6];
-
-    // Header dua-lapis: pita gelap + garis aksen emas
-    doc.setFillColor(...DARK);
-    doc.rect(0, 0, 210, 26, "F");
-    doc.setFillColor(...GOLD);
-    doc.rect(0, 26, 210, 1.5, "F");
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(17);
-    doc.setFont(undefined, "bold");
-    doc.text(title, 105, 14, { align: "center" });
-    doc.setFont(undefined, "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(210, 210, 210);
-    doc.text(fmtPeriode(data.range), 105, 21, { align: "center" });
-
-    doc.setFontSize(8);
-    doc.setTextColor(140, 140, 140);
-    doc.text("Dicetak: " + new Date().toLocaleString("id-ID"), 105, 33, { align: "center" });
-
-    // Kotak ringkasan bersudut membulat
-    const boxes = [["TOTAL MASUK", rp(masuk)], ["TOTAL KELUAR", rp(keluar)], ["SALDO AKHIR", rp(masuk - keluar)]];
-    const boxW = 58, gap = 5, boxX0 = (210 - (boxW * 3 + gap * 2)) / 2, boxY = 38;
-    boxes.forEach((b, i) => {
-      const x = boxX0 + i * (boxW + gap);
-      doc.setFillColor(...RED);
-      doc.roundedRect(x, boxY, boxW, 9, 2, 2, "F");
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(8);
-      doc.setFont(undefined, "bold");
-      doc.text(b[0], x + boxW / 2, boxY + 6, { align: "center" });
-      doc.setFont(undefined, "normal");
-      doc.setFillColor(...LIGHT);
-      doc.roundedRect(x, boxY + 9, boxW, 12, 2, 2, "F");
-      doc.setTextColor(23, 23, 23);
-      doc.setFontSize(12);
-      doc.setFont(undefined, "bold");
-      doc.text(b[1], x + boxW / 2, boxY + 17, { align: "center" });
-      doc.setFont(undefined, "normal");
-    });
-
-    doc.setTextColor(0, 0, 0);
-    pdfSectionHeader(doc, "💰", "Keuangan", 68, RED);
-    doc.autoTable({
-      startY: 72,
-      head: [["Tanggal", "Keterangan", "Jenis", "Jumlah", "Oleh"]],
-      body: data.keuangan.map(r => [r.tanggal, r.keterangan, r.jenis, rp(r.jumlah), r.created_by]),
-      styles: { fontSize: 9, cellPadding: 3 },
-      headStyles: { fillColor: DARK },
-      alternateRowStyles: { fillColor: [250, 250, 250] },
-      theme: "grid"
-    });
-
-    doc.addPage();
-    pdfSectionHeader(doc, "📄", "SPJ", 18, RED);
-    doc.autoTable({
-      startY: 22,
-      head: [["No SPJ", "Tanggal", "Kegiatan", "Nominal", "Status", "Oleh"]],
-      body: data.spj.map(r => [r.no_spj, r.tanggal, r.kegiatan, rp(r.nominal), r.status, r.created_by]),
-      styles: { fontSize: 9, cellPadding: 3 },
-      headStyles: { fillColor: DARK },
-      alternateRowStyles: { fillColor: [250, 250, 250] },
-      theme: "grid"
-    });
-
-    doc.addPage();
-    pdfSectionHeader(doc, "📋", "Proposal", 18, RED);
-    doc.autoTable({
-      startY: 22,
-      head: [["Judul", "Status", "Dibuat Oleh", "Diubah Oleh"]],
-      body: data.proposal.map(r => [r.judul, r.status, r.created_by, r.updated_by || "-"]),
-      styles: { fontSize: 9, cellPadding: 3 },
-      headStyles: { fillColor: DARK },
-      alternateRowStyles: { fillColor: [250, 250, 250] },
-      theme: "grid"
-    });
-
-    pdfFooter(doc, title);
-
-    const fname = "laporan_" + (data.range.start || "semua") + "_" + (data.range.end || "data") + ".pdf";
-    doc.save(fname);
-  } catch (err) {
-    showErr("expErr", err.message || String(err));
-  }
-}
-
-function wZebraRow(cells, idx) {
-  const bg = idx % 2 === 1 ? "#FAFAFA" : "#FFFFFF";
-  return `<tr style="background:${bg}">` + cells.map(c => `<td style="padding:7px 8px;border:1px solid #E5E7EB">${c}</td>`).join("") + `</tr>`;
-}
-
-function wSectionTitle(icon, text) {
-  return `<table cellspacing="0" cellpadding="0" style="width:100%;margin:22px 0 8px 0"><tr>
-    <td style="width:5px;background:#C00000"></td>
-    <td style="padding-left:10px;font-size:15px;font-weight:bold;color:#171717;letter-spacing:.5px">${icon} ${text.toUpperCase()}</td>
-  </tr></table>
-  <div style="border-bottom:1.5px solid #171717;margin-bottom:10px"></div>`;
-}
-
-async function exportWord() {
-  try {
-    const data = await getExportData();
-    const title = getReportTitle();
-    let masuk = 0, keluar = 0;
-
-    const keuRows = data.keuangan.map((r, i) => {
-      r.jenis === "masuk" ? masuk += r.jumlah : keluar += r.jumlah;
-      const jenisColor = r.jenis === "masuk" ? "#15803D" : "#B91C1C";
-      return wZebraRow([r.tanggal, r.keterangan, `<b style="color:${jenisColor}">${r.jenis}</b>`, rp(r.jumlah), r.created_by], i);
-    }).join("");
-
-    const statusColor = { disetujui: "#15803D", ditolak: "#B91C1C", pending: "#B45309" };
-    const spjRows = data.spj.map((r, i) =>
-      wZebraRow([r.no_spj, r.tanggal, r.kegiatan, rp(r.nominal),
-        `<b style="color:${statusColor[r.status] || "#444"}">${r.status}</b>`, r.created_by], i)
-    ).join("");
-
-    const propRows = data.proposal.map((r, i) =>
-      wZebraRow([`<b>${r.judul}</b>`, r.status, r.created_by, r.updated_by || "-"], i)
-    ).join("");
-
-    const thStyle = "background:#171717;color:#fff;padding:8px;font-size:12px;text-align:left";
-
-    const html = `
-      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-      <head><meta charset="utf-8"><title>${title}</title></head>
-      <body style="font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#171717;max-width:760px;margin:auto">
-
-        <div style="height:6px;background:#D9A406"></div>
-        <div style="background:#171717;color:#fff;padding:22px 16px;text-align:center">
-          <div style="font-size:24px;font-weight:bold;letter-spacing:.5px">${title}</div>
-          <div style="font-size:12px;color:#C9CDD3;margin-top:6px">${fmtPeriode(data.range)}</div>
+<div class="shell">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#3a1c05" stroke-width="1.6" stroke-linejoin="round"><path d="M12 2l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z"/></svg>
+      </div>
+      <h1>KARANG TARUNA</h1>
+      <p>Bersama Membangun<br>Desa</p>
+    </div>
+
+    <nav class="nav">
+      <a class="nav-item" data-page="index.html" href="index.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
+        Beranda
+      </a>
+      <a class="nav-item" data-page="bendahara.html" href="bendahara.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="17" cy="15" r="1.3" fill="currentColor" stroke="none"/></svg>
+        Bendahara
+      </a>
+      <a class="nav-item" data-page="file.html" href="file.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>
+        File
+      </a>
+      <a class="nav-item" data-page="footage.html" href="footage.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4V8z" fill="currentColor" stroke="none"/></svg>
+        Footage
+        <svg class="chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      </a>
+      <a class="nav-item" data-page="galeri.html" href="galeri.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        Galeri Foto
+      </a>
+      <a class="nav-item" data-page="agenda.html" href="agenda.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+        Agenda
+      </a>
+      <a class="nav-item" data-page="pengumuman.html" href="pengumuman.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4a1 1 0 0 0 1 1h2l4 4V5L6 9H4a1 1 0 0 0-1 1z"/><path d="M14 8a4 4 0 0 1 0 8"/><path d="M18 5a8 8 0 0 1 0 14"/></svg>
+        Pengumuman
+      </a>
+      <a class="nav-item" data-page="anggota.html" href="anggota.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c.7-3.6 3.3-5.5 6.5-5.5s5.8 1.9 6.5 5.5"/><circle cx="17" cy="8.5" r="2.5"/><path d="M16 14.6c2.4.4 4 2 4.6 5.4"/></svg>
+        Anggota
+      </a>
+      <a class="nav-item" data-page="pengaturan.html" href="pengaturan.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        Pengaturan
+      </a>
+    </nav>
+
+    <div class="sidebar-user">
+      <div class="avatar">A</div>
+      <div class="who"><b>Admin BMS</b><span>Administrator</span></div>
+    </div>
+    <div class="sidebar-footer">BERGERAK BERSAMA<br>BERMANFAAT UNTUK SEMUA</div>
+  </aside>
+
+  <main class="main">
+
+    <div class="topbar">
+      <div style="display:flex;align-items:center">
+        <div class="menu-toggle" onclick="toggleSidebar()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
         </div>
-        <p style="text-align:center;color:#9CA3AF;font-size:11px;margin:6px 0 20px 0">Dicetak: ${new Date().toLocaleString("id-ID")}</p>
-
-        <table cellspacing="6" cellpadding="0" style="width:100%;margin:0 0 10px 0">
-          <tr>
-            <td style="width:33%">
-              <table cellspacing="0" cellpadding="10" style="width:100%;border-collapse:collapse">
-                <tr><td style="background:#C00000;color:#fff;font-weight:bold;text-align:center;font-size:11px;border-radius:6px 6px 0 0">TOTAL MASUK</td></tr>
-                <tr><td style="background:#F3F4F6;font-weight:bold;text-align:center;font-size:16px;color:#15803D">${rp(masuk)}</td></tr>
-              </table>
-            </td>
-            <td style="width:33%">
-              <table cellspacing="0" cellpadding="10" style="width:100%;border-collapse:collapse">
-                <tr><td style="background:#C00000;color:#fff;font-weight:bold;text-align:center;font-size:11px;border-radius:6px 6px 0 0">TOTAL KELUAR</td></tr>
-                <tr><td style="background:#F3F4F6;font-weight:bold;text-align:center;font-size:16px;color:#B91C1C">${rp(keluar)}</td></tr>
-              </table>
-            </td>
-            <td style="width:34%">
-              <table cellspacing="0" cellpadding="10" style="width:100%;border-collapse:collapse">
-                <tr><td style="background:#D9A406;color:#fff;font-weight:bold;text-align:center;font-size:11px;border-radius:6px 6px 0 0">SALDO AKHIR</td></tr>
-                <tr><td style="background:#F3F4F6;font-weight:bold;text-align:center;font-size:16px">${rp(masuk - keluar)}</td></tr>
-              </table>
-            </td>
-          </tr>
-        </table>
-
-        ${wSectionTitle("💰", "Keuangan")}
-        <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:12px">
-          <tr>${["Tanggal", "Keterangan", "Jenis", "Jumlah", "Oleh"].map(h => `<th style="${thStyle}">${h}</th>`).join("")}</tr>
-          ${keuRows}
-        </table>
-
-        ${wSectionTitle("📄", "SPJ")}
-        <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:12px">
-          <tr>${["No SPJ", "Tanggal", "Kegiatan", "Nominal", "Status", "Oleh"].map(h => `<th style="${thStyle}">${h}</th>`).join("")}</tr>
-          ${spjRows}
-        </table>
-
-        ${wSectionTitle("📋", "Proposal")}
-        <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:12px">
-          <tr>${["Judul", "Status", "Dibuat Oleh", "Diubah Oleh"].map(h => `<th style="${thStyle}">${h}</th>`).join("")}</tr>
-          ${propRows}
-        </table>
-
-        <div style="margin-top:26px;padding-top:10px;border-top:1px solid #E5E7EB;text-align:center;font-size:10px;color:#9CA3AF">
-          ${title} &middot; Dibuat otomatis oleh GroupApp
+      </div>
+      <div class="topbar-actions">
+        <div class="icon-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="dot"></span>
         </div>
-      </body>
-      </html>`;
+      </div>
+    </div>
 
-    const blob = new Blob(['\ufeff', html], { type: "application/msword" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "laporan_" + (data.range.start || "semua") + "_" + (data.range.end || "data") + ".doc";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  } catch (err) {
-    showErr("expErr", err.message || String(err));
-  }
-}
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-text">
+        <div class="eyebrow"><i></i>Selamat Datang,</div>
+        <h1>KARANG TARUNA<span>BRIGADE MUDA SOROPATI (BMS)</span></h1>
+        <div class="quote">"Bersatu, Berkarya, Bermanfaat"</div>
+      </div>
+      <svg class="hero-flag" viewBox="0 0 210 150" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3a3a3f"/><stop offset="1" stop-color="#111113"/>
+          </linearGradient>
+        </defs>
+        <rect width="210" height="150" fill="url(#sky)" opacity=".35"/>
+        <line x1="70" y1="150" x2="118" y2="18" stroke="#5a5a5f" stroke-width="3"/>
+        <path d="M118 18 L178 32 L150 46 L178 60 L118 46 Z" fill="var(--red-bright)"/>
+        <path d="M118 46 L178 60 L118 74 Z" fill="#e9e9ea" opacity=".92"/>
+        <g fill="#0b0b0d">
+          <path d="M60 150 L70 118 L80 150 Z"/>
+          <path d="M38 150 L50 108 L64 150 Z"/>
+          <path d="M84 150 L92 122 L102 150 Z"/>
+        </g>
+      </svg>
+    </section>
 
-start();
-</script>
+    <!-- STAT CARDS -->
+    <section class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="17" cy="15" r="1.3" fill="#fff" stroke="none"/></svg></div>
+        <div class="stat-body">
+          <div class="label">Total Saldo</div>
+          <div class="value">Rp 12.450.000</div>
+          <div class="sub">Saldo Saat Ini</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v14M6 12l6 6 6-6"/></svg></div>
+        <div class="stat-body">
+          <div class="label">Pemasukan</div>
+          <div class="value">Rp 8.750.000</div>
+          <div class="sub">Total Pemasukan</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon amber"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V6M6 12l6-6 6 6"/></svg></div>
+        <div class="stat-body">
+          <div class="label">Pengeluaran</div>
+          <div class="value">Rp 3.250.000</div>
+          <div class="sub">Total Pengeluaran</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></div>
+        <div class="stat-body">
+          <div class="label">Dokumen</div>
+          <div class="value">28</div>
+          <div class="sub">Total File</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAIN DASH GRID -->
+    <section class="dash-grid">
+
+      <!-- MENU UTAMA -->
+      <div class="panel">
+        <div class="panel-head"><h3><i></i>MENU UTAMA</h3></div>
+        <div class="tile-grid">
+          <a class="tile" href="bendahara.html">
+            <div class="tile-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div>
+            <div><b>Bendahara</b><p>Kelola keuangan pemasukan dan pengeluaran</p></div>
+          </a>
+          <a class="tile" href="file.html">
+            <div class="tile-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></div>
+            <div><b>File</b><p>Simpan dan kelola dokumen penting karang taruna</p></div>
+          </a>
+          <a class="tile" href="footage.html">
+            <div class="tile-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4V8z" fill="#fff" stroke="none"/></svg></div>
+            <div><b>Footage Video</b><p>Lihat, putar, dan kelola footage video kegiatan</p></div>
+          </a>
+          <a class="tile" href="galeri.html">
+            <div class="tile-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
+            <div><b>Footage Photo</b><p>Lihat dan kelola foto kegiatan karang taruna</p></div>
+          </a>
+          <a class="tile" href="agenda.html">
+            <div class="tile-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></div>
+            <div><b>Agenda</b><p>Lihat jadwal dan agenda kegiatan terbaru</p></div>
+          </a>
+          <a class="tile" href="pengumuman.html">
+            <div class="tile-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10v4a1 1 0 0 0 1 1h2l4 4V5L6 9H4a1 1 0 0 0-1 1z"/><path d="M14 8a4 4 0 0 1 0 8"/></svg></div>
+            <div><b>Pengumuman</b><p>Informasi dan pengumuman penting</p></div>
+          </a>
+        </div>
+      </div>
+
+      <!-- KEGIATAN TERBARU -->
+      <div class="panel">
+        <div class="panel-head"><h3><i></i>KEGIATAN TERBARU</h3></div>
+        <div class="activity-list">
+          <div class="activity-item">
+            <div class="activity-thumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 20c.6-3.3 3-5 7-5s6.4 1.7 7 5"/></svg></div>
+            <div class="activity-body">
+              <div class="row1"><b>Kerja Bakti Lingkungan</b><span class="date">25 Mei 2024</span></div>
+              <p>Kegiatan bersih-bersih lingkungan bersama warga</p>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-thumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 20c.6-3.3 3-5 7-5s6.4 1.7 7 5"/></svg></div>
+            <div class="activity-body">
+              <div class="row1"><b>Rapat Koordinasi</b><span class="date">20 Mei 2024</span></div>
+              <p>Rapat rutin membahas program kerja karang taruna</p>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-thumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8l6 4-6 4V8z" fill="currentColor" stroke="none"/></svg></div>
+            <div class="activity-body">
+              <div class="row1"><b>Turnamen Volly</b><span class="date">15 Mei 2024</span></div>
+              <p>Turnamen voli antar dusun memperingati HUT RI</p>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-thumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V9l8-6 8 6v12"/></svg></div>
+            <div class="activity-body">
+              <div class="row1"><b>Upacara HUT RI</b><span class="date">17 Agu 2023</span></div>
+              <p>Upacara bendera dalam rangka memperingati HUT RI ke-78</p>
+            </div>
+          </div>
+        </div>
+        <a class="link-btn" href="agenda.html">Lihat Semua Kegiatan ›</a>
+      </div>
+
+      <!-- FOOTAGE TERBARU -->
+      <div class="panel">
+        <div class="panel-head"><h3><i></i>FOOTAGE TERBARU</h3></div>
+        <div class="tabs" data-tab-group="footage-home">
+          <div class="tab active" data-tab="video">Video</div>
+          <div class="tab" data-tab="foto">Foto</div>
+        </div>
+
+        <div data-tab-panel="footage-home" data-panel="video" class="activity-list">
+          <div class="footage-item">
+            <div class="footage-thumb"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><span class="dur">02:45</span></div>
+            <div class="footage-body"><b>Jalan Sehat HUT RI 78</b><p>Kegiatan jalan sehat bersama warga dalam rangka HUT RI</p></div>
+          </div>
+          <div class="footage-item">
+            <div class="footage-thumb"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><span class="dur">05:12</span></div>
+            <div class="footage-body"><b>Malam Tirakatan</b><p>Malam tirakatan dan doa bersama menyambut HUT RI</p></div>
+          </div>
+          <div class="footage-item">
+            <div class="footage-thumb"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><span class="dur">03:30</span></div>
+            <div class="footage-body"><b>Turnamen Volly Final</b><p>Partai final turnamen voli antar dusun</p></div>
+          </div>
+        </div>
+
+        <div data-tab-panel="footage-home" data-panel="foto" class="activity-list" style="display:none">
+          <div class="footage-item">
+            <div class="footage-thumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
+            <div class="footage-body"><b>Dokumentasi Upacara</b><p>28 foto — 17 Agustus 2024</p></div>
+          </div>
+          <div class="footage-item">
+            <div class="footage-thumb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
+            <div class="footage-body"><b>Kerja Bakti</b><p>16 foto — 25 Mei 2024</p></div>
+          </div>
+        </div>
+
+        <a class="link-btn" href="footage.html">Lihat Semua Video ›</a>
+      </div>
+
+    </section>
+
+    <footer class="page-footer">
+      <span>© 2024 Karang Taruna Brigade Muda Soropati (BMS). All rights reserved.</span>
+      <div class="socials">
+        <a href="#"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-8h2.7l.4-3.2h-3.1V7.7c0-.9.3-1.6 1.6-1.6h1.7V3.3C16.5 3.2 15.4 3 14.2 3c-2.6 0-4.4 1.6-4.4 4.4v2.4H7v3.2h2.8v8h3.7z"/></svg></a>
+        <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/></svg></a>
+        <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="M10 9l6 3-6 3V9z" fill="currentColor" stroke="none"/></svg></a>
+        <a href="#"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2z"/></svg></a>
+      </div>
+    </footer>
+
+  </main>
+</div>
+<script src="assets/script.js"></script>
 </body>
 </html>
