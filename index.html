@@ -108,11 +108,13 @@ th,td{border:1px solid #ddd;padding:8px}th{background:#2563eb;color:#fff}
 <h3>📦 Export Laporan</h3>
 <p style="color:#666;font-size:14px">Fitur ini hanya bisa diakses oleh username tertentu yang sudah diizinkan admin. Data yang diexport mencakup Keuangan, SPJ, dan Proposal.</p>
 <form onsubmit="return false">
+<label style="font-size:13px;color:#444">Judul Laporan (opsional)</label>
+<input id="expTitle" placeholder="Contoh: Laporan Keuangan Lomba Agustusan">
 <label style="font-size:13px;color:#444">Dari tanggal</label>
 <input type="date" id="expStart">
 <label style="font-size:13px;color:#444">Sampai tanggal</label>
 <input type="date" id="expEnd">
-<p style="font-size:12px;color:#888">Kosongkan kedua tanggal untuk export semua data.</p>
+<p style="font-size:12px;color:#888">Kosongkan kedua tanggal untuk export semua data. Judul kosong akan pakai judul default.</p>
 </form>
 <div id="expErr" class="errBox"></div>
 <div class="exportRow">
@@ -314,6 +316,11 @@ async function getExportData() {
 function fmtPeriode(range) {
   if (range.start && range.end) return "Periode: " + range.start + " s/d " + range.end;
   return "Periode: Semua data";
+}
+
+function getReportTitle() {
+  const v = (document.getElementById("expTitle").value || "").trim();
+  return v ? v.toUpperCase() : "LAPORAN KEGIATAN KELOMPOK";
 }
 
 // ---- palet & helper styling (meniru desain "Laporan Keuangan Profesional") ----
@@ -519,77 +526,121 @@ async function exportExcel() {
   }
 }
 
+function pdfSectionHeader(doc, icon, text, y, accentColor) {
+  doc.setFillColor(...accentColor);
+  doc.roundedRect(14, y - 5, 3.2, 6.5, 1, 1, "F");
+  doc.setTextColor(23, 23, 23);
+  doc.setFontSize(13);
+  doc.setFont(undefined, "bold");
+  doc.text(icon + "  " + text, 20, y);
+  doc.setFont(undefined, "normal");
+  doc.setDrawColor(225, 225, 225);
+  doc.setLineWidth(0.3);
+  doc.line(14, y + 3, 196, y + 3);
+}
+
+function pdfFooter(doc, orgLine) {
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setDrawColor(225, 225, 225);
+    doc.setLineWidth(0.2);
+    doc.line(14, 285, 196, 285);
+    doc.setFontSize(7.5);
+    doc.setTextColor(150, 150, 150);
+    doc.text(orgLine, 14, 290);
+    doc.text("Halaman " + i + " dari " + pageCount, 196, 290, { align: "right" });
+  }
+}
+
 async function exportPDF() {
   try {
     const data = await getExportData();
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
+    const title = getReportTitle();
 
     let masuk = 0, keluar = 0;
     data.keuangan.forEach(r => { r.jenis === "masuk" ? masuk += r.jumlah : keluar += r.jumlah; });
 
-    const DARK = [23, 23, 23], RED = [192, 0, 0], LIGHT = [243, 244, 246];
+    const DARK = [23, 23, 23], RED = [192, 0, 0], LIGHT = [243, 244, 246], GOLD = [217, 164, 6];
 
-    // Header gelap judul
+    // Header dua-lapis: pita gelap + garis aksen emas
     doc.setFillColor(...DARK);
-    doc.rect(0, 0, 210, 22, "F");
+    doc.rect(0, 0, 210, 26, "F");
+    doc.setFillColor(...GOLD);
+    doc.rect(0, 26, 210, 1.5, "F");
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
-    doc.text("LAPORAN KEGIATAN KELOMPOK", 105, 13, { align: "center" });
-    doc.setTextColor(80, 80, 80);
+    doc.setFontSize(17);
+    doc.setFont(undefined, "bold");
+    doc.text(title, 105, 14, { align: "center" });
+    doc.setFont(undefined, "normal");
     doc.setFontSize(9);
-    doc.text(fmtPeriode(data.range) + "  |  Dicetak: " + new Date().toLocaleString("id-ID"), 105, 27, { align: "center" });
-    doc.setTextColor(0, 0, 0);
+    doc.setTextColor(210, 210, 210);
+    doc.text(fmtPeriode(data.range), 105, 21, { align: "center" });
 
-    // Kotak ringkasan (merah + abu terang)
+    doc.setFontSize(8);
+    doc.setTextColor(140, 140, 140);
+    doc.text("Dicetak: " + new Date().toLocaleString("id-ID"), 105, 33, { align: "center" });
+
+    // Kotak ringkasan bersudut membulat
     const boxes = [["TOTAL MASUK", rp(masuk)], ["TOTAL KELUAR", rp(keluar)], ["SALDO AKHIR", rp(masuk - keluar)]];
-    const boxW = 60, boxX0 = 15, boxY = 32;
+    const boxW = 58, gap = 5, boxX0 = (210 - (boxW * 3 + gap * 2)) / 2, boxY = 38;
     boxes.forEach((b, i) => {
-      const x = boxX0 + i * (boxW + 5);
+      const x = boxX0 + i * (boxW + gap);
       doc.setFillColor(...RED);
-      doc.rect(x, boxY, boxW, 8, "F");
+      doc.roundedRect(x, boxY, boxW, 9, 2, 2, "F");
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(8);
-      doc.text(b[0], x + boxW / 2, boxY + 5.5, { align: "center" });
+      doc.setFont(undefined, "bold");
+      doc.text(b[0], x + boxW / 2, boxY + 6, { align: "center" });
+      doc.setFont(undefined, "normal");
       doc.setFillColor(...LIGHT);
-      doc.rect(x, boxY + 8, boxW, 10, "F");
+      doc.roundedRect(x, boxY + 9, boxW, 12, 2, 2, "F");
       doc.setTextColor(23, 23, 23);
-      doc.setFontSize(11);
-      doc.text(b[1], x + boxW / 2, boxY + 15, { align: "center" });
+      doc.setFontSize(12);
+      doc.setFont(undefined, "bold");
+      doc.text(b[1], x + boxW / 2, boxY + 17, { align: "center" });
+      doc.setFont(undefined, "normal");
     });
 
     doc.setTextColor(0, 0, 0);
-    doc.setFontSize(13);
-    doc.text("Keuangan", 14, 60);
+    pdfSectionHeader(doc, "💰", "Keuangan", 68, RED);
     doc.autoTable({
-      startY: 64,
+      startY: 72,
       head: [["Tanggal", "Keterangan", "Jenis", "Jumlah", "Oleh"]],
       body: data.keuangan.map(r => [r.tanggal, r.keterangan, r.jenis, rp(r.jumlah), r.created_by]),
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: DARK }
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: DARK },
+      alternateRowStyles: { fillColor: [250, 250, 250] },
+      theme: "grid"
     });
 
     doc.addPage();
-    doc.setFontSize(13);
-    doc.text("SPJ", 14, 16);
+    pdfSectionHeader(doc, "📄", "SPJ", 18, RED);
     doc.autoTable({
-      startY: 20,
+      startY: 22,
       head: [["No SPJ", "Tanggal", "Kegiatan", "Nominal", "Status", "Oleh"]],
       body: data.spj.map(r => [r.no_spj, r.tanggal, r.kegiatan, rp(r.nominal), r.status, r.created_by]),
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: DARK }
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: DARK },
+      alternateRowStyles: { fillColor: [250, 250, 250] },
+      theme: "grid"
     });
 
     doc.addPage();
-    doc.setFontSize(13);
-    doc.text("Proposal", 14, 16);
+    pdfSectionHeader(doc, "📋", "Proposal", 18, RED);
     doc.autoTable({
-      startY: 20,
+      startY: 22,
       head: [["Judul", "Status", "Dibuat Oleh", "Diubah Oleh"]],
       body: data.proposal.map(r => [r.judul, r.status, r.created_by, r.updated_by || "-"]),
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: DARK }
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: DARK },
+      alternateRowStyles: { fillColor: [250, 250, 250] },
+      theme: "grid"
     });
+
+    pdfFooter(doc, title);
 
     const fname = "laporan_" + (data.range.start || "semua") + "_" + (data.range.end || "data") + ".pdf";
     doc.save(fname);
@@ -598,60 +649,99 @@ async function exportPDF() {
   }
 }
 
+function wZebraRow(cells, idx) {
+  const bg = idx % 2 === 1 ? "#FAFAFA" : "#FFFFFF";
+  return `<tr style="background:${bg}">` + cells.map(c => `<td style="padding:7px 8px;border:1px solid #E5E7EB">${c}</td>`).join("") + `</tr>`;
+}
+
+function wSectionTitle(icon, text) {
+  return `<table cellspacing="0" cellpadding="0" style="width:100%;margin:22px 0 8px 0"><tr>
+    <td style="width:5px;background:#C00000"></td>
+    <td style="padding-left:10px;font-size:15px;font-weight:bold;color:#171717;letter-spacing:.5px">${icon} ${text.toUpperCase()}</td>
+  </tr></table>
+  <div style="border-bottom:1.5px solid #171717;margin-bottom:10px"></div>`;
+}
+
 async function exportWord() {
   try {
     const data = await getExportData();
+    const title = getReportTitle();
     let masuk = 0, keluar = 0;
-    const keuRows = data.keuangan.map(r => {
+
+    const keuRows = data.keuangan.map((r, i) => {
       r.jenis === "masuk" ? masuk += r.jumlah : keluar += r.jumlah;
-      return `<tr><td>${r.tanggal}</td><td>${r.keterangan}</td><td>${r.jenis}</td><td>${rp(r.jumlah)}</td><td>${r.created_by}</td></tr>`;
+      const jenisColor = r.jenis === "masuk" ? "#15803D" : "#B91C1C";
+      return wZebraRow([r.tanggal, r.keterangan, `<b style="color:${jenisColor}">${r.jenis}</b>`, rp(r.jumlah), r.created_by], i);
     }).join("");
 
-    const spjRows = data.spj.map(r =>
-      `<tr><td>${r.no_spj}</td><td>${r.tanggal}</td><td>${r.kegiatan}</td><td>${rp(r.nominal)}</td><td>${r.status}</td><td>${r.created_by}</td></tr>`
+    const statusColor = { disetujui: "#15803D", ditolak: "#B91C1C", pending: "#B45309" };
+    const spjRows = data.spj.map((r, i) =>
+      wZebraRow([r.no_spj, r.tanggal, r.kegiatan, rp(r.nominal),
+        `<b style="color:${statusColor[r.status] || "#444"}">${r.status}</b>`, r.created_by], i)
     ).join("");
 
-    const propRows = data.proposal.map(r =>
-      `<tr><td>${r.judul}</td><td>${r.status}</td><td>${r.created_by}</td><td>${r.updated_by || "-"}</td></tr>`
+    const propRows = data.proposal.map((r, i) =>
+      wZebraRow([`<b>${r.judul}</b>`, r.status, r.created_by, r.updated_by || "-"], i)
     ).join("");
+
+    const thStyle = "background:#171717;color:#fff;padding:8px;font-size:12px;text-align:left";
 
     const html = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-      <head><meta charset="utf-8"><title>Laporan</title></head>
-      <body style="font-family:Arial;font-size:13px;color:#171717">
-        <div style="background:#171717;color:#fff;padding:16px;text-align:center;font-size:22px;font-weight:bold">LAPORAN KEGIATAN KELOMPOK</div>
-        <p style="text-align:center;color:#666;font-size:12px">${fmtPeriode(data.range)}<br>Dicetak: ${new Date().toLocaleString("id-ID")}</p>
+      <head><meta charset="utf-8"><title>${title}</title></head>
+      <body style="font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#171717;max-width:760px;margin:auto">
 
-        <table cellspacing="0" cellpadding="8" style="border-collapse:collapse;width:100%;margin:14px 0">
+        <div style="height:6px;background:#D9A406"></div>
+        <div style="background:#171717;color:#fff;padding:22px 16px;text-align:center">
+          <div style="font-size:24px;font-weight:bold;letter-spacing:.5px">${title}</div>
+          <div style="font-size:12px;color:#C9CDD3;margin-top:6px">${fmtPeriode(data.range)}</div>
+        </div>
+        <p style="text-align:center;color:#9CA3AF;font-size:11px;margin:6px 0 20px 0">Dicetak: ${new Date().toLocaleString("id-ID")}</p>
+
+        <table cellspacing="6" cellpadding="0" style="width:100%;margin:0 0 10px 0">
           <tr>
-            <td style="background:#C00000;color:#fff;font-weight:bold;text-align:center;width:33%">TOTAL UANG MASUK</td>
-            <td style="background:#C00000;color:#fff;font-weight:bold;text-align:center;width:33%">TOTAL UANG KELUAR</td>
-            <td style="background:#C00000;color:#fff;font-weight:bold;text-align:center;width:34%">SALDO AKHIR</td>
-          </tr>
-          <tr>
-            <td style="background:#F3F4F6;font-weight:bold;text-align:center;font-size:16px">${rp(masuk)}</td>
-            <td style="background:#F3F4F6;font-weight:bold;text-align:center;font-size:16px">${rp(keluar)}</td>
-            <td style="background:#F3F4F6;font-weight:bold;text-align:center;font-size:16px">${rp(masuk - keluar)}</td>
+            <td style="width:33%">
+              <table cellspacing="0" cellpadding="10" style="width:100%;border-collapse:collapse">
+                <tr><td style="background:#C00000;color:#fff;font-weight:bold;text-align:center;font-size:11px;border-radius:6px 6px 0 0">TOTAL MASUK</td></tr>
+                <tr><td style="background:#F3F4F6;font-weight:bold;text-align:center;font-size:16px;color:#15803D">${rp(masuk)}</td></tr>
+              </table>
+            </td>
+            <td style="width:33%">
+              <table cellspacing="0" cellpadding="10" style="width:100%;border-collapse:collapse">
+                <tr><td style="background:#C00000;color:#fff;font-weight:bold;text-align:center;font-size:11px;border-radius:6px 6px 0 0">TOTAL KELUAR</td></tr>
+                <tr><td style="background:#F3F4F6;font-weight:bold;text-align:center;font-size:16px;color:#B91C1C">${rp(keluar)}</td></tr>
+              </table>
+            </td>
+            <td style="width:34%">
+              <table cellspacing="0" cellpadding="10" style="width:100%;border-collapse:collapse">
+                <tr><td style="background:#D9A406;color:#fff;font-weight:bold;text-align:center;font-size:11px;border-radius:6px 6px 0 0">SALDO AKHIR</td></tr>
+                <tr><td style="background:#F3F4F6;font-weight:bold;text-align:center;font-size:16px">${rp(masuk - keluar)}</td></tr>
+              </table>
+            </td>
           </tr>
         </table>
 
-        <h2 style="color:#171717">Keuangan</h2>
-        <table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%;font-size:12px">
-          <tr style="background:#171717;color:#fff"><th>Tanggal</th><th>Keterangan</th><th>Jenis</th><th>Jumlah</th><th>Oleh</th></tr>
+        ${wSectionTitle("💰", "Keuangan")}
+        <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:12px">
+          <tr>${["Tanggal", "Keterangan", "Jenis", "Jumlah", "Oleh"].map(h => `<th style="${thStyle}">${h}</th>`).join("")}</tr>
           ${keuRows}
         </table>
 
-        <h2 style="color:#171717">SPJ</h2>
-        <table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%;font-size:12px">
-          <tr style="background:#171717;color:#fff"><th>No SPJ</th><th>Tanggal</th><th>Kegiatan</th><th>Nominal</th><th>Status</th><th>Oleh</th></tr>
+        ${wSectionTitle("📄", "SPJ")}
+        <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:12px">
+          <tr>${["No SPJ", "Tanggal", "Kegiatan", "Nominal", "Status", "Oleh"].map(h => `<th style="${thStyle}">${h}</th>`).join("")}</tr>
           ${spjRows}
         </table>
 
-        <h2 style="color:#171717">Proposal</h2>
-        <table border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse;width:100%;font-size:12px">
-          <tr style="background:#171717;color:#fff"><th>Judul</th><th>Status</th><th>Dibuat Oleh</th><th>Diubah Oleh</th></tr>
+        ${wSectionTitle("📋", "Proposal")}
+        <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:12px">
+          <tr>${["Judul", "Status", "Dibuat Oleh", "Diubah Oleh"].map(h => `<th style="${thStyle}">${h}</th>`).join("")}</tr>
           ${propRows}
         </table>
+
+        <div style="margin-top:26px;padding-top:10px;border-top:1px solid #E5E7EB;text-align:center;font-size:10px;color:#9CA3AF">
+          ${title} &middot; Dibuat otomatis oleh GroupApp
+        </div>
       </body>
       </html>`;
 
