@@ -60,6 +60,19 @@ button{font-family:inherit}
 .itemActions span:hover{color:var(--gold)}
 .itemActions span.danger:hover{color:#ef4444}
 
+.itemMenuWrap{position:relative;margin-top:5px}
+.dotsBtn{background:var(--card2);border:1px solid var(--border);color:var(--text-dim);width:26px;height:22px;border-radius:6px;cursor:pointer;font-size:14px;line-height:1}
+.dotsBtn:hover{color:var(--gold);border-color:var(--gold-dark)}
+.dropdownMenu{display:none;position:absolute;left:0;top:26px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:6px;min-width:150px;z-index:20;box-shadow:0 8px 20px rgba(0,0,0,.4)}
+.dropdownMenu.open{display:block}
+.dropdownMenu div{padding:7px 10px;border-radius:6px;cursor:pointer;font-size:12.5px;white-space:nowrap}
+.dropdownMenu div:hover{background:var(--card)}
+.dropdownMenu div.danger{color:#ef4444}
+
+.selectCheck{position:absolute;top:6px;left:6px;width:19px;height:19px;z-index:6;cursor:pointer;accent-color:var(--gold)}
+
+#bulkBar{display:none;align-items:center;gap:10px;background:var(--card2);border:1px solid var(--gold-dark);border-radius:10px;padding:10px 14px;margin-bottom:14px;flex-wrap:wrap}
+
 .folderToolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
 .folderPill{display:inline-flex;align-items:center;gap:2px}
 .folderPill .rm{cursor:pointer;color:var(--text-dim2);padding:2px 6px;margin-left:-6px;font-size:12px}
@@ -154,6 +167,7 @@ button{font-family:inherit}
       <input type="file" id="footInput" accept="image/*,video/*" style="display:none" onchange="doUploadFootage()">
       <button class="pillBtn" id="uploadBtn" onclick="document.getElementById('footInput').click()">+ Unggah</button>
       <button class="pillBtn" id="syncBtn" onclick="syncFootage()">🔄 Sync Drive</button>
+      <button class="pillBtn" id="selectModeBtn" onclick="toggleSelectMode()">☑️ Pilih</button>
     </div>
 
     <div class="folderToolbar">
@@ -161,6 +175,15 @@ button{font-family:inherit}
         <button class="pillBtn active" onclick="setFolderTab('ALL',this)">📁 Semua</button>
       </div>
       <button class="pillBtn" onclick="createFolder()">+ Folder Baru</button>
+    </div>
+
+    <div id="bulkBar">
+      <b id="bulkCount" style="font-size:13px"></b>
+      <div style="flex:1"></div>
+      <button class="pillBtn" onclick="openBulkMoveDialog()">📁 Pindahkan</button>
+      <button class="pillBtn" onclick="bulkDownload()">⬇️ Unduh</button>
+      <button class="pillBtn" style="border-color:#5c1f1f;color:#ef4444" onclick="bulkDelete()">🗑️ Hapus</button>
+      <button class="pillBtn" onclick="toggleSelectMode()">Batal</button>
     </div>
 
     <div id="uploadErr" style="display:none;background:#3a1414;color:#fca5a5;border:1px solid #5c1f1f;padding:11px 12px;border-radius:8px;margin:0 0 14px;font-size:13px"></div>
@@ -247,6 +270,9 @@ let allFolders = [];
 let currentTipe = "";
 let currentFolderId = "ALL"; // "ALL" | "ROOT" | angka id folder (string)
 let moveTargetId = null;
+let moveIsBulk = false;
+let selectMode = false;
+let selectedIds = new Set();
 const thumbCache = {};
 
 async function loadFootage() {
@@ -314,25 +340,30 @@ function renderFootage() {
   }
   grid.innerHTML = rows.map(f => `
     <div class="footItem">
-      <div class="thumb" id="thumb-${f.id}" onclick="viewFootage(${f.id},'${f.mime_type}')" style="cursor:pointer;background-size:cover;background-position:center">
+      <div class="thumb" id="thumb-${f.id}" onclick="${selectMode ? `toggleSelectFromThumb(${f.id})` : `viewFootage(${f.id},'${f.mime_type}')`}" style="cursor:pointer;background-size:cover;background-position:center">
+        ${selectMode ? `<input type="checkbox" class="selectCheck" id="chk-${f.id}" onclick="event.stopPropagation();toggleSelectItem(${f.id},this.checked)" ${selectedIds.has(f.id) ? "checked" : ""}>` : ""}
         ${f.starred ? `<span class="starBadge">⭐</span>` : ""}
-        ${f.tipe === "video"
+        <span class="typeIcon" id="typeicon-${f.id}">${f.tipe === "video"
           ? `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 9l5 3-5 3z"/></svg>`
-          : `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M22 16l-5.5-5-8.5 8"/></svg>`}
+          : `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M22 16l-5.5-5-8.5 8"/></svg>`}</span>
       </div>
       <b title="${escapeAttr(f.judul)}">${escapeHtml(f.judul)}</b><small>${fmtDate(f.uploaded_at)}</small>
-      <div class="itemActions">
-        <span onclick="toggleStar(${f.id})" title="Tandai">${f.starred ? "⭐" : "☆"}</span>
-        <span onclick="renameFootage(${f.id},'${escapeAttr(f.judul)}')" title="Ganti nama">✏️</span>
-        <span onclick="openMoveDialog(${f.id})" title="Pindahkan folder">📁</span>
-        <span onclick="downloadFootage(${f.id},'${escapeAttr(f.judul)}')" title="Unduh">⬇️</span>
-        <span class="danger" onclick="deleteFootage(${f.id})" title="Hapus">🗑️</span>
-      </div>
+      ${selectMode ? "" : `
+      <div class="itemMenuWrap">
+        <button class="dotsBtn" onclick="toggleItemMenu(event,${f.id})">⋮</button>
+        <div class="dropdownMenu" id="menu-${f.id}">
+          <div onclick="toggleStar(${f.id})">${f.starred ? "⭐ Batal tandai" : "☆ Tandai"}</div>
+          <div onclick="renameFootage(${f.id},'${escapeAttr(f.judul)}')">✏️ Ganti nama</div>
+          <div onclick="openMoveDialog(${f.id})">📁 Pindahkan</div>
+          <div onclick="downloadFootage(${f.id},'${escapeAttr(f.judul)}')">⬇️ Unduh</div>
+          <div class="danger" onclick="deleteFootage(${f.id})">🗑️ Hapus</div>
+        </div>
+      </div>`}
     </div>
   `).join("");
 
-  // muat thumbnail foto secara async (aman pakai token, tidak lewat URL publik)
-  rows.filter(f => f.tipe === "foto").forEach(f => loadThumb(f.id));
+  // muat thumbnail kecil (bukan file asli) biar ringan, untuk foto & video
+  rows.forEach(f => loadThumb(f.id));
 }
 
 async function loadThumb(id) {
@@ -341,8 +372,8 @@ async function loadThumb(id) {
     return;
   }
   try {
-    const r = await fetch(API + "/footage/view?id=" + id, { headers: { Authorization: "Bearer " + token } });
-    if (!r.ok) return;
+    const r = await fetch(API + "/footage/thumb?id=" + id, { headers: { Authorization: "Bearer " + token } });
+    if (!r.ok) return; // biarkan ikon default kalau thumbnail belum tersedia
     const blob = await r.blob();
     const url = URL.createObjectURL(blob);
     thumbCache[id] = url;
@@ -351,8 +382,19 @@ async function loadThumb(id) {
 }
 function applyThumb(id, url) {
   const el = document.getElementById("thumb-" + id);
-  if (el) { el.style.backgroundImage = `url(${url})`; el.innerHTML = ""; }
+  if (el) el.style.backgroundImage = `url(${url})`;
+  const icon = document.getElementById("typeicon-" + id);
+  if (icon) icon.style.display = "none";
 }
+
+function toggleItemMenu(ev, id) {
+  ev.stopPropagation();
+  document.querySelectorAll(".dropdownMenu.open").forEach(m => { if (m.id !== "menu-" + id) m.classList.remove("open"); });
+  document.getElementById("menu-" + id).classList.toggle("open");
+}
+document.addEventListener("click", () => {
+  document.querySelectorAll(".dropdownMenu.open").forEach(m => m.classList.remove("open"));
+});
 
 async function viewFootage(id, mime) {
   try {
@@ -449,6 +491,7 @@ async function downloadFootage(id, judul) {
 }
 
 function openMoveDialog(id) {
+  moveIsBulk = false;
   moveTargetId = id;
   const sel = document.getElementById("moveFolderSelect");
   sel.innerHTML = `<option value="">(Tanpa folder / root)</option>` +
@@ -457,19 +500,81 @@ function openMoveDialog(id) {
   if (current && current.folder_id) sel.value = current.folder_id;
   document.getElementById("moveModal").classList.add("open");
 }
+function openBulkMoveDialog() {
+  if (selectedIds.size === 0) return;
+  moveIsBulk = true;
+  moveTargetId = null;
+  const sel = document.getElementById("moveFolderSelect");
+  sel.innerHTML = `<option value="">(Tanpa folder / root)</option>` +
+    allFolders.map(f => `<option value="${f.id}">${escapeHtml(f.nama)}</option>`).join("");
+  document.getElementById("moveModal").classList.add("open");
+}
 function closeMoveModal() {
   document.getElementById("moveModal").classList.remove("open");
   moveTargetId = null;
+  moveIsBulk = false;
 }
 async function confirmMove() {
-  if (!moveTargetId) return;
   const folderId = document.getElementById("moveFolderSelect").value;
   try {
-    await apiPost("/footage/move", { id: moveTargetId, folder_id: folderId || null });
+    if (moveIsBulk) {
+      await apiPost("/footage/move-bulk", { ids: Array.from(selectedIds), folder_id: folderId || null });
+      selectedIds.clear();
+    } else {
+      if (!moveTargetId) return;
+      await apiPost("/footage/move", { id: moveTargetId, folder_id: folderId || null });
+    }
     closeMoveModal();
+    await loadFootage();
+    renderBulkBar();
+  } catch (err) {
+    showUploadErr(err.message);
+  }
+}
+
+// ===== MODE PILIH & AKSI MASSAL =====
+function toggleSelectMode() {
+  selectMode = !selectMode;
+  selectedIds.clear();
+  document.getElementById("selectModeBtn").classList.toggle("active", selectMode);
+  renderBulkBar();
+  renderFootage();
+}
+function toggleSelectItem(id, checked) {
+  if (checked) selectedIds.add(id); else selectedIds.delete(id);
+  renderBulkBar();
+}
+function toggleSelectFromThumb(id) {
+  const chk = document.getElementById("chk-" + id);
+  if (!chk) return;
+  chk.checked = !chk.checked;
+  toggleSelectItem(id, chk.checked);
+}
+function renderBulkBar() {
+  const bar = document.getElementById("bulkBar");
+  if (!selectMode || selectedIds.size === 0) { bar.style.display = "none"; return; }
+  bar.style.display = "flex";
+  document.getElementById("bulkCount").textContent = selectedIds.size + " dipilih";
+}
+async function bulkDelete() {
+  if (selectedIds.size === 0) return;
+  if (!confirm(`Hapus ${selectedIds.size} footage terpilih? Tindakan ini tidak bisa dibatalkan.`)) return;
+  try {
+    await apiPost("/footage/delete-bulk", { ids: Array.from(selectedIds) });
+    selectedIds.clear();
+    renderBulkBar();
     await loadFootage();
   } catch (err) {
     showUploadErr(err.message);
+  }
+}
+async function bulkDownload() {
+  if (selectedIds.size === 0) return;
+  const ids = Array.from(selectedIds);
+  for (const id of ids) {
+    const item = allFootage.find(f => f.id === id);
+    await downloadFootage(id, item ? item.judul : ("footage-" + id));
+    await new Promise(res => setTimeout(res, 400)); // jeda kecil biar browser tidak memblokir unduhan beruntun
   }
 }
 
