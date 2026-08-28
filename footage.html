@@ -20,7 +20,7 @@ button{font-family:inherit}
 .brand{display:flex;flex-direction:column;align-items:center;text-align:center;padding-bottom:20px;margin-bottom:14px;border-bottom:1px solid var(--border)}
 .brand .logo{width:60px;height:60px;border-radius:50%;object-fit:cover;background:#0a0a0b;margin-bottom:10px;border:3px solid #0a0a0b;box-shadow:0 0 0 2px var(--gold)}
 .brand b{font-size:15px;letter-spacing:.4px}
-.brand span{font-size:10.5px;color:var(--gold);letter-spacing:.6px;margin-top:2px}
+.brand span{font-size:10.px;color:var(--gold);letter-spacing:.6px;margin-top:2px}
 .navlink{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:9px;color:var(--text-dim);font-size:14px;font-weight:500;cursor:pointer;margin-bottom:4px;border:0;background:transparent;width:100%;text-align:left}
 .navlink svg{flex:0 0 18px;width:18px;height:18px}
 .navlink:hover{background:var(--card2);color:var(--text)}
@@ -36,23 +36,31 @@ button{font-family:inherit}
 
 .main{flex:1;min-width:0;padding:26px 30px 40px}
 .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:16px;flex-wrap:wrap}
-.topbar h1{font-size:22px;margin:0}
+.topbar h1{font-size22px;margin:0}
 .topbar h1 span{color:var(--gold)}
 .topbar p{margin:4px 0 0;color:var(--text-dim);font-size:13.5px}
 
-.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
 .searchBox{flex:1;min-width:200px;display:flex;align-items:center;gap:8px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:9px 12px}
 .searchBox input{background:transparent;border:0;outline:0;color:var(--text);font-size:13.5px;width:100%}
 .searchBox svg{color:var(--text-dim2);flex:0 0 auto}
-.pillGroup{display:flex;gap:8px}
+.pillGroup{display:flex;gap:8px;flex-wrap:wrap}
 .pillBtn{border:1px solid var(--gold-dark);color:var(--gold);background:transparent;padding:9px 16px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
 .pillBtn.active,.pillBtn:hover{background:var(--gold);color:#181205}
+.folderBar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.folderBtn{border:1px solid var(--border);color:var(--text-dim);background:var(--card2);padding:7px 14px;border-radius:9px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.folderBtn.active,.folderBtn:hover{border-color:var(--gold);color:var(--gold)}
+.folderBtn .delX{color:var(--text-dim2);margin-left:5px}
+.folderBtn .delX:hover{color:#ef4444}
 
 .panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px}
 .footGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.footItem .thumb{aspect-ratio:1/1;border-radius:12px;background:linear-gradient(150deg,#2a2413,#3a2f14);display:flex;align-items:center;justify-content:center;color:var(--gold-dark);margin-bottom:7px}
+.footItem .thumb{aspect-ratio:1/1;border-radius:12px;background:linear-gradient(150deg,#2a2413,#3a2f14);display:flex;align-items:center;justify-content:center;color:var(--gold-dark);margin-bottom:7px;position:relative}
+.footItem .thumb .starBadge{position:absolute;top:7px;right:9px;font-size:16px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))}
 .footItem b{display:block;font-size:13px}
 .footItem small{color:var(--text-dim2);font-size:11.5px}
+.footItem .actions{margin-top:5px;display:flex;flex-wrap:wrap;gap:8px;font-size:11.5px}
+.footItem .actions span{cursor:pointer;font-weight:600}
 
 .menuToggle{display:none;position:fixed;top:16px;left:16px;z-index:70;width:42px;height:42px;border-radius:10px;background:var(--card2);border:1px solid var(--border);color:var(--text);align-items:center;justify-content:center;cursor:pointer}
 .sidebarOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:45}
@@ -124,7 +132,7 @@ button{font-family:inherit}
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
         <input id="footSearch" placeholder="Cari footage..." oninput="renderFootage()">
       </div>
-      <div class="pillGroup">
+      <div class="pillGroup" id="tipeGroup">
         <button class="pillBtn active" data-tipe="" onclick="setTab('',this)">Semua</button>
         <button class="pillBtn" data-tipe="foto" onclick="setTab('foto',this)">Foto</button>
         <button class="pillBtn" data-tipe="video" onclick="setTab('video',this)">Video</button>
@@ -133,7 +141,10 @@ button{font-family:inherit}
       <input type="file" id="footInput" accept="image/*,video/*" style="display:none" onchange="doUploadFootage()">
       <button class="pillBtn" id="uploadBtn" onclick="document.getElementById('footInput').click()">+ Unggah</button>
       <button class="pillBtn" id="syncBtn" onclick="syncFootage()">🔄 Sync Drive</button>
+      <button class="pillBtn" id="newFolderBtn" onclick="createFolder()">+ Folder</button>
     </div>
+
+    <div class="folderBar" id="folderBar"></div>
 
     <div id="uploadErr" style="display:none;background:#3a1414;color:#fca5a5;border:1px solid #5c1f1f;padding:11px 12px;border-radius:8px;margin:0 0 14px;font-size:13px"></div>
 
@@ -170,6 +181,7 @@ function showUploadErr(msg) {
   const b = document.getElementById("uploadErr");
   b.textContent = "⚠️ " + msg;
   b.style.display = "block";
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 function clearUploadErr() {
   document.getElementById("uploadErr").style.display = "none";
@@ -179,11 +191,22 @@ async function apiGet(path) {
   const r = await fetch(API + path, { headers: { Authorization: "Bearer " + token } });
   if (r.status === 401) { logout(); throw new Error("Sesi habis, silakan login lagi."); }
   const d = await r.json();
-  if (!r.ok) throw new Error(d.error || ("Error " + r.status));
+  if (!r.ok) new Error(d.error || ("Error " + r.status));
   return d;
 }
 async function apiUpload(path, formData) {
   const r = await fetch(API + path, { method: "POST", headers: { Authorization: "Bearer " + token }, body: formData });
+  if (r.status === 401) { logout(); throw new Error("Sesi habis, silakan login lagi."); }
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || ("Error " + r.status));
+  return d;
+}
+async function apiJson(path, method, body) {
+  const r = await fetch(API + path, {
+    method,
+    headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
   if (r.status === 401) { logout(); throw new Error("Sesi habis, silakan login lagi."); }
   const d = await r.json();
   if (!r.ok) throw new Error(d.error || ("Error " + r.status));
@@ -204,7 +227,9 @@ function fmtDate(iso) {
 }
 
 let allFootage = [];
+let allFolders = [];
 let currentTipe = "";
+let currentFolder = "";   // "" = semua folder, "root" = tanpa folder, angka = folder_id
 const thumbCache = {};
 
 async function loadFootage() {
@@ -217,9 +242,58 @@ async function loadFootage() {
   }
 }
 
+async function loadFolders() {
+  try { allFolders = await apiGet("/folders"); }
+  catch { allFolders = []; }
+  renderFolderBar();
+}
+
+/* ================= FOLDER BAR ================= */
+function renderFolderBar() {
+  const bar = document.getElementById("folderBar");
+  let html = `
+    <button class="folderBtn ${currentFolder === "" ? "active" : ""}" onclick="setFolder('')">🗂 Semua</button>
+    <button class="folderBtn ${currentFolder === "root" ? "active" : ""}" onclick="setFolder('root')">📁 Tanpa Folder</button>`;
+  html += allFolders.map(f =>
+    `<button class="folderBtn String(currentFolder)===String(f.id)?"active":"""onclick="setFolder(′{String(currentFolder) === String(f.id) ? "active" : ""}" onclick="setFolder('String(currentFolder)===String(f.id)?"active":"""onclick="setFolder(′{f.id}')">
+      📁 f.nama<spanclass="delX"title="Hapusfolder"onclick="event.stopPropagation();deleteFolder({f.nama}<span class="delX" title="Hapus folder" onclick="event.stopPropagation();deleteFolder(f.nama<spanclass="delX"title="Hapusfolder"onclick="event.stopPropagation();deleteFolder({f.id},'${(f.nama || "").replace(/'/g, "\\'")}')">✕</span>
+    </button>`
+  ).join("");
+  bar.innerHTML = html;
+}
+
+function setFolder(id) {
+  currentFolder = id;
+  renderFolderBar();
+  renderFootage();
+}
+
+async function createFolder() {
+  const nama = prompt("Nama folder baru:");
+  if (!nama || !nama.trim()) return;
+  try {
+    await apiJson("/folders", "POST", { nama: nama.trim() });
+    await loadFolders();
+  } catch (err) { showUploadErr(err.message); }
+}
+
+async function deleteFolder(id, nama) {
+  if (!confirm(`Hapus folder "${nama}"?\nFile di dalamnya TIDAK akan terhapus, hanya dipindahkan ke "Tanpa Folder".`)) return;
+  try {
+    await apiDelete("/folders?id=" + id);
+    if (String(currentFolder) === String(id)) currentFolder = "";
+    await loadFolders();
+    renderFootage();
+  } catch (err) { showUploadErr(err.message); }
+}
+
+/* ================= RENDER FOOTAGE ================= */
 function renderFootage() {
   const q = (document.getElementById("footSearch").value || "").toLowerCase();
-  const rows = allFootage.filter(f => f.judul.toLowerCase().includes(q));
+  let rows = allFootage.filter(f => (f.judul || "").toLowerCase().includes(q));
+  if (currentFolder === "root") rows = rows.filter(f => !f.folder_id);
+  else if (currentFolder !== "") rows = rows.filter(f => String(f.folder_id) === String(currentFolder));
+
   const grid = document.getElementById("footageGrid");
   if (rows.length === 0) {
     grid.innerHTML = `<div class="emptyNote" style="grid-column:1/-1">
@@ -228,17 +302,27 @@ function renderFootage() {
     </div>`;
     return;
   }
-  grid.innerHTML = rows.map(f => `
+  grid.innerHTML = rows.map(f => {
+    const starred = f.starred === 1;
+    const judulEsc = (f.judul || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+    return `
     <div class="footItem">
-      <div class="thumb" id="thumb-${f.id}" onclick="viewFootage(${f.id},'${f.mime_type}')" style="cursor:pointer;background-size:cover;background-position:center">
+      <div class="thumb" id="thumb-f.id"onclick="viewFootage({f.id}" onclick="viewFootage(f.id"onclick="viewFootage({f.id},'${f.mime_type}')" style="cursor:pointer;background-size:cover;background-position:center">
         ${f.tipe === "video"
           ? `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 9l5 3-5 3z"/></svg>`
           : `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M22 16l-5.5-5-8.5 8"/></svg>`}
+        ${starred ? `<span class="starBadge">⭐</span>` : ""}
       </div>
-      <b>${f.judul}</b><small>${fmtDate(f.uploaded_at)}</small>
-      <div style="margin-top:4px"><span class="dlBtn" style="color:#ef4444;cursor:pointer;font-size:12px" onclick="deleteFootage(${f.id})">Hapus</span></div>
-    </div>
-  `).join("");
+      <b>f.judul</b><small>{f.judul}</b><small>f.judul</b><small>{fmtDate(f.uploaded_at)}${f.folder_id ? " • 📁" : ""}</small>
+      <div class="actions">
+        <span style="color:#60a5fa" onclick="renameFootage(f.id,′{f.id},'f.id,′{judulEsc}')">Rename</span>
+        <span style="color:#4ade80" onclick="downloadFootage(${f.id})">Download</span>
+        <span style="color:#c084fc" onclick="moveFile(${f.id})">Pindah</span>
+        <span style="color:#facc15" onclick="toggleStar(f.id)">{f.id})">f.id)">{starred ? "Hapus Tanda" : "Tandai"}</span>
+        <span style="color:#ef4444" onclick="deleteFootage(${f.id})">Hapus</span>
+      </div>
+    </div>`;
+  }).join("");
 
   // muat thumbnail foto secara async (aman pakai token, tidak lewat URL publik)
   rows.filter(f => f.tipe === "foto").forEach(f => loadThumb(f.id));
@@ -260,7 +344,10 @@ async function loadThumb(id) {
 }
 function applyThumb(id, url) {
   const el = document.getElementById("thumb-" + id);
-  if (el) { el.style.backgroundImage = `url(${url})`; el.innerHTML = ""; }
+  if (el) {
+    el.style.backgroundImage = `url(${url})`;
+    el.querySelector("svg")?.remove();
+  }
 }
 
 async function viewFootage(id, mime) {
@@ -273,6 +360,70 @@ async function viewFootage(id, mime) {
   } catch (err) {
     showUploadErr(err.message);
   }
+}
+
+/* ================= RENAME ================= */
+async function renameFootage(id, oldName) {
+  const judul = prompt("Judul baru untuk footage ini:", oldName);
+  if (!judul || judul === oldName) return;
+  try {
+    await apiJson("/footage/rename", "POST", { id, judul: judul.trim() });
+    delete thumbCache[id];
+    await loadFootage();
+  } catch (err) { showUploadErr(err.message); }
+}
+
+/* ================= DOWNLOAD ================= */
+async function downloadFootage(id) {
+  try {
+    const r = await fetch(API + "/footage/download?id=" + id, { headers: { Authorization: "Bearer " + token } });
+    if (!r.ok) { const d = await r.json(); throw new Error(d.error || "Gagal mengunduh"); }
+    const blob = await r.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = (allFootage.find(f => f.id === id)?.judul || "footage");
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
+  } catch (err) { showUploadErr(err.message); }
+}
+
+/* ================= PINDAH FILE KE FOLDER ================= */
+async function moveFile(id) {
+  const f = allFootage.find(x => x.id === id);
+  if (!f) return;
+  if (allFolders.length === 0) {
+    return showUploadErr("Belum ada folder. Klik tombol \"+ Folder\" terlebih dahulu.");
+  }
+  const lokasiSekarang = f.folder_id
+    ? (allFolders.find(x => x.id === f.folder_id)?.nama || "Folder #" + f.folder_id)
+    : "Tanpa Folder";
+
+  const opts = ["0 = Tanpa Folder", ...allFolders.map(x => `x.id={x.id} =x.id={x.nama}`)];
+  const pilih = prompt(
+    `Pindah FILE ke folder:\n` +
+    `File        : "${f.judul}"\n` +
+    `Sekarang di : ${lokasiSekarang}\n\n` +
+    `Daftar folder:\n${opts.join("\n")}\n\n` +
+    `Ketik ID folder tujuan (0 = Tanpa Folder):`
+  );
+  if (pilih === null) return;
+  if (pilih !== "0" && !allFolders.some(x => String(x.id) === pilih)) {
+    return showUploadErr("ID folder tidak dikenal. Pilihan yang tersedia: " + opts.join(", "));
+  }
+  try {
+    await apiJson("/footage/move", "POST", { id, folder_id: pilih === "0" ? null : Number(pilih) });
+    await loadFootage();
+  } catch (err) { showUploadErr(err.message); }
+}
+
+/* ================= TANDAI (STAR) ================= */
+async function toggleStar(id) {
+  try {
+    await apiJson("/footage/star", "POST", { id });
+    await loadFootage();
+  } catch (err) { showUploadErr(err.message); }
 }
 
 async function doUploadFootage() {
@@ -302,6 +453,7 @@ async function deleteFootage(id) {
   if (!confirm("Hapus footage ini?")) return;
   try {
     await apiDelete("/footage?id=" + id);
+    delete thumbCache[id];
     await loadFootage();
   } catch (err) {
     showUploadErr(err.message);
@@ -319,7 +471,7 @@ async function syncFootage() {
     if (r.status === 401) { logout(); return; }
     if (!r.ok) throw new Error(d.error || ("Error " + r.status));
     await loadFootage();
-    alert(`Sync selesai. ${d.added} file baru ditambahkan dari Drive (total di folder Drive: ${d.total_di_drive}).`);
+    alert(`Sync selesai. d.addedfilebaruditambahkandariDrive(totaldifolderDrive:{d.added} file baru ditambahkan dari Drive (total di folder Drive:d.addedfilebaruditambahkandariDrive(totaldifolderDrive:{d.total_di_drive}).`);
   } catch (err) {
     showUploadErr(err.message);
   } finally {
@@ -328,12 +480,13 @@ async function syncFootage() {
 }
 
 function setTab(tipe, btn) {
-  document.querySelectorAll(".pillGroup .pillBtn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll("#tipeGroup .pillBtn").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
   currentTipe = tipe;
   loadFootage();
 }
 
+loadFolders();
 loadFootage();
 </script>
 </body>
