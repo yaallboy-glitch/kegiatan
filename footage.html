@@ -122,40 +122,37 @@ button{font-family:inherit}
     <div class="toolbar">
       <div class="searchBox">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
-        <input id="footSearch" placeholder="Cari footage...">
+        <input id="footSearch" placeholder="Cari footage..." oninput="renderFootage()">
       </div>
       <div class="pillGroup">
-        <button class="pillBtn active" onclick="setTab('foto',this)">Foto</button>
-        <button class="pillBtn" onclick="setTab('video',this)">Video</button>
+        <button class="pillBtn active" data-tipe="" onclick="setTab('',this)">Semua</button>
+        <button class="pillBtn" data-tipe="foto" onclick="setTab('foto',this)">Foto</button>
+        <button class="pillBtn" data-tipe="video" onclick="setTab('video',this)">Video</button>
       </div>
-      <button class="pillBtn" onclick="alert('Sambungkan tombol ini ke endpoint upload API Footage kamu.')">+ Unggah</button>
+      <input type="text" id="uploadJudul" placeholder="Judul (mis: Bakti Sosial)" style="max-width:200px;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:9px 12px;font-size:13px">
+      <input type="file" id="footInput" accept="image/*,video/*" style="display:none" onchange="doUploadFootage()">
+      <button class="pillBtn" id="uploadBtn" onclick="document.getElementById('footInput').click()">+ Unggah</button>
     </div>
+
+    <div id="uploadErr" style="display:none;background:#3a1414;color:#fca5a5;border:1px solid #5c1f1f;padding:11px 12px;border-radius:8px;margin:0 0 14px;font-size:13px"></div>
 
     <div class="panel">
       <div class="footGrid" id="footageGrid">
-        <!-- TODO: sambungkan ke API Footage kamu sendiri, contoh:
-             const rows = await api('/footage?type=foto');
-             lalu render tiap item dengan struktur .footItem di bawah ini -->
-        <div class="footItem"><div class="thumb"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M22 16l-5.5-5-8.5 8"/></svg></div><b>Bakti Sosial</b><small>20 Mei 2025</small></div>
-        <div class="footItem"><div class="thumb"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M22 16l-5.5-5-8.5 8"/></svg></div><b>Rapat Rutin</b><small>18 Mei 2025</small></div>
-        <div class="footItem"><div class="thumb"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M22 16l-5.5-5-8.5 8"/></svg></div><b>Kerja Bakti</b><small>15 Mei 2025</small></div>
-        <div class="footItem"><div class="thumb"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M22 16l-5.5-5-8.5 8"/></svg></div><b>Pentas Seni</b><small>12 Mei 2025</small></div>
-        <div class="footItem"><div class="thumb"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M22 16l-5.5-5-8.5 8"/></svg></div><b>Turnamen Voli</b><small>10 Mei 2025</small></div>
-        <div class="footItem"><div class="thumb"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M22 16l-5.5-5-8.5 8"/></svg></div><b>Halal Bihalal</b><small>8 Mei 2025</small></div>
+        <div class="emptyNote" style="grid-column:1/-1"><p>Memuat data...</p></div>
       </div>
     </div>
   </main>
 </div>
 
 <script>
-// Modul ini berdiri sendiri (terpisah dari index.html) supaya bisa disambungkan
-// ke endpoint API Footage kamu sendiri kapan saja, tanpa mengubah index.html.
+const API = "https://kegiatan-api.newbrigademudasoropati.workers.dev";
 const token = localStorage.getItem("token") || "";
 if (!token) { location.href = "index.html"; }
 
+let me = {};
 try {
   const payload = atob(token).split("|");
-  const me = { username: payload[0], nama: payload[1], role: payload[2] };
+  me = { username: payload[0], nama: payload[1], role: payload[2] };
   document.getElementById("profName").textContent = me.nama;
   document.getElementById("profRole").textContent = me.role;
   document.getElementById("avatarInit").textContent = (me.nama || "?").trim().charAt(0).toUpperCase();
@@ -168,11 +165,156 @@ function toggleSidebar() {
   document.getElementById("sidebarOverlay").classList.toggle("open");
 }
 
-function setTab(type, btn) {
-  document.querySelectorAll('.pillGroup .pillBtn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  // TODO: panggil ulang fetch data footage sesuai `type` ('foto' / 'video')
+function showUploadErr(msg) {
+  const b = document.getElementById("uploadErr");
+  b.textContent = "⚠️ " + msg;
+  b.style.display = "block";
 }
+function clearUploadErr() {
+  document.getElementById("uploadErr").style.display = "none";
+}
+
+async function apiGet(path) {
+  const r = await fetch(API + path, { headers: { Authorization: "Bearer " + token } });
+  if (r.status === 401) { logout(); throw new Error("Sesi habis, silakan login lagi."); }
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || ("Error " + r.status));
+  return d;
+}
+async function apiUpload(path, formData) {
+  const r = await fetch(API + path, { method: "POST", headers: { Authorization: "Bearer " + token }, body: formData });
+  if (r.status === 401) { logout(); throw new Error("Sesi habis, silakan login lagi."); }
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || ("Error " + r.status));
+  return d;
+}
+async function apiDelete(path) {
+  const r = await fetch(API + path, { method: "DELETE", headers: { Authorization: "Bearer " + token } });
+  if (r.status === 401) { logout(); throw new Error("Sesi habis, silakan login lagi."); }
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || ("Error " + r.status));
+  return d;
+}
+
+function fmtDate(iso) {
+  try {
+    return new Date(iso.replace(" ", "T") + "Z").toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  } catch { return iso; }
+}
+
+let allFootage = [];
+let currentTipe = "";
+const thumbCache = {};
+
+async function loadFootage() {
+  try {
+    allFootage = await apiGet("/footage" + (currentTipe ? "?tipe=" + currentTipe : ""));
+    renderFootage();
+  } catch (err) {
+    document.getElementById("footageGrid").innerHTML =
+      `<div class="emptyNote" style="grid-column:1/-1"><b>Gagal memuat footage</b><p>${err.message}</p></div>`;
+  }
+}
+
+function renderFootage() {
+  const q = (document.getElementById("footSearch").value || "").toLowerCase();
+  const rows = allFootage.filter(f => f.judul.toLowerCase().includes(q));
+  const grid = document.getElementById("footageGrid");
+  if (rows.length === 0) {
+    grid.innerHTML = `<div class="emptyNote" style="grid-column:1/-1">
+      <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="6" width="15" height="12" rx="2"/><path d="M17 10l5-3v10l-5-3"/></svg>
+      <b>Belum ada footage</b><p>Klik "+ Unggah" untuk menambahkan foto/video pertama.</p>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = rows.map(f => `
+    <div class="footItem">
+      <div class="thumb" id="thumb-${f.id}" onclick="viewFootage(${f.id},'${f.mime_type}')" style="cursor:pointer;background-size:cover;background-position:center">
+        ${f.tipe === "video"
+          ? `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 9l5 3-5 3z"/></svg>`
+          : `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M22 16l-5.5-5-8.5 8"/></svg>`}
+      </div>
+      <b>${f.judul}</b><small>${fmtDate(f.uploaded_at)}</small>
+      <div style="margin-top:4px"><span class="dlBtn" style="color:#ef4444;cursor:pointer;font-size:12px" onclick="deleteFootage(${f.id})">Hapus</span></div>
+    </div>
+  `).join("");
+
+  // muat thumbnail foto secara async (aman pakai token, tidak lewat URL publik)
+  rows.filter(f => f.tipe === "foto").forEach(f => loadThumb(f.id));
+}
+
+async function loadThumb(id) {
+  if (thumbCache[id]) {
+    applyThumb(id, thumbCache[id]);
+    return;
+  }
+  try {
+    const r = await fetch(API + "/footage/view?id=" + id, { headers: { Authorization: "Bearer " + token } });
+    if (!r.ok) return;
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    thumbCache[id] = url;
+    applyThumb(id, url);
+  } catch {}
+}
+function applyThumb(id, url) {
+  const el = document.getElementById("thumb-" + id);
+  if (el) { el.style.backgroundImage = `url(${url})`; el.innerHTML = ""; }
+}
+
+async function viewFootage(id, mime) {
+  try {
+    const r = await fetch(API + "/footage/view?id=" + id, { headers: { Authorization: "Bearer " + token } });
+    if (!r.ok) { const d = await r.json(); throw new Error(d.error || "Gagal memuat"); }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+  } catch (err) {
+    showUploadErr(err.message);
+  }
+}
+
+async function doUploadFootage() {
+  clearUploadErr();
+  const input = document.getElementById("footInput");
+  const file = input.files[0];
+  if (!file) return;
+  const judul = document.getElementById("uploadJudul").value || file.name;
+  const btn = document.getElementById("uploadBtn");
+  btn.textContent = "Mengunggah..."; btn.disabled = true;
+  try {
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("judul", judul);
+    await apiUpload("/footage", fd);
+    input.value = "";
+    document.getElementById("uploadJudul").value = "";
+    await loadFootage();
+  } catch (err) {
+    showUploadErr(err.message);
+  } finally {
+    btn.textContent = "+ Unggah"; btn.disabled = false;
+  }
+}
+
+async function deleteFootage(id) {
+  if (!confirm("Hapus footage ini?")) return;
+  try {
+    await apiDelete("/footage?id=" + id);
+    await loadFootage();
+  } catch (err) {
+    showUploadErr(err.message);
+  }
+}
+
+function setTab(tipe, btn) {
+  document.querySelectorAll(".pillGroup .pillBtn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  currentTipe = tipe;
+  loadFootage();
+}
+
+loadFootage();
 </script>
 </body>
 </html>

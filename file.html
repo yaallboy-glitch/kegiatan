@@ -133,56 +133,32 @@ button{font-family:inherit}
     <div class="toolbar">
       <div class="searchBox">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
-        <input id="fileSearch" placeholder="Cari file...">
+        <input id="fileSearch" placeholder="Cari file..." oninput="renderFiles()">
       </div>
-      <button class="pillBtn" onclick="alert('Sambungkan tombol ini ke endpoint upload API File kamu.')">+ Unggah File</button>
+      <input type="text" id="uploadKategori" placeholder="Kategori (mis: Proposal Kegiatan)" style="max-width:220px;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:9px 12px;font-size:13px">
+      <input type="file" id="fileInput" style="display:none" onchange="doUploadFile()">
+      <button class="pillBtn" id="uploadBtn" onclick="document.getElementById('fileInput').click()">+ Unggah File</button>
     </div>
+
+    <div id="uploadErr" style="display:none;background:#3a1414;color:#fca5a5;border:1px solid #5c1f1f;padding:11px 12px;border-radius:8px;margin:0 0 14px;font-size:13px"></div>
 
     <div class="panel">
       <div id="fileList">
-        <!-- TODO: sambungkan ke API File kamu sendiri, contoh:
-             const rows = await api('/file');
-             lalu render tiap baris dengan struktur .fileRow di bawah ini -->
-        <div class="fileRow">
-          <div class="fIcon pdf">PDF</div>
-          <div class="fMeta"><b>Laporan_Kegiatan_Mei_2025.pdf</b><small>Laporan Kegiatan</small></div>
-          <div class="fRight">2.4 MB &middot; 20 Mei 2025 <span class="dlBtn">&#8681;</span></div>
-        </div>
-        <div class="fileRow">
-          <div class="fIcon doc">DOC</div>
-          <div class="fMeta"><b>Proposal_Bakti_Sosial.docx</b><small>Proposal Kegiatan</small></div>
-          <div class="fRight">1.8 MB &middot; 18 Mei 2025 <span class="dlBtn">&#8681;</span></div>
-        </div>
-        <div class="fileRow">
-          <div class="fIcon xls">XLS</div>
-          <div class="fMeta"><b>RAB_Pembangunan_Pos.xlsx</b><small>Rencana Anggaran</small></div>
-          <div class="fRight">3.2 MB &middot; 15 Mei 2025 <span class="dlBtn">&#8681;</span></div>
-        </div>
-        <div class="fileRow">
-          <div class="fIcon pdf">PDF</div>
-          <div class="fMeta"><b>Notulen_Rapat_120525.pdf</b><small>Notulen Rapat</small></div>
-          <div class="fRight">1.1 MB &middot; 12 Mei 2025 <span class="dlBtn">&#8681;</span></div>
-        </div>
-        <div class="fileRow">
-          <div class="fIcon doc">DOC</div>
-          <div class="fMeta"><b>Data_Anggota_KarangTaruna.docx</b><small>Data Anggota</small></div>
-          <div class="fRight">950 KB &middot; 10 Mei 2025 <span class="dlBtn">&#8681;</span></div>
-        </div>
+        <div class="emptyNote"><p>Memuat data...</p></div>
       </div>
     </div>
   </main>
 </div>
 
 <script>
-// Modul ini berdiri sendiri (terpisah dari index.html) supaya bisa disambungkan
-// ke endpoint API File kamu sendiri kapan saja, tanpa mengubah index.html.
-// Guard sederhana: kalau belum login, lempar balik ke index.html.
+const API = "https://kegiatan-api.newbrigademudasoropati.workers.dev";
 const token = localStorage.getItem("token") || "";
 if (!token) { location.href = "index.html"; }
 
+let me = {};
 try {
   const payload = atob(token).split("|");
-  const me = { username: payload[0], nama: payload[1], role: payload[2] };
+  me = { username: payload[0], nama: payload[1], role: payload[2] };
   document.getElementById("profName").textContent = me.nama;
   document.getElementById("profRole").textContent = me.role;
   document.getElementById("avatarInit").textContent = (me.nama || "?").trim().charAt(0).toUpperCase();
@@ -194,6 +170,142 @@ function toggleSidebar() {
   document.getElementById("sidebar").classList.toggle("open");
   document.getElementById("sidebarOverlay").classList.toggle("open");
 }
+
+function showUploadErr(msg) {
+  const b = document.getElementById("uploadErr");
+  b.textContent = "⚠️ " + msg;
+  b.style.display = "block";
+}
+function clearUploadErr() {
+  document.getElementById("uploadErr").style.display = "none";
+}
+
+async function apiGet(path) {
+  const r = await fetch(API + path, { headers: { Authorization: "Bearer " + token } });
+  if (r.status === 401) { logout(); throw new Error("Sesi habis, silakan login lagi."); }
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || ("Error " + r.status));
+  return d;
+}
+async function apiUpload(path, formData) {
+  const r = await fetch(API + path, { method: "POST", headers: { Authorization: "Bearer " + token }, body: formData });
+  if (r.status === 401) { logout(); throw new Error("Sesi habis, silakan login lagi."); }
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || ("Error " + r.status));
+  return d;
+}
+async function apiDelete(path) {
+  const r = await fetch(API + path, { method: "DELETE", headers: { Authorization: "Bearer " + token } });
+  if (r.status === 401) { logout(); throw new Error("Sesi habis, silakan login lagi."); }
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || ("Error " + r.status));
+  return d;
+}
+
+function fmtSize(bytes) {
+  if (!bytes) return "0 KB";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+}
+function fmtDate(iso) {
+  try {
+    return new Date(iso.replace(" ", "T") + "Z").toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  } catch { return iso; }
+}
+function iconFor(mime, filename) {
+  const ext = (filename.split(".").pop() || "").toLowerCase();
+  if (mime?.includes("pdf") || ext === "pdf") return ["pdf", "PDF"];
+  if (mime?.includes("word") || ["doc", "docx"].includes(ext)) return ["doc", "DOC"];
+  if (mime?.includes("sheet") || mime?.includes("excel") || ["xls", "xlsx"].includes(ext)) return ["xls", "XLS"];
+  return ["doc", "FILE"];
+}
+
+let allFiles = [];
+
+async function loadFiles() {
+  try {
+    allFiles = await apiGet("/file");
+    renderFiles();
+  } catch (err) {
+    document.getElementById("fileList").innerHTML =
+      `<div class="emptyNote"><b>Gagal memuat file</b><p>${err.message}</p></div>`;
+  }
+}
+
+function renderFiles() {
+  const q = (document.getElementById("fileSearch").value || "").toLowerCase();
+  const rows = allFiles.filter(f => f.filename.toLowerCase().includes(q) || (f.kategori || "").toLowerCase().includes(q));
+  const list = document.getElementById("fileList");
+  if (rows.length === 0) {
+    list.innerHTML = `<div class="emptyNote">
+      <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>
+      <b>Belum ada file</b><p>Klik "+ Unggah File" untuk menambahkan dokumen pertama.</p>
+    </div>`;
+    return;
+  }
+  list.innerHTML = rows.map(f => {
+    const [cls, label] = iconFor(f.mime_type, f.filename);
+    return `<div class="fileRow">
+      <div class="fIcon ${cls}">${label}</div>
+      <div class="fMeta"><b>${f.filename}</b><small>${f.kategori || "Umum"}</small></div>
+      <div class="fRight">
+        ${fmtSize(f.size)} &middot; ${fmtDate(f.uploaded_at)}
+        <span class="dlBtn" onclick="downloadFile(${f.id},'${f.filename.replace(/'/g, "\\'")}')" title="Unduh">&#8681;</span>
+        <span class="dlBtn" onclick="deleteFile(${f.id})" title="Hapus" style="color:#ef4444">&#128465;</span>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+async function doUploadFile() {
+  clearUploadErr();
+  const input = document.getElementById("fileInput");
+  const file = input.files[0];
+  if (!file) return;
+  const kategori = document.getElementById("uploadKategori").value || "Umum";
+  const btn = document.getElementById("uploadBtn");
+  btn.textContent = "Mengunggah..."; btn.disabled = true;
+  try {
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("kategori", kategori);
+    await apiUpload("/file", fd);
+    input.value = "";
+    document.getElementById("uploadKategori").value = "";
+    await loadFiles();
+  } catch (err) {
+    showUploadErr(err.message);
+  } finally {
+    btn.textContent = "+ Unggah File"; btn.disabled = false;
+  }
+}
+
+async function downloadFile(id, filename) {
+  try {
+    const r = await fetch(API + "/file/download?id=" + id, { headers: { Authorization: "Bearer " + token } });
+    if (!r.ok) { const d = await r.json(); throw new Error(d.error || "Gagal mengunduh"); }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    showUploadErr(err.message);
+  }
+}
+
+async function deleteFile(id) {
+  if (!confirm("Hapus file ini?")) return;
+  try {
+    await apiDelete("/file?id=" + id);
+    await loadFiles();
+  } catch (err) {
+    showUploadErr(err.message);
+  }
+}
+
+loadFiles();
 </script>
 </body>
 </html>
