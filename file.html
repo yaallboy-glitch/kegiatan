@@ -138,6 +138,7 @@ button{font-family:inherit}
       <input type="text" id="uploadKategori" placeholder="Kategori (mis: Proposal Kegiatan)" style="max-width:220px;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:9px 12px;font-size:13px">
       <input type="file" id="fileInput" style="display:none" onchange="doUploadFile()">
       <button class="pillBtn" id="uploadBtn" onclick="document.getElementById('fileInput').click()">+ Unggah File</button>
+      <button class="pillBtn" id="syncBtn" onclick="syncFiles()">🔄 Sync Drive</button>
     </div>
 
     <div id="uploadErr" style="display:none;background:#3a1414;color:#fca5a5;border:1px solid #5c1f1f;padding:11px 12px;border-radius:8px;margin:0 0 14px;font-size:13px"></div>
@@ -218,6 +219,25 @@ function iconFor(mime, filename) {
   if (mime?.includes("word") || ["doc", "docx"].includes(ext)) return ["doc", "DOC"];
   if (mime?.includes("sheet") || mime?.includes("excel") || ["xls", "xlsx"].includes(ext)) return ["xls", "XLS"];
   return ["doc", "FILE"];
+}
+
+async function syncFiles() {
+  clearUploadErr();
+  const btn = document.getElementById("syncBtn");
+  const oldText = btn.textContent;
+  btn.textContent = "Menyinkronkan..."; btn.disabled = true;
+  try {
+    const r = await fetch(API + "/file/sync", { method: "POST", headers: { Authorization: "Bearer " + token } });
+    const d = await r.json();
+    if (r.status === 401) { logout(); return; }
+    if (!r.ok) throw new Error(d.error || ("Error " + r.status));
+    await loadFiles();
+    alert(`Sync selesai. ${d.added} file baru ditambahkan dari Drive (total di folder Drive: ${d.total_di_drive}).`);
+  } catch (err) {
+    showUploadErr(err.message);
+  } finally {
+    btn.textContent = oldText; btn.disabled = false;
+  }
 }
 
 let allFiles = [];
