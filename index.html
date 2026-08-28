@@ -260,13 +260,13 @@ tr:hover td{background:#1d1d20}
         <div class="statCard">
           <div class="ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></div>
           <h3>Total File</h3>
-          <div class="big" id="statTotalFile">36</div>
+          <div class="big" id="statTotalFile">-</div>
           <p>Dokumen tersimpan</p>
         </div>
         <div class="statCard">
           <div class="ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="15" height="12" rx="2"/><path d="M17 10l5-3v10l-5-3"/></svg></div>
           <h3>Total Footage</h3>
-          <div class="big" id="statTotalFootage">54</div>
+          <div class="big" id="statTotalFootage">-</div>
           <p>Foto &amp; Video tersimpan</p>
         </div>
       </div>
@@ -281,22 +281,7 @@ tr:hover td{background:#1d1d20}
             <a class="pillBtn" href="file.html">Lihat Semua</a>
           </div>
           <div id="fileTerbaruList">
-            <!-- TODO: ganti dengan fetch ke API File (lihat file.html) -->
-            <div class="fileRow">
-              <div class="fIcon pdf">PDF</div>
-              <div class="fMeta"><b>Laporan_Kegiatan_Mei_2025.pdf</b><small>Laporan Kegiatan</small></div>
-              <div class="fRight">2.4 MB &middot; 20 Mei 2025 <span class="dlBtn">&#8681;</span></div>
-            </div>
-            <div class="fileRow">
-              <div class="fIcon doc">DOC</div>
-              <div class="fMeta"><b>Proposal_Bakti_Sosial.docx</b><small>Proposal Kegiatan</small></div>
-              <div class="fRight">1.8 MB &middot; 18 Mei 2025 <span class="dlBtn">&#8681;</span></div>
-            </div>
-            <div class="fileRow">
-              <div class="fIcon xls">XLS</div>
-              <div class="fMeta"><b>RAB_Pembangunan_Pos.xlsx</b><small>Rencana Anggaran</small></div>
-              <div class="fRight">3.2 MB &middot; 15 Mei 2025 <span class="dlBtn">&#8681;</span></div>
-            </div>
+            <p style="color:var(--text-dim2);font-size:13px;margin:0">Memuat data...</p>
           </div>
         </div>
 
@@ -312,10 +297,7 @@ tr:hover td{background:#1d1d20}
             </div>
           </div>
           <div class="footGrid" id="footageTerbaruGrid">
-            <!-- TODO: ganti dengan fetch ke API Footage (lihat footage.html) -->
-            <div class="footItem"><div class="thumb"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M22 16l-5.5-5-8.5 8"/></svg></div><b>Bakti Sosial</b><small>20 Mei 2025</small></div>
-            <div class="footItem"><div class="thumb"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M22 16l-5.5-5-8.5 8"/></svg></div><b>Rapat Rutin</b><small>18 Mei 2025</small></div>
-            <div class="footItem"><div class="thumb"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M22 16l-5.5-5-8.5 8"/></svg></div><b>Kerja Bakti</b><small>15 Mei 2025</small></div>
+            <p style="color:var(--text-dim2);font-size:13px;margin:0;grid-column:1/-1">Memuat data...</p>
           </div>
         </div>
       </div>
@@ -502,10 +484,91 @@ async function start() {
   profRole.textContent = me.role;
   avatarInit.textContent = (me.nama||"?").trim().charAt(0).toUpperCase();
   try {
-    await Promise.all([loadKeu(), loadSpj(), loadProp(), loadLog()]);
+    await Promise.all([loadKeu(), loadSpj(), loadProp(), loadLog(), loadDashboardFiles()]);
   } catch (err) {
     showErr("errBox2", err.message || String(err));
   }
+}
+
+// ===== FILE & FOOTAGE (dashboard) =====
+function fmtSizeDash(bytes) {
+  if (!bytes) return "0 KB";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+}
+function fmtDateDash(iso) {
+  try {
+    return new Date(iso.replace(" ", "T") + "Z").toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  } catch { return iso; }
+}
+function iconForDash(mime, filename) {
+  const ext = (filename.split(".").pop() || "").toLowerCase();
+  if (mime?.includes("pdf") || ext === "pdf") return ["pdf", "PDF"];
+  if (mime?.includes("word") || ["doc", "docx"].includes(ext)) return ["doc", "DOC"];
+  if (mime?.includes("sheet") || mime?.includes("excel") || ["xls", "xlsx"].includes(ext)) return ["xls", "XLS"];
+  return ["doc", "FILE"];
+}
+
+async function downloadFileDash(id, filename) {
+  try {
+    const r = await fetch(API + "/file/download?id=" + id, { headers: h() });
+    if (!r.ok) { const d = await r.json(); throw new Error(d.error || "Gagal mengunduh"); }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    showErr("errBox2", err.message || String(err));
+  }
+}
+
+async function loadDashThumb(id) {
+  try {
+    const r = await fetch(API + "/footage/view?id=" + id, { headers: h() });
+    if (!r.ok) return;
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const el = document.getElementById("dashThumb-" + id);
+    if (el) { el.style.backgroundImage = `url(${url})`; el.innerHTML = ""; }
+  } catch {}
+}
+
+async function loadDashboardFiles() {
+  const [files, footage] = await Promise.all([api("/file"), api("/footage")]);
+
+  document.getElementById("statTotalFile").textContent = files.length;
+  document.getElementById("statTotalFootage").textContent = footage.length;
+
+  const fileList = document.getElementById("fileTerbaruList");
+  const recentFiles = files.slice(0, 3);
+  fileList.innerHTML = recentFiles.length === 0
+    ? `<p style="color:var(--text-dim2);font-size:13px;margin:0">Belum ada file.</p>`
+    : recentFiles.map(f => {
+        const [cls, label] = iconForDash(f.mime_type, f.filename);
+        return `<div class="fileRow">
+          <div class="fIcon ${cls}">${label}</div>
+          <div class="fMeta"><b>${f.filename}</b><small>${f.kategori || "Umum"}</small></div>
+          <div class="fRight">${fmtSizeDash(f.size)} &middot; ${fmtDateDash(f.uploaded_at)}
+            <span class="dlBtn" onclick="downloadFileDash(${f.id},'${f.filename.replace(/'/g, "\\'")}')">&#8681;</span>
+          </div>
+        </div>`;
+      }).join("");
+
+  const footGrid = document.getElementById("footageTerbaruGrid");
+  const recentFoto = footage.filter(f => f.tipe === "foto").slice(0, 3);
+  footGrid.innerHTML = recentFoto.length === 0
+    ? `<p style="color:var(--text-dim2);font-size:13px;margin:0;grid-column:1/-1">Belum ada foto.</p>`
+    : recentFoto.map(f => `
+        <div class="footItem">
+          <div class="thumb" id="dashThumb-${f.id}" style="background-size:cover;background-position:center">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M22 16l-5.5-5-8.5 8"/></svg>
+          </div>
+          <b>${f.judul}</b><small>${fmtDateDash(f.uploaded_at)}</small>
+        </div>
+      `).join("");
+  recentFoto.forEach(f => loadDashThumb(f.id));
 }
 
 // ---- buka/tutup sidebar (mobile & tablet, termasuk iPad) ----
