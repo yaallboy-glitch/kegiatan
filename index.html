@@ -234,6 +234,10 @@ tr:hover td{background:#1d1d20}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="15" height="12" rx="2"/><path d="M17 10l5-3v10l-5-3"/></svg>
       Footage
     </a>
+    <button class="navlink" onclick="openSosmedModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+      Sosial Media
+    </button>
 
     <div class="navSpacer"></div>
     <div class="profileBox">
@@ -470,6 +474,32 @@ tr:hover td{background:#1d1d20}
     <div id="anggotaModalList" style="max-height:60vh;overflow-y:auto">
       <p style="color:var(--text-dim2);font-size:13px;margin:0">Memuat data...</p>
     </div>
+  </div>
+</div>
+
+<div id="sosmedModalOverlay" class="modalOverlay" onclick="if(event.target===this) closeSosmedModal()">
+  <div class="modalBox" style="max-width:320px;text-align:center">
+    <div class="modalHead">
+      <b>🔗 Ikuti Sosial Media Kami</b>
+      <button type="button" class="modalClose" onclick="closeSosmedModal()">&times;</button>
+    </div>
+    <div style="display:flex;justify-content:center;gap:22px;padding:14px 0 6px">
+      <a href="https://www.tiktok.com/@kabarbms.id?_r=1&_t=ZS-99HRMhXN8Wz" target="_blank" rel="noopener"
+         style="display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--text);width:100px">
+        <div style="width:60px;height:60px;border-radius:50%;background:#000;display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="30" height="30" fill="#fff"><path d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0 1 15.54 3h-3.09v12.4a2.592 2.592 0 0 1-2.59 2.5c-1.42 0-2.6-1.16-2.6-2.6 0-1.72 1.66-3.01 3.37-2.48V9.66c-3.45-.46-6.47 2.22-6.47 5.64 0 3.33 2.76 5.7 5.69 5.7 3.14 0 5.69-2.55 5.69-5.7V9.01a7.35 7.35 0 0 0 4.3 1.38V7.3s-1.88.09-3.24-1.48z"/></svg>
+        </div>
+        <small style="font-size:11.5px;font-weight:700">TikTok</small>
+      </a>
+      <a href="https://www.instagram.com/bmsofficial.id?igsi=eGZia3hpY3p1dnAy" target="_blank" rel="noopener"
+         style="display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--text);width:100px">
+        <div style="width:60px;height:60px;border-radius:16px;background:radial-gradient(circle at 30% 110%, #fdf497 0%, #fdf497 5%, #fd5949 45%,#d6249f 60%,#285AEB 90%);display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="6"/><circle cx="12" cy="12" r="4.5"/><circle cx="17.3" cy="6.7" r="1.2" fill="#fff" stroke="none"/></svg>
+        </div>
+        <small style="font-size:11.5px;font-weight:700">Instagram</small>
+      </a>
+    </div>
+    <p style="font-size:11.5px;color:var(--text-dim2);margin:4px 0 0">Tap logo untuk membuka di tab baru</p>
   </div>
 </div>
 
@@ -1248,6 +1278,14 @@ function openAnggotaModal() {
 
 function closeAnggotaModal() {
   document.getElementById("anggotaModalOverlay").classList.remove("open");
+}
+
+function openSosmedModal() {
+  document.getElementById("sosmedModalOverlay").classList.add("open");
+}
+
+function closeSosmedModal() {
+  document.getElementById("sosmedModalOverlay").classList.remove("open");
 }
 
 async function submitExportModal() {
