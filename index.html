@@ -170,32 +170,37 @@ tr:hover td{background:#1d1d20}
 </head>
 <body>
 
-<!-- ================= LOGIN ================= -->
+<!-- ================= LOGIN (Google Sign-In) ================= -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <div id="loginView" class="loginWrap">
   <div class="loginCard">
     <img class="loginLogo" src="https://raw.githubusercontent.com/yaallboy-glitch/kegiatan/refs/heads/main/IMG_6411.png" alt="Logo Karang Taruna">
     <div class="loginTitle">Karang Taruna</div>
     <div class="loginSub">Bersatu &bull; Berkarya &bull; Berdaya</div>
     <div id="errBox"></div>
-    <form id="loginForm" onsubmit="login(event)">
-      <input id="luser" placeholder="Username" required>
-      <input id="lpass" type="password" placeholder="Password" required>
-      <button id="btnLogin" class="btnGold">Login</button>
-    </form>
-    <p id="loginSwitchText" style="text-align:center;font-size:12.5px;color:var(--text-dim);margin:12px 0 0">
-      Belum punya akun? <a onclick="toggleAuthMode('register')" style="color:var(--gold);cursor:pointer;font-weight:700">Daftar di sini</a>
+
+    <p style="text-align:center;font-size:13px;color:var(--text-dim);margin:4px 0 18px">
+      Masuk memakai akun Google Anda. Akun baru otomatis terdaftar sebagai anggota setelah login pertama kali.
     </p>
 
-    <form id="registerForm" onsubmit="register(event)" style="display:none">
-      <input id="rNama" placeholder="Nama Asli Lengkap (mis: Ahmad Fauzi)" required>
-      <input id="rUser" placeholder="Username (3-20 karakter, tanpa spasi)" required>
-      <input id="rPass" type="password" placeholder="Password (min. 6 karakter)" required>
-      <input id="rPass2" type="password" placeholder="Ulangi Password" required>
-      <button id="btnRegister" class="btnGold">Daftar</button>
-    </form>
-    <p id="regSwitchBack" style="display:none;text-align:center;font-size:12.5px;color:var(--text-dim);margin:12px 0 0">
-      Sudah punya akun? <a onclick="toggleAuthMode('login')" style="color:var(--gold);cursor:pointer;font-weight:700">Login di sini</a>
-    </p>
+    <div id="g_id_onload"
+         data-client_id="358445361659-e0a67dcf6dakkf6ak74a0kuu9v49a07v.apps.googleusercontent.com"
+         data-callback="handleGoogleCredential"
+         data-auto_prompt="false">
+    </div>
+    <div class="g_id_signin"
+         data-type="standard"
+         data-shape="pill"
+         data-theme="filled_black"
+         data-text="signin_with"
+         data-size="large"
+         data-logo_alignment="left"
+         style="display:flex;justify-content:center;margin:8px 0">
+    </div>
+
+    <div id="googleLoginLoading" style="display:none;text-align:center;font-size:12.5px;color:var(--text-dim);margin-top:10px">
+      Memproses login...
+    </div>
 
     <div id="debugBox">API target: <span id="apiShown"></span></div>
   </div>
@@ -529,16 +534,15 @@ async function api(path, opt={}) {
   return d;
 }
 
-async function login(e) {
-  e.preventDefault();
+async function handleGoogleCredential(response) {
   clearErr("errBox");
-  const btn = document.getElementById("btnLogin");
-  btn.disabled = true; btn.textContent = "Memproses...";
+  const loadingEl = document.getElementById("googleLoginLoading");
+  loadingEl.style.display = "block";
   try {
-    const r = await fetch(API+"/login", {
+    const r = await fetch(API + "/auth/google", {
       method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ username: luser.value, password: lpass.value })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ credential: response.credential })
     });
     let d;
     try {
@@ -546,63 +550,17 @@ async function login(e) {
     } catch {
       throw new Error("Server merespon status " + r.status + " tapi bukan JSON. Kemungkinan URL API salah atau Worker error.");
     }
-    if (!r.ok) throw new Error(d.error || ("Login gagal (status " + r.status + ")"));
+    if (!r.ok) throw new Error(d.error || ("Login Google gagal (status " + r.status + ")"));
     if (!d.token) throw new Error("Server tidak mengirim token.");
     localStorage.setItem("token", d.token);
     location.reload();
   } catch (err) {
     showErr("errBox", err.message || String(err));
-  } finally {
-    btn.disabled = false; btn.textContent = "Login";
+    loadingEl.style.display = "none";
   }
 }
 
 function logout() { localStorage.removeItem("token"); location.reload(); }
-
-function toggleAuthMode(mode) {
-  clearErr("errBox");
-  const isLogin = mode === "login";
-  document.getElementById("loginForm").style.display = isLogin ? "block" : "none";
-  document.getElementById("loginSwitchText").style.display = isLogin ? "block" : "none";
-  document.getElementById("registerForm").style.display = isLogin ? "none" : "block";
-  document.getElementById("regSwitchBack").style.display = isLogin ? "none" : "block";
-}
-
-async function register(e) {
-  e.preventDefault();
-  clearErr("errBox");
-
-  if (rPass.value !== rPass2.value) {
-    showErr("errBox", "Konfirmasi password tidak cocok.");
-    return;
-  }
-
-  const btn = document.getElementById("btnRegister");
-  btn.disabled = true; btn.textContent = "Memproses...";
-  try {
-    const r = await fetch(API+"/register", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ nama: rNama.value, username: rUser.value, password: rPass.value })
-    });
-    let d;
-    try {
-      d = await r.json();
-    } catch {
-      throw new Error("Server merespon status " + r.status + " tapi bukan JSON.");
-    }
-    if (!r.ok) throw new Error(d.error || ("Pendaftaran gagal (status " + r.status + ")"));
-
-    alert("Pendaftaran berhasil! Silakan login dengan akun yang baru dibuat.");
-    rNama.value = rUser.value = rPass.value = rPass2.value = "";
-    toggleAuthMode("login");
-    luser.value = "";
-  } catch (err) {
-    showErr("errBox", err.message || String(err));
-  } finally {
-    btn.disabled = false; btn.textContent = "Daftar";
-  }
-}
 
 async function start() {
   if (!token) return;
@@ -1033,21 +991,59 @@ function roleLabel(role) {
 
 function openAnggotaModal() {
   const box = document.getElementById("anggotaModalList");
+  const isAdmin = me.role === "admin";
+
   if (allAnggota.length === 0) {
     box.innerHTML = `<p style="color:var(--text-dim2);font-size:13px;margin:0">Belum ada anggota terdaftar.</p>`;
   } else {
     box.innerHTML = allAnggota.map(u => `
-      <div style="display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--border);flex-wrap:wrap">
         <div style="width:32px;height:32px;border-radius:50%;background:var(--gold-soft);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex:0 0 32px">
           ${(u.nama||"?").trim().charAt(0).toUpperCase()}
         </div>
-        <div style="flex:1;min-width:0">
+        <div style="flex:1;min-width:140px">
           <b style="display:block;font-size:13.5px">${u.nama}</b>
-          <small style="color:var(--text-dim2);font-size:11px">@${u.username} &bull; ${roleLabel(u.role)}</small>
+          <small style="color:var(--text-dim2);font-size:11px">@${u.username}${u.google_email ? " &bull; " + u.google_email : ""}</small>
         </div>
+        ${!isAdmin ? `
+          <small style="color:var(--text-dim2);font-size:11.5px">${roleLabel(u.role)}</small>
+        ` : `
+          <div class="anggotaEditRow" data-username="${u.username}" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;width:100%;margin-top:6px">
+            <select class="agRole" style="flex:1;min-width:100px;padding:7px 8px;background:var(--bg-soft);border:1px solid var(--border);color:var(--text);border-radius:7px;font-size:12.5px">
+              <option value="anggota" ${u.role==="anggota"?"selected":""}>Anggota</option>
+              <option value="admin" ${u.role==="admin"?"selected":""}>Admin</option>
+            </select>
+            <input class="agEmail" placeholder="Gmail (opsional)" value="${u.google_email || ""}" style="flex:2;min-width:150px;padding:7px 8px;background:var(--bg-soft);border:1px solid var(--border);color:var(--text);border-radius:7px;font-size:12.5px">
+            <button type="button" onclick="saveAnggota('${u.username}', this)" style="padding:7px 12px;background:var(--gold);color:#181205;border:0;border-radius:7px;font-weight:700;font-size:12px;cursor:pointer">💾 Simpan</button>
+          </div>
+          <small class="agMsg" style="width:100%;font-size:11px;color:var(--text-dim2);display:none"></small>
+        `}
       </div>`).join("");
   }
   document.getElementById("anggotaModalOverlay").classList.add("open");
+}
+
+async function saveAnggota(username, btn) {
+  const row = btn.closest(".anggotaEditRow");
+  const role = row.querySelector(".agRole").value;
+  const google_email = row.querySelector(".agEmail").value.trim();
+  const msgEl = row.nextElementSibling;
+
+  btn.disabled = true; const oldText = btn.textContent; btn.textContent = "...";
+  msgEl.style.display = "none";
+  try {
+    await api("/users/update", { method: "POST", body: JSON.stringify({ username, role, google_email }) });
+    msgEl.textContent = "✅ Tersimpan";
+    msgEl.style.color = "#4ade80";
+    msgEl.style.display = "block";
+    await loadAnggota();
+  } catch (err) {
+    msgEl.textContent = "⚠️ " + err.message;
+    msgEl.style.color = "#f87171";
+    msgEl.style.display = "block";
+  } finally {
+    btn.disabled = false; btn.textContent = oldText;
+  }
 }
 
 function closeAnggotaModal() {
