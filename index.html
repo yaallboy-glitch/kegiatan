@@ -206,6 +206,23 @@ tr:hover td{background:#1d1d20}
   </div>
 </div>
 
+<!-- ================= POPUP WAJIB: ISI NAMA ASLI (setelah daftar via Google) ================= -->
+<div id="namaPopupOverlay" class="modalOverlay">
+  <div class="modalBox" style="max-width:380px">
+    <div class="modalHead">
+      <b>Lengkapi Profil Anda</b>
+    </div>
+    <p style="color:var(--text-dim);font-size:13px;margin-top:-6px;margin-bottom:14px">
+      Selamat datang! Sebelum lanjut, mohon isi <b>nama asli</b> Anda. Nama ini akan tersimpan permanen sesuai email Google yang Anda pakai.
+    </p>
+    <form class="formCard" onsubmit="return false" style="grid-template-columns:1fr">
+      <input id="namaAsliInput" placeholder="Nama Asli Lengkap" maxlength="100">
+    </form>
+    <div id="namaPopupErr" class="errBox"></div>
+    <button class="mainBtn" style="margin-top:10px;width:100%" onclick="submitNamaAsli()" id="namaPopupSubmitBtn">Simpan &amp; Lanjutkan</button>
+  </div>
+</div>
+
 <!-- ================= APP ================= -->
 <div id="appView" style="display:none" class="layout">
 
@@ -553,10 +570,71 @@ async function handleGoogleCredential(response) {
     if (!r.ok) throw new Error(d.error || ("Login Google gagal (status " + r.status + ")"));
     if (!d.token) throw new Error("Server tidak mengirim token.");
     localStorage.setItem("token", d.token);
+    if (d.needs_name) {
+      loadingEl.style.display = "none";
+      const gPayload = decodeJwtPayload(response.credential);
+      showNamaPopup(gPayload.name || "");
+      return;
+    }
     location.reload();
   } catch (err) {
     showErr("errBox", err.message || String(err));
     loadingEl.style.display = "none";
+  }
+}
+
+// Decode payload JWT Google (hanya untuk PRE-ISI nama di popup, bukan untuk
+// verifikasi keamanan — verifikasi aslinya tetap dilakukan di server).
+function decodeJwtPayload(jwt) {
+  try {
+    const base64 = jwt.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const json = decodeURIComponent(
+      atob(base64).split("").map(c => "%" + c.charCodeAt(0).toString(16).padStart(2, "0")).join("")
+    );
+    return JSON.parse(json);
+  } catch {
+    return {};
+  }
+}
+
+function showNamaPopup(prefill) {
+  document.getElementById("namaAsliInput").value = prefill || "";
+  document.getElementById("namaPopupErr").style.display = "none";
+  document.getElementById("namaPopupOverlay").classList.add("open");
+}
+
+async function submitNamaAsli() {
+  const errBox = document.getElementById("namaPopupErr");
+  errBox.style.display = "none";
+  const nama = document.getElementById("namaAsliInput").value.trim();
+  if (!nama) {
+    errBox.textContent = "⚠️ Nama tidak boleh kosong.";
+    errBox.style.display = "block";
+    return;
+  }
+  const btn = document.getElementById("namaPopupSubmitBtn");
+  const oldText = btn.textContent;
+  btn.textContent = "Menyimpan..."; btn.disabled = true;
+  try {
+    const r = await fetch(API + "/auth/set-name", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + localStorage.getItem("token") },
+      body: JSON.stringify({ nama })
+    });
+    let d;
+    try {
+      d = await r.json();
+    } catch {
+      throw new Error("Server merespon status " + r.status + " tapi bukan JSON.");
+    }
+    if (!r.ok) throw new Error(d.error || ("Gagal menyimpan nama (status " + r.status + ")"));
+    if (!d.token) throw new Error("Server tidak mengirim token baru.");
+    localStorage.setItem("token", d.token);
+    location.reload();
+  } catch (err) {
+    errBox.textContent = "⚠️ " + (err.message || String(err));
+    errBox.style.display = "block";
+    btn.textContent = oldText; btn.disabled = false;
   }
 }
 
