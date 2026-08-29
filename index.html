@@ -1106,6 +1106,12 @@ async function exportLPJPDF() {
     const doc = new jsPDF();
     const RED = [192, 0, 0], GOLD = [217, 164, 6], DARK = [23, 23, 23], GRAY = [120, 120, 120], LIGHTGRAY = [243, 244, 246];
 
+    // jaga jarak aman dari footer (garis+teks footer ada di y=285/290)
+    const pdfEnsureSpace = (yNow, needed, topAfterBreak = 20) => {
+      if (yNow + needed > 272) { doc.addPage(); return topAfterBreak; }
+      return yNow;
+    };
+
     let logoData = null;
     try {
       logoData = await loadImageAsDataURL("https://raw.githubusercontent.com/yaallboy-glitch/kegiatan/refs/heads/main/IMG_6411.png");
@@ -1142,20 +1148,26 @@ async function exportLPJPDF() {
     doc.text(": " + periodeLabel, 128, 48);
     doc.text(": " + status, 128, 56);
 
-    let y = 70;
-    y = pdfLpjSectionBar(doc, "I. RINCIAN UANG MASUK (PENERIMAAN)", y, RED);
-    const bodyMasuk = masukRows.map((r, i) => [i + 1, fmtTgl(r.tanggal), r.keterangan, rp(r.jumlah)]);
-    doc.autoTable({
-      startY: y,
-      head: [["NO", "TANGGAL", "SUMBER DANA / KETERANGAN", "JUMLAH (RP)"]],
-      body: bodyMasuk.length ? bodyMasuk : [["-", "-", "Tidak ada data", "-"]],
+    const tableCommon = {
       styles: { fontSize: 9, cellPadding: 3, textColor: DARK },
       headStyles: { fillColor: LIGHTGRAY, textColor: DARK, fontStyle: "bold" },
       columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 26 }, 3: { halign: "right", cellWidth: 34 } },
       theme: "plain",
-      margin: { left: 14, right: 14 }
+      showHead: "everyPage",
+      margin: { left: 14, right: 14, top: 20, bottom: 22 }
+    };
+
+    let y = 70;
+    y = pdfLpjSectionBar(doc, "I. RINCIAN UANG MASUK (PENERIMAAN)", y, RED);
+    const bodyMasuk = masukRows.map((r, i) => [i + 1, fmtTgl(r.tanggal), r.keterangan, rp(r.jumlah)]);
+    doc.autoTable({
+      ...tableCommon,
+      startY: y,
+      head: [["NO", "TANGGAL", "SUMBER DANA / KETERANGAN", "JUMLAH (RP)"]],
+      body: bodyMasuk.length ? bodyMasuk : [["-", "-", "Tidak ada data", "-"]]
     });
     y = doc.lastAutoTable.finalY;
+    y = pdfEnsureSpace(y, 8);
     doc.setFillColor(253, 246, 227);
     doc.rect(14, y, 182, 8, "F");
     doc.setFont(undefined, "bold");
@@ -1165,20 +1177,17 @@ async function exportLPJPDF() {
     doc.text(rp(totalMasuk), 196, y + 5.5, { align: "right" });
     y += 16;
 
-    if (y > 230) { doc.addPage(); y = 20; }
+    y = pdfEnsureSpace(y, 40);
     y = pdfLpjSectionBar(doc, "II. RINCIAN UANG KELUAR (PENGELUARAN)", y, RED);
     const bodyKeluar = keluarRows.map((r, i) => [i + 1, fmtTgl(r.tanggal), r.keterangan, rp(r.jumlah)]);
     doc.autoTable({
+      ...tableCommon,
       startY: y,
       head: [["NO", "TANGGAL", "RINCIAN PENGELUARAN", "JUMLAH (RP)"]],
-      body: bodyKeluar.length ? bodyKeluar : [["-", "-", "Tidak ada data", "-"]],
-      styles: { fontSize: 9, cellPadding: 3, textColor: DARK },
-      headStyles: { fillColor: LIGHTGRAY, textColor: DARK, fontStyle: "bold" },
-      columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 26 }, 3: { halign: "right", cellWidth: 34 } },
-      theme: "plain",
-      margin: { left: 14, right: 14 }
+      body: bodyKeluar.length ? bodyKeluar : [["-", "-", "Tidak ada data", "-"]]
     });
     y = doc.lastAutoTable.finalY;
+    y = pdfEnsureSpace(y, 8);
     doc.setFillColor(253, 246, 227);
     doc.rect(14, y, 182, 8, "F");
     doc.setFont(undefined, "bold");
@@ -1187,7 +1196,7 @@ async function exportLPJPDF() {
     doc.text(rp(totalKeluar), 196, y + 5.5, { align: "right" });
     y += 18;
 
-    if (y > 245) { doc.addPage(); y = 20; }
+    y = pdfEnsureSpace(y, 22);
     doc.setFillColor(...RED);
     doc.setDrawColor(...GOLD);
     doc.setLineWidth(0.8);
@@ -1203,7 +1212,7 @@ async function exportLPJPDF() {
     doc.text(rp(sisa), 196, y + 17, { align: "right" });
     y += 36;
 
-    if (y > 255) { doc.addPage(); y = 30; }
+    y = pdfEnsureSpace(y, 32, 30);
     const colW = 92;
     doc.setFont(undefined, "bold");
     doc.setFontSize(9);
