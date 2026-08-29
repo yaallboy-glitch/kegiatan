@@ -150,8 +150,6 @@ th,td{border:1px solid var(--border);padding:9px 10px;text-align:left}
 th{background:var(--card2);color:var(--gold);font-size:12.5px;text-transform:uppercase;letter-spacing:.3px}
 tr:hover td{background:#1d1d20}
 .masuk{color:#4ade80;font-weight:700}.keluar{color:#f87171;font-weight:700}
-.exportRow{display:flex;gap:10px;flex-wrap:wrap}
-.exportRow button{flex:1;min-width:130px}
 .wrapTable{overflow-x:auto}
 .sectionTitle{font-size:16px;font-weight:700;margin:0 0 14px;display:flex;align-items:center;gap:9px}
 .sectionTitle svg{color:var(--gold)}
@@ -369,9 +367,9 @@ tr:hover td{background:#1d1d20}
         <div class="wrapTable"><table id="tKeu"><tr><th>Tanggal</th><th>Ket</th><th>Jenis</th><th>Jumlah</th><th>Oleh</th><th></th></tr></table></div>
 
         <div class="lpjPrintCard">
-          <div class="sectionTitle" style="margin-top:26px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Export Laporan Keuangan Resmi</div>
-          <p style="color:var(--text-dim);font-size:13.5px;margin-top:-6px">Cetak dokumen Laporan Keuangan satu halaman bergaya formal (merah-putih-emas). Pilih format Excel, PDF, atau Word.</p>
-          <button class="mainBtn" style="margin-top:10px" onclick="openExportModal('keuangan')">🖨️ Export Laporan Keuangan</button>
+          <div class="sectionTitle" style="margin-top:26px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Export Laporan Keuangan Resmi (PDF)</div>
+          <p style="color:var(--text-dim);font-size:13.5px;margin-top:-6px">Cetak dokumen Laporan Keuangan satu halaman bergaya formal (merah-putih-emas).</p>
+          <button class="mainBtn" style="margin-top:10px" onclick="openExportModal('keuangan')">🖨️ Export Laporan Keuangan (PDF)</button>
         </div>
       </div>
 
@@ -388,9 +386,9 @@ tr:hover td{background:#1d1d20}
         <div class="wrapTable"><table id="tSpj"><tr><th>No</th><th>Kegiatan</th><th>Nominal</th><th>Status</th><th>Oleh</th><th>Aksi</th></tr></table></div>
 
         <div class="lpjPrintCard">
-          <div class="sectionTitle" style="margin-top:26px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Export LPJ Resmi</div>
-          <p style="color:var(--text-dim);font-size:13.5px;margin-top:-6px">Cetak dokumen LPJ satu halaman bergaya formal (merah-putih-emas). Pilih format Excel, PDF, atau Word.</p>
-          <button class="mainBtn" style="margin-top:10px" onclick="openExportModal('lpj')">🖨️ Export LPJ</button>
+          <div class="sectionTitle" style="margin-top:26px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Export LPJ Resmi (PDF)</div>
+          <p style="color:var(--text-dim);font-size:13.5px;margin-top:-6px">Cetak dokumen LPJ satu halaman bergaya formal (merah-putih-emas).</p>
+          <button class="mainBtn" style="margin-top:10px" onclick="openExportModal('lpj')">🖨️ Export LPJ (PDF)</button>
         </div>
       </div>
 
@@ -404,9 +402,9 @@ tr:hover td{background:#1d1d20}
         <div class="wrapTable"><table id="tProp"><tr><th>Judul</th><th>Status</th><th>Oleh</th><th>Diubah Oleh</th></tr></table></div>
 
         <div class="lpjPrintCard">
-          <div class="sectionTitle" style="margin-top:26px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Export Proposal Resmi</div>
-          <p style="color:var(--text-dim);font-size:13.5px;margin-top:-6px">Cetak dokumen daftar proposal satu halaman bergaya formal (merah-putih-emas). Pilih format Excel, PDF, atau Word.</p>
-          <button class="mainBtn" style="margin-top:10px" onclick="openExportModal('proposal')">🖨️ Export Proposal</button>
+          <div class="sectionTitle" style="margin-top:26px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Export Proposal Resmi (PDF)</div>
+          <p style="color:var(--text-dim);font-size:13.5px;margin-top:-6px">Cetak dokumen daftar proposal satu halaman bergaya formal (merah-putih-emas).</p>
+          <button class="mainBtn" style="margin-top:10px" onclick="openExportModal('proposal')">🖨️ Export Proposal (PDF)</button>
         </div>
       </div>
 
@@ -414,6 +412,7 @@ tr:hover td{background:#1d1d20}
         <div class="sectionTitle"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Log Aktivitas</div>
         <div class="wrapTable"><table id="tLog"><tr><th>Waktu</th><th>Username</th><th>Aktivitas</th></tr></table></div>
       </div>
+
     </section>
 
   </main>
@@ -436,14 +435,17 @@ tr:hover td{background:#1d1d20}
       <input id="exKetua" placeholder="Nama Ketua / Penanggung Jawab">
       <input id="exBendahara" placeholder="Nama Bendahara">
     </form>
-    <div id="exModalErr" class="errBox"></div>
-    <p style="font-size:12px;color:var(--text-dim);margin:10px 0 6px">Pilih format export:</p>
-    <div class="exportRow">
-      <button type="button" class="mainBtn secondary" id="exModalBtnExcel" onclick="submitExportModal('excel')">📊 Excel</button>
-      <button type="button" class="mainBtn" id="exModalBtnPdf" onclick="submitExportModal('pdf')">🖨️ PDF</button>
-      <button type="button" class="mainBtn word" id="exModalBtnWord" onclick="submitExportModal('word')">📝 Word</button>
+    <label style="font-size:12.5px;color:var(--text-dim);display:block;margin:2px 0 6px">Format File</label>
+    <div class="pillGroup" id="exFormatGroup">
+      <button type="button" class="pillBtn active" data-fmt="pdf" onclick="setExportFormat('pdf')">📕 PDF</button>
+      <button type="button" class="pillBtn" data-fmt="excel" onclick="setExportFormat('excel')">📗 Excel</button>
+      <button type="button" class="pillBtn" data-fmt="word" onclick="setExportFormat('word')">📘 Word</button>
     </div>
-    <button type="button" class="mainBtn secondary" style="width:100%;margin-top:8px;background:transparent;border:1px solid var(--border);color:var(--text-dim)" onclick="closeExportModal()">Batal</button>
+    <div id="exModalErr" class="errBox"></div>
+    <div style="display:flex;gap:10px;margin-top:12px">
+      <button type="button" class="mainBtn secondary" style="flex:1" onclick="closeExportModal()">Batal</button>
+      <button type="button" class="mainBtn" id="exModalSubmitBtn" style="flex:1" onclick="submitExportModal()">🖨️ Export (PDF)</button>
+    </div>
   </div>
 </div>
 
@@ -724,7 +726,7 @@ function showPage(pageId, btn) {
 
 // ---- navigasi sub-tab di dalam Bendahara ----
 function show(id) {
-  ["dash","keu","spj","prop","log","exp"].forEach(x => document.getElementById(x).hidden = (x!==id));
+  ["dash","keu","spj","prop","log"].forEach(x => document.getElementById(x).hidden = (x!==id));
   document.querySelectorAll(".subnav button").forEach(b => b.classList.toggle("active", b.dataset.tab===id));
 }
 
@@ -812,7 +814,7 @@ async function loadLog() {
     `<td>${r.waktu}</td><td><b>${r.username}</b></td><td>${r.aktivitas}</td>`);
 }
 
-// ===== EXPORT =====
+// ===== EXPORT (Excel helpers - dipakai bersama Keuangan/LPJ/Proposal) =====
 // ---- palet & helper styling (meniru desain "Laporan Keuangan Profesional") ----
 const XC = {
   DARK: 'FF171717', RED: 'FFC00000', LIGHT: 'FFF3F4F6',
@@ -917,11 +919,13 @@ function pdfLpjSectionBar(doc, text, y, redColor) {
 // ===== LPJ: cetak PDF formal (merah-putih-emas), meniru gaya contoh laporan =====
 // ===== MODAL EXPORT (dipakai bersama oleh Keuangan, LPJ, dan Proposal) =====
 let exportModalType = null;
+let exportModalFormat = "pdf";
 const exportModalTitles = {
   keuangan: "Export Laporan Keuangan",
   lpj: "Export LPJ",
   proposal: "Export Daftar Proposal"
 };
+const exportModalFormatLabel = { pdf: "🖨️ Export (PDF)", excel: "📗 Export (Excel)", word: "📘 Export (Word)" };
 
 function openExportModal(type) {
   exportModalType = type;
@@ -932,12 +936,22 @@ function openExportModal(type) {
   document.getElementById("exKegiatan").value = "";
   document.getElementById("exKetua").value = "";
   document.getElementById("exBendahara").value = "";
+  setExportFormat("pdf");
   document.getElementById("exportModalOverlay").classList.add("open");
 }
 
 function closeExportModal() {
   document.getElementById("exportModalOverlay").classList.remove("open");
   exportModalType = null;
+}
+
+function setExportFormat(fmt) {
+  exportModalFormat = fmt;
+  document.querySelectorAll("#exFormatGroup .pillBtn").forEach(b => {
+    b.classList.toggle("active", b.dataset.fmt === fmt);
+  });
+  const btn = document.getElementById("exModalSubmitBtn");
+  if (btn) btn.textContent = exportModalFormatLabel[fmt] || "Export";
 }
 
 let allAnggota = [];
@@ -986,13 +1000,7 @@ function closeSosmedModal() {
   document.getElementById("sosmedModalOverlay").classList.remove("open");
 }
 
-const exportDispatch = {
-  keuangan: { excel: exportKeuanganExcel, pdf: exportKeuanganPDF, word: exportKeuanganWord },
-  lpj: { excel: exportLPJExcel, pdf: exportLPJPDF, word: exportLPJWord },
-  proposal: { excel: exportProposalExcel, pdf: exportProposalPDF, word: exportProposalWord }
-};
-
-async function submitExportModal(format) {
+async function submitExportModal() {
   clearErr("exModalErr");
   const params = {
     start: document.getElementById("exPeriodeStart").value,
@@ -1001,22 +1009,23 @@ async function submitExportModal(format) {
     ketuaNama: (document.getElementById("exKetua").value || "").trim(),
     bendaharaNama: (document.getElementById("exBendahara").value || "").trim()
   };
-  const fn = exportDispatch[exportModalType] && exportDispatch[exportModalType][format];
-  if (!fn) { showErr("exModalErr", "Format atau jenis laporan tidak dikenali."); return; }
-
-  const btnIds = { excel: "exModalBtnExcel", pdf: "exModalBtnPdf", word: "exModalBtnWord" };
-  const btn = document.getElementById(btnIds[format]);
+  const btn = document.getElementById("exModalSubmitBtn");
   const oldText = btn.textContent;
-  document.querySelectorAll("#exportModalOverlay button").forEach(b => b.disabled = true);
-  btn.textContent = "Memproses...";
+  btn.textContent = "Memproses..."; btn.disabled = true;
   try {
+    const exportFns = {
+      keuangan: { pdf: exportKeuanganPDF, excel: exportKeuanganExcel, word: exportKeuanganWord },
+      lpj: { pdf: exportLPJPDF, excel: exportLPJExcel, word: exportLPJWord },
+      proposal: { pdf: exportProposalPDF, excel: exportProposalExcel, word: exportProposalWord }
+    };
+    const fn = exportFns[exportModalType] && exportFns[exportModalType][exportModalFormat];
+    if (!fn) throw new Error("Kombinasi jenis/format export tidak dikenal.");
     await fn(params);
     closeExportModal();
   } catch (err) {
     showErr("exModalErr", err.message || String(err));
   } finally {
-    btn.textContent = oldText;
-    document.querySelectorAll("#exportModalOverlay button").forEach(b => b.disabled = false);
+    btn.textContent = exportModalFormatLabel[exportModalFormat] || oldText; btn.disabled = false;
   }
 }
 
@@ -1428,6 +1437,424 @@ async function exportProposalPDF({ kegiatan, ketuaNama, bendaharaNama, start, en
   }
 }
 
+// ===================================================================
+// ===== FORMAT LAIN (EXCEL & WORD) UNTUK MODAL EXPORT YANG SAMA =====
+// Konsep & data identik dengan versi PDF di atas, hanya beda output.
+// ===================================================================
+const NEW_LOGO_URL = "https://raw.githubusercontent.com/yaallboy-glitch/kegiatan/refs/heads/main/IMG_6411.png";
+const EXTRA_ROWS = 25; // baris kosong siap-rumus di Excel supaya bisa dilanjutkan manual
+
+function xSaveBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function xEmbedLogo(wb, ws) {
+  try {
+    const dataUrl = await loadImageAsDataURL(NEW_LOGO_URL);
+    const base64 = dataUrl.split(",")[1];
+    const imgId = wb.addImage({ base64, extension: "png" });
+    ws.addImage(imgId, { tl: { col: 0.15, row: 0.15 }, ext: { width: 46, height: 46 } });
+  } catch {}
+}
+
+// ----- helper HTML untuk Word (memakai wZebraRow & wSectionTitle yang sudah ada) -----
+function wHeader(logoData, entitas, subtitle) {
+  return `
+    <table cellspacing="0" cellpadding="0" style="width:100%;margin-bottom:6px"><tr>
+      <td style="width:70px;vertical-align:middle">${logoData ? `<img src="${logoData}" style="width:58px;height:58px;border-radius:50%;object-fit:cover">` : ""}</td>
+      <td style="vertical-align:middle">
+        <div style="font-size:22px;font-weight:bold;color:#171717;letter-spacing:.5px">${entitas.toUpperCase()}</div>
+        <div style="font-size:11px;color:#D9A406;font-weight:bold;letter-spacing:.5px;margin-top:2px">${subtitle}</div>
+      </td>
+    </tr></table>
+    <div style="border-bottom:2.5px solid #D9A406;margin-bottom:14px"></div>`;
+}
+
+function wInfoBox(pairs) {
+  const rows = [];
+  for (let i = 0; i < pairs.length; i += 2) {
+    const b = pairs[i + 1];
+    rows.push(`<tr>
+      <td style="width:14%;font-weight:bold;color:#C00000;padding:3px 0">${pairs[i][0]}</td>
+      <td style="width:36%;padding:3px 0">: ${pairs[i][1]}</td>
+      ${b ? `<td style="width:14%;font-weight:bold;color:#C00000;padding:3px 0">${b[0]}</td><td style="width:36%;padding:3px 0">: ${b[1]}</td>` : `<td colspan="2"></td>`}
+    </tr>`);
+  }
+  return `<table cellspacing="0" cellpadding="6" style="width:100%;background:#FDF6E3;border-left:4px solid #C00000;font-size:12px;margin-bottom:16px">${rows.join("")}</table>`;
+}
+
+function wTotalBox(items) {
+  const w = Math.floor(100 / items.length);
+  const cells = items.map(it => `
+    <td style="width:${w}%;padding:0 4px">
+      <table cellspacing="0" cellpadding="8" style="width:100%;border-collapse:collapse">
+        <tr><td style="background:#C00000;color:#fff;font-weight:bold;text-align:center;font-size:11px;border-radius:6px 6px 0 0">${it[0]}</td></tr>
+        <tr><td style="background:#F3F4F6;font-weight:bold;text-align:center;font-size:16px;color:${it[2] || "#171717"}">${it[1]}</td></tr>
+      </table>
+    </td>`).join("");
+  return `<table cellspacing="0" cellpadding="0" style="width:100%;margin:6px 0 18px"><tr>${cells}</tr></table>`;
+}
+
+function wSignBlock(leftLabel, leftName, rightLabel, rightName) {
+  return `<table cellspacing="0" cellpadding="0" style="width:100%;margin-top:34px;font-size:11px;text-align:center">
+    <tr><td style="width:50%;font-weight:bold">${leftLabel}</td><td style="width:50%;font-weight:bold">${rightLabel}</td></tr>
+    <tr><td style="height:50px"></td><td></td></tr>
+    <tr>
+      <td style="font-weight:bold;color:#C00000;font-size:12px">${leftName || "________________________"}</td>
+      <td style="font-weight:bold;color:#C00000;font-size:12px">${rightName || "________________________"}</td>
+    </tr>
+  </table>`;
+}
+
+function wDocFooter(orgLine) {
+  return `<div style="margin-top:26px;padding-top:10px;border-top:1px solid #E5E7EB;text-align:center;font-size:10px;color:#9CA3AF">${orgLine} &middot; Dicetak: ${new Date().toLocaleString("id-ID")}</div>`;
+}
+
+// ===== KEUANGAN =====
+async function exportKeuanganExcel({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
+  const entitas = "Karang Taruna Brigade Muda Soropati";
+  const status = "Berjalan";
+  const allKeu = await api("/keuangan");
+  const rows = ((start && end) ? allKeu.filter(r => r.tanggal >= start && r.tanggal <= end) : allKeu)
+    .slice().sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+  const periodeLabel = (start && end) ? fmtIndoPeriode(start, end) : "Semua data";
+
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Keuangan");
+  ws.columns = [{ width: 6 }, { width: 14 }, { width: 34 }, { width: 17 }, { width: 17 }, { width: 17 }];
+  const colCount = 6;
+
+  xTitleBlock(ws, entitas.toUpperCase(), "LAPORAN KEUANGAN — " + periodeLabel, colCount);
+  await xEmbedLogo(wb, ws);
+
+  const infoRow = 4;
+  xMergeStyle(ws, infoRow, 1, infoRow, 3, { value: "Kegiatan: " + (kegiatan || "-") + "   |   Status: " + status, fill: XC.LIGHT, font: { bold: true, size: 10 }, align: { horizontal: "left", vertical: "middle" } });
+  xMergeStyle(ws, infoRow, 4, infoRow, 6, { value: "Ketua: " + (ketuaNama || "-") + "   |   Bendahara: " + (bendaharaNama || "-"), fill: XC.LIGHT, font: { bold: true, size: 10 }, align: { horizontal: "left", vertical: "middle" } });
+  ws.getRow(infoRow).height = 20;
+
+  const HDR_ROW = 6;
+  xHeaderRow(ws, HDR_ROW, ["No", "Tanggal", "Keterangan", "Uang Masuk", "Uang Keluar", "Saldo"]);
+  const firstDataRow = HDR_ROW + 1;
+  const totalRows = rows.length + EXTRA_ROWS;
+  const lastDataRow = HDR_ROW + totalRows;
+
+  for (let i = 0; i < totalRows; i++) {
+    const r = rows[i];
+    const rowIdx = firstDataRow + i;
+    const row = ws.getRow(rowIdx);
+    row.getCell(1).value = i + 1;
+    if (r) {
+      row.getCell(2).value = r.tanggal;
+      row.getCell(3).value = r.keterangan;
+      row.getCell(4).value = r.jenis === "masuk" ? r.jumlah : null;
+      row.getCell(5).value = r.jenis === "keluar" ? r.jumlah : null;
+    }
+    row.getCell(6).value = { formula: `SUM($D$${firstDataRow}:D${rowIdx})-SUM($E$${firstDataRow}:E${rowIdx})` };
+    row.getCell(4).numFmt = RP_FMT; row.getCell(5).numFmt = RP_FMT; row.getCell(6).numFmt = RP_FMT;
+    row.getCell(1).alignment = { horizontal: "center" };
+    xZebraBorder(ws, rowIdx, 6, i % 2 === 1);
+  }
+
+  const totalRow = lastDataRow + 2;
+  xMergeStyle(ws, totalRow, 1, totalRow, 2, { value: "TOTAL UANG MASUK", fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "center" } });
+  xMergeStyle(ws, totalRow, 3, totalRow, 4, { value: "TOTAL UANG KELUAR", fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "center" } });
+  xMergeStyle(ws, totalRow, 5, totalRow, 6, { value: "SALDO AKHIR", fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "center" } });
+  const valRow = totalRow + 1;
+  xMergeStyle(ws, valRow, 1, valRow + 1, 2, { value: { formula: `SUM(D${firstDataRow}:D${lastDataRow})` }, fill: XC.LIGHT, font: { bold: true, size: 14 }, align: { horizontal: "center", vertical: "middle" }, numFmt: RP_FMT });
+  xMergeStyle(ws, valRow, 3, valRow + 1, 4, { value: { formula: `SUM(E${firstDataRow}:E${lastDataRow})` }, fill: XC.LIGHT, font: { bold: true, size: 14 }, align: { horizontal: "center", vertical: "middle" }, numFmt: RP_FMT });
+  xMergeStyle(ws, valRow, 5, valRow + 1, 6, { value: { formula: `F${lastDataRow}` }, fill: XC.LIGHT, font: { bold: true, size: 14 }, align: { horizontal: "center", vertical: "middle" }, numFmt: RP_FMT });
+  ws.getRow(valRow).height = 22; ws.getRow(valRow + 1).height = 22;
+
+  const sigRow = valRow + 4;
+  ws.mergeCells(sigRow, 1, sigRow, 3); ws.mergeCells(sigRow, 4, sigRow, 6);
+  ws.getCell(sigRow, 1).value = "KETUA / PENANGGUNG JAWAB";
+  ws.getCell(sigRow, 4).value = "BENDAHARA KEUANGAN";
+  [ws.getCell(sigRow, 1), ws.getCell(sigRow, 4)].forEach(c => { c.font = { bold: true, size: 9 }; c.alignment = { horizontal: "center" }; });
+  const sigNameRow = sigRow + 3;
+  ws.mergeCells(sigNameRow, 1, sigNameRow, 3); ws.mergeCells(sigNameRow, 4, sigNameRow, 6);
+  ws.getCell(sigNameRow, 1).value = ketuaNama || "________________________";
+  ws.getCell(sigNameRow, 4).value = bendaharaNama || "________________________";
+  [ws.getCell(sigNameRow, 1), ws.getCell(sigNameRow, 4)].forEach(c => { c.font = { bold: true, size: 10, color: { argb: XC.RED } }; c.alignment = { horizontal: "center" }; });
+
+  const noteRow = sigNameRow + 3;
+  ws.mergeCells(noteRow, 1, noteRow, 6);
+  ws.getCell(noteRow, 1).value = "Catatan: baris kosong di bawah data sudah berisi rumus Saldo & Total otomatis — tinggal isi Tanggal/Keterangan/Jumlah untuk melanjutkan pencatatan secara manual.";
+  ws.getCell(noteRow, 1).font = { italic: true, size: 9, color: { argb: "FF6B7280" } };
+
+  const buffer = await wb.xlsx.writeBuffer();
+  xSaveBlob(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), "Keuangan_" + (start || "semua") + "_" + (end || "data") + ".xlsx");
+}
+
+async function exportKeuanganWord({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
+  const entitas = "Karang Taruna Brigade Muda Soropati";
+  const status = "Berjalan";
+  const allKeu = await api("/keuangan");
+  const keu = (start && end) ? allKeu.filter(r => r.tanggal >= start && r.tanggal <= end) : allKeu;
+  const masukRows = keu.filter(r => r.jenis === "masuk").sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+  const keluarRows = keu.filter(r => r.jenis !== "masuk").sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+  const totalMasuk = masukRows.reduce((a, r) => a + (r.jumlah || 0), 0);
+  const totalKeluar = keluarRows.reduce((a, r) => a + (r.jumlah || 0), 0);
+  const sisa = totalMasuk - totalKeluar;
+  const periodeLabel = (start && end) ? fmtIndoPeriode(start, end) : "Semua data";
+
+  let logoData = null;
+  try { logoData = await loadImageAsDataURL(NEW_LOGO_URL); } catch {}
+
+  const thStyle = "background:#171717;color:#fff;padding:8px;font-size:12px;text-align:left";
+  const mkRows = (list) => list.length
+    ? list.map((r, i) => wZebraRow([i + 1, fmtTgl(r.tanggal), r.keterangan, rp(r.jumlah)], i)).join("")
+    : wZebraRow(["-", "-", "Tidak ada data", "-"], 0);
+
+  const html = `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head><meta charset="utf-8"><title>Laporan Keuangan</title></head>
+    <body style="font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#171717;max-width:760px;margin:auto">
+      ${wHeader(logoData, entitas, "LAPORAN KEUANGAN")}
+      ${wInfoBox([["Entitas", entitas], ["Periode", periodeLabel], ["Kegiatan", kegiatan || "-"], ["Status", status]])}
+      ${wTotalBox([["TOTAL MASUK", rp(totalMasuk), "#15803D"], ["TOTAL KELUAR", rp(totalKeluar), "#B91C1C"], ["SALDO AKHIR", rp(sisa)]])}
+      ${wSectionTitle("💰", "I. Rincian Uang Masuk (Penerimaan)")}
+      <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:12px">
+        <tr>${["No", "Tanggal", "Keterangan", "Jumlah"].map(h => `<th style="${thStyle}">${h}</th>`).join("")}</tr>
+        ${mkRows(masukRows)}
+      </table>
+      ${wSectionTitle("💸", "II. Rincian Uang Keluar (Pengeluaran)")}
+      <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:12px">
+        <tr>${["No", "Tanggal", "Keterangan", "Jumlah"].map(h => `<th style="${thStyle}">${h}</th>`).join("")}</tr>
+        ${mkRows(keluarRows)}
+      </table>
+      ${wSignBlock("KETUA / PENANGGUNG JAWAB", ketuaNama, "BENDAHARA KEUANGAN", bendaharaNama)}
+      ${wDocFooter(entitas.toUpperCase() + " - LAPORAN KEUANGAN")}
+    </body></html>`;
+
+  xSaveBlob(new Blob(["\ufeff", html], { type: "application/msword" }), "Keuangan_" + (start || "semua") + "_" + (end || "data") + ".doc");
+}
+
+// ===== LPJ (konsep & sumber data sama seperti exportLPJPDF) =====
+async function exportLPJExcel({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
+  const entitas = "Karang Taruna Brigade Muda Soropati";
+  const status = "Selesai";
+  const allKeu = await api("/keuangan");
+  const keu = (start && end) ? allKeu.filter(r => r.tanggal >= start && r.tanggal <= end) : allKeu;
+  const masukRows = keu.filter(r => r.jenis === "masuk").sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+  const keluarRows = keu.filter(r => r.jenis !== "masuk").sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+  const periodeLabel = (start && end) ? fmtIndoPeriode(start, end) : "Semua data";
+
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("LPJ");
+  ws.columns = [{ width: 6 }, { width: 14 }, { width: 34 }, { width: 18 }];
+  const colCount = 4;
+
+  xTitleBlock(ws, entitas.toUpperCase(), "LAPORAN PERTANGGUNGJAWABAN (LPJ) — " + periodeLabel, colCount);
+  await xEmbedLogo(wb, ws);
+
+  const infoRow = 4;
+  xMergeStyle(ws, infoRow, 1, infoRow, 2, { value: "Kegiatan: " + (kegiatan || "-"), fill: XC.LIGHT, font: { bold: true, size: 10 }, align: { horizontal: "left", vertical: "middle" } });
+  xMergeStyle(ws, infoRow, 3, infoRow, 4, { value: "Status: " + status, fill: XC.LIGHT, font: { bold: true, size: 10 }, align: { horizontal: "left", vertical: "middle" } });
+  ws.getRow(infoRow).height = 20;
+
+  function buildSection(title, list, startRow) {
+    let r = startRow;
+    ws.mergeCells(r, 1, r, colCount);
+    const t = ws.getCell(r, 1); t.value = title; t.font = { bold: true, size: 11, color: { argb: XC.WHITE } };
+    t.fill = { type: "pattern", pattern: "solid", fgColor: { argb: XC.RED } };
+    t.alignment = { horizontal: "left", vertical: "middle" }; ws.getRow(r).height = 18;
+    r += 1;
+    const hdrRow = r;
+    xHeaderRow(ws, hdrRow, ["No", "Tanggal", "Keterangan", "Jumlah"]);
+    const firstDataRow = hdrRow + 1;
+    const totalRows = list.length + EXTRA_ROWS;
+    const lastDataRow = hdrRow + totalRows;
+    for (let i = 0; i < totalRows; i++) {
+      const item = list[i];
+      const rowIdx = firstDataRow + i;
+      const row = ws.getRow(rowIdx);
+      row.getCell(1).value = i + 1;
+      if (item) { row.getCell(2).value = item.tanggal; row.getCell(3).value = item.keterangan; row.getCell(4).value = item.jumlah; }
+      row.getCell(4).numFmt = RP_FMT;
+      row.getCell(1).alignment = { horizontal: "center" };
+      xZebraBorder(ws, rowIdx, colCount, i % 2 === 1);
+    }
+    const totalRow = lastDataRow + 1;
+    xMergeStyle(ws, totalRow, 1, totalRow, 3, { value: "TOTAL " + title.toUpperCase(), fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "left", vertical: "middle" } });
+    xMergeStyle(ws, totalRow, 4, totalRow, 4, { value: { formula: `SUM(D${firstDataRow}:D${lastDataRow})` }, fill: XC.LIGHT, font: { bold: true, size: 11 }, align: { horizontal: "center", vertical: "middle" }, numFmt: RP_FMT });
+    return { nextRow: totalRow + 2, totalCellRef: `D${totalRow}` };
+  }
+
+  const secMasuk = buildSection("Rincian Uang Masuk (Penerimaan)", masukRows, 6);
+  const secKeluar = buildSection("Rincian Uang Keluar (Pengeluaran)", keluarRows, secMasuk.nextRow);
+
+  const saldoRow = secKeluar.nextRow;
+  xMergeStyle(ws, saldoRow, 1, saldoRow, 3, { value: "SISA SALDO / DANA " + entitas.toUpperCase(), fill: XC.DARK, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "left", vertical: "middle" } });
+  xMergeStyle(ws, saldoRow, 4, saldoRow, 4, { value: { formula: `${secMasuk.totalCellRef}-${secKeluar.totalCellRef}` }, fill: XC.DARK, font: { bold: true, size: 12, color: { argb: XC.WHITE } }, align: { horizontal: "center", vertical: "middle" }, numFmt: RP_FMT });
+
+  const sigRow = saldoRow + 3;
+  ws.mergeCells(sigRow, 1, sigRow, 2); ws.mergeCells(sigRow, 3, sigRow, 4);
+  ws.getCell(sigRow, 1).value = "KETUA / PENANGGUNG JAWAB";
+  ws.getCell(sigRow, 3).value = "BENDAHARA KEUANGAN";
+  [ws.getCell(sigRow, 1), ws.getCell(sigRow, 3)].forEach(c => { c.font = { bold: true, size: 9 }; c.alignment = { horizontal: "center" }; });
+  const sigNameRow = sigRow + 3;
+  ws.mergeCells(sigNameRow, 1, sigNameRow, 2); ws.mergeCells(sigNameRow, 3, sigNameRow, 4);
+  ws.getCell(sigNameRow, 1).value = ketuaNama || "________________________";
+  ws.getCell(sigNameRow, 3).value = bendaharaNama || "________________________";
+  [ws.getCell(sigNameRow, 1), ws.getCell(sigNameRow, 3)].forEach(c => { c.font = { bold: true, size: 10, color: { argb: XC.RED } }; c.alignment = { horizontal: "center" }; });
+
+  const noteRow = sigNameRow + 3;
+  ws.mergeCells(noteRow, 1, noteRow, 4);
+  ws.getCell(noteRow, 1).value = "Catatan: baris kosong di bawah data sudah berisi rumus Total otomatis — tinggal isi Tanggal/Keterangan/Jumlah untuk melanjutkan pencatatan secara manual.";
+  ws.getCell(noteRow, 1).font = { italic: true, size: 9, color: { argb: "FF6B7280" } };
+
+  const buffer = await wb.xlsx.writeBuffer();
+  xSaveBlob(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), "LPJ_" + (start || "semua") + "_" + (end || "data") + ".xlsx");
+}
+
+async function exportLPJWord({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
+  const entitas = "Karang Taruna Brigade Muda Soropati";
+  const status = "Selesai";
+  const allKeu = await api("/keuangan");
+  const keu = (start && end) ? allKeu.filter(r => r.tanggal >= start && r.tanggal <= end) : allKeu;
+  const masukRows = keu.filter(r => r.jenis === "masuk").sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+  const keluarRows = keu.filter(r => r.jenis !== "masuk").sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+  const totalMasuk = masukRows.reduce((a, r) => a + (r.jumlah || 0), 0);
+  const totalKeluar = keluarRows.reduce((a, r) => a + (r.jumlah || 0), 0);
+  const sisa = totalMasuk - totalKeluar;
+  const periodeLabel = (start && end) ? fmtIndoPeriode(start, end) : "Semua data";
+
+  let logoData = null;
+  try { logoData = await loadImageAsDataURL(NEW_LOGO_URL); } catch {}
+
+  const thStyle = "background:#171717;color:#fff;padding:8px;font-size:12px;text-align:left";
+  const mkRows = (list) => list.length
+    ? list.map((r, i) => wZebraRow([i + 1, fmtTgl(r.tanggal), r.keterangan, rp(r.jumlah)], i)).join("")
+    : wZebraRow(["-", "-", "Tidak ada data", "-"], 0);
+
+  const html = `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head><meta charset="utf-8"><title>LPJ</title></head>
+    <body style="font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#171717;max-width:760px;margin:auto">
+      ${wHeader(logoData, entitas, "LAPORAN PERTANGGUNGJAWABAN (LPJ)")}
+      ${wInfoBox([["Entitas", entitas], ["Periode", periodeLabel], ["Kegiatan", kegiatan || "-"], ["Status", status]])}
+      ${wTotalBox([["TOTAL MASUK", rp(totalMasuk), "#15803D"], ["TOTAL KELUAR", rp(totalKeluar), "#B91C1C"], ["SISA SALDO", rp(sisa)]])}
+      ${wSectionTitle("💰", "I. Rincian Uang Masuk (Penerimaan)")}
+      <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:12px">
+        <tr>${["No", "Tanggal", "Keterangan", "Jumlah"].map(h => `<th style="${thStyle}">${h}</th>`).join("")}</tr>
+        ${mkRows(masukRows)}
+      </table>
+      ${wSectionTitle("💸", "II. Rincian Uang Keluar (Pengeluaran)")}
+      <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:12px">
+        <tr>${["No", "Tanggal", "Keterangan", "Jumlah"].map(h => `<th style="${thStyle}">${h}</th>`).join("")}</tr>
+        ${mkRows(keluarRows)}
+      </table>
+      ${wSignBlock("KETUA / PENANGGUNG JAWAB", ketuaNama, "BENDAHARA KEUANGAN", bendaharaNama)}
+      ${wDocFooter(entitas.toUpperCase() + " - LAPORAN PERTANGGUNGJAWABAN")}
+    </body></html>`;
+
+  xSaveBlob(new Blob(["\ufeff", html], { type: "application/msword" }), "LPJ_" + (start || "semua") + "_" + (end || "data") + ".doc");
+}
+
+// ===== PROPOSAL =====
+async function exportProposalExcel({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
+  const entitas = "Karang Taruna Brigade Muda Soropati";
+  const status = "Berjalan";
+  const sekretarisNama = bendaharaNama;
+  const periodeLabel = (start && end) ? fmtIndoPeriode(start, end) : "Semua data";
+  const allProp = await api("/proposal");
+
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Proposal");
+  ws.columns = [{ width: 6 }, { width: 42 }, { width: 16 }, { width: 20 }, { width: 20 }];
+  const colCount = 5;
+
+  xTitleBlock(ws, entitas.toUpperCase(), "DAFTAR PROPOSAL KEGIATAN — " + periodeLabel, colCount);
+  await xEmbedLogo(wb, ws);
+
+  const infoRow = 4;
+  xMergeStyle(ws, infoRow, 1, infoRow, 2, { value: "Kegiatan Terkait: " + (kegiatan || "-"), fill: XC.LIGHT, font: { bold: true, size: 10 }, align: { horizontal: "left", vertical: "middle" } });
+  xMergeStyle(ws, infoRow, 3, infoRow, 5, { value: "Status: " + status + "   |   Jumlah Proposal: " + allProp.length, fill: XC.LIGHT, font: { bold: true, size: 10 }, align: { horizontal: "left", vertical: "middle" } });
+  ws.getRow(infoRow).height = 20;
+
+  const HDR_ROW = 6;
+  xHeaderRow(ws, HDR_ROW, ["No", "Judul", "Status", "Dibuat Oleh", "Diubah Oleh"]);
+  const firstDataRow = HDR_ROW + 1;
+  const totalRows = allProp.length + EXTRA_ROWS;
+  const lastDataRow = HDR_ROW + totalRows;
+
+  for (let i = 0; i < totalRows; i++) {
+    const r = allProp[i];
+    const rowIdx = firstDataRow + i;
+    const row = ws.getRow(rowIdx);
+    row.getCell(1).value = i + 1;
+    if (r) {
+      row.getCell(2).value = r.judul;
+      row.getCell(3).value = r.status;
+      row.getCell(4).value = r.created_by;
+      row.getCell(5).value = r.updated_by || "-";
+    }
+    row.getCell(1).alignment = { horizontal: "center" };
+    row.getCell(3).alignment = { horizontal: "center" };
+    xZebraBorder(ws, rowIdx, 5, i % 2 === 1);
+  }
+
+  const totalRow = lastDataRow + 2;
+  xMergeStyle(ws, totalRow, 1, totalRow, 3, { value: "TOTAL PROPOSAL", fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "left", vertical: "middle" } });
+  xMergeStyle(ws, totalRow, 4, totalRow, 5, { value: { formula: `COUNTA(B${firstDataRow}:B${lastDataRow})` }, fill: XC.LIGHT, font: { bold: true, size: 13 }, align: { horizontal: "center", vertical: "middle" } });
+
+  const sigRow = totalRow + 3;
+  ws.mergeCells(sigRow, 1, sigRow, 2); ws.mergeCells(sigRow, 3, sigRow, 5);
+  ws.getCell(sigRow, 1).value = "KETUA / PENANGGUNG JAWAB";
+  ws.getCell(sigRow, 3).value = "SEKRETARIS";
+  [ws.getCell(sigRow, 1), ws.getCell(sigRow, 3)].forEach(c => { c.font = { bold: true, size: 9 }; c.alignment = { horizontal: "center" }; });
+  const sigNameRow = sigRow + 3;
+  ws.mergeCells(sigNameRow, 1, sigNameRow, 2); ws.mergeCells(sigNameRow, 3, sigNameRow, 5);
+  ws.getCell(sigNameRow, 1).value = ketuaNama || "________________________";
+  ws.getCell(sigNameRow, 3).value = sekretarisNama || "________________________";
+  [ws.getCell(sigNameRow, 1), ws.getCell(sigNameRow, 3)].forEach(c => { c.font = { bold: true, size: 10, color: { argb: XC.RED } }; c.alignment = { horizontal: "center" }; });
+
+  const noteRow = sigNameRow + 3;
+  ws.mergeCells(noteRow, 1, noteRow, 5);
+  ws.getCell(noteRow, 1).value = "Catatan: baris kosong di bawah data sudah siap format — tinggal isi Judul/Status/Dibuat Oleh untuk melanjutkan pencatatan secara manual. Total akan terhitung otomatis.";
+  ws.getCell(noteRow, 1).font = { italic: true, size: 9, color: { argb: "FF6B7280" } };
+
+  const buffer = await wb.xlsx.writeBuffer();
+  xSaveBlob(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), "Proposal_" + (start || "semua") + "_" + (end || "data") + ".xlsx");
+}
+
+async function exportProposalWord({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
+  const entitas = "Karang Taruna Brigade Muda Soropati";
+  const status = "Berjalan";
+  const sekretarisNama = bendaharaNama;
+  const periodeLabel = (start && end) ? fmtIndoPeriode(start, end) : "Semua data";
+  const allProp = await api("/proposal");
+
+  let logoData = null;
+  try { logoData = await loadImageAsDataURL(NEW_LOGO_URL); } catch {}
+
+  const thStyle = "background:#171717;color:#fff;padding:8px;font-size:12px;text-align:left";
+  const rowsHtml = allProp.length
+    ? allProp.map((r, i) => wZebraRow([`<b>${r.judul}</b>`, r.status, r.created_by, r.updated_by || "-"], i)).join("")
+    : wZebraRow(["Tidak ada data", "-", "-", "-"], 0);
+
+  const html = `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head><meta charset="utf-8"><title>Proposal</title></head>
+    <body style="font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#171717;max-width:760px;margin:auto">
+      ${wHeader(logoData, entitas, "DAFTAR PROPOSAL KEGIATAN")}
+      ${wInfoBox([["Entitas", entitas], ["Periode", periodeLabel], ["Kegiatan", kegiatan || "-"], ["Status", status], ["Jumlah", allProp.length + " proposal"]])}
+      ${wSectionTitle("📋", "Daftar Proposal")}
+      <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:12px">
+        <tr>${["Judul", "Status", "Dibuat Oleh", "Diubah Oleh"].map(h => `<th style="${thStyle}">${h}</th>`).join("")}</tr>
+        ${rowsHtml}
+      </table>
+      ${wSignBlock("KETUA / PENANGGUNG JAWAB", ketuaNama, "SEKRETARIS", sekretarisNama)}
+      ${wDocFooter(entitas.toUpperCase() + " - DAFTAR PROPOSAL KEGIATAN")}
+    </body></html>`;
+
+  xSaveBlob(new Blob(["\ufeff", html], { type: "application/msword" }), "Proposal_" + (start || "semua") + "_" + (end || "data") + ".doc");
+}
+
 function wZebraRow(cells, idx) {
   const bg = idx % 2 === 1 ? "#FAFAFA" : "#FFFFFF";
   return `<tr style="background:${bg}">` + cells.map(c => `<td style="padding:7px 8px;border:1px solid #E5E7EB">${c}</td>`).join("") + `</tr>`;
@@ -1439,419 +1866,6 @@ function wSectionTitle(icon, text) {
     <td style="padding-left:10px;font-size:15px;font-weight:bold;color:#171717;letter-spacing:.5px">${icon} ${text.toUpperCase()}</td>
   </tr></table>
   <div style="border-bottom:1.5px solid #171717;margin-bottom:10px"></div>`;
-}
-
-// ===== KEUANGAN & LPJ: export Excel dengan RUMUS (bisa dilanjutkan manual di Excel) =====
-async function buildKeuanganLikeExcel({ kegiatan, ketuaNama, bendaharaNama, start, end, judulLaporan, statusLabel, saldoLabel, sheetName, fnamePrefix, apiPath }) {
-  const entitas = "Karang Taruna Brigade Muda Soropati";
-  const allKeu = await api(apiPath);
-  const keu = (start && end) ? allKeu.filter(r => r.tanggal >= start && r.tanggal <= end) : allKeu;
-  const masukRows = keu.filter(r => r.jenis === "masuk").sort((a, b) => a.tanggal.localeCompare(b.tanggal));
-  const keluarRows = keu.filter(r => r.jenis !== "masuk").sort((a, b) => a.tanggal.localeCompare(b.tanggal));
-  const periodeLabel = (start && end) ? fmtIndoPeriode(start, end) : "Semua data";
-
-  const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet(sheetName);
-  ws.columns = [{ width: 6 }, { width: 14 }, { width: 42 }, { width: 20 }];
-
-  xTitleBlock(ws, judulLaporan, entitas.toUpperCase(), 4);
-
-  let r = 4;
-  [["Entitas", entitas], ["Kegiatan", kegiatan || "-"], ["Periode", periodeLabel], ["Status", statusLabel]].forEach(([label, val]) => {
-    ws.getCell(r, 1).value = label;
-    ws.getCell(r, 1).font = { bold: true, color: { argb: XC.RED } };
-    ws.mergeCells(r, 2, r, 4);
-    ws.getCell(r, 2).value = ": " + val;
-    r++;
-  });
-  r++; // baris kosong
-
-  // ---- I. Uang Masuk ----
-  xMergeStyle(ws, r, 1, r, 4, { value: "I. RINCIAN UANG MASUK (PENERIMAAN)", fill: XC.RED, font: { bold: true, color: { argb: XC.WHITE } }, align: { horizontal: "left", vertical: "middle" } });
-  r++;
-  xHeaderRow(ws, r, ["No", "Tanggal", "Sumber Dana / Keterangan", "Jumlah (Rp)"]);
-  r++;
-  const masukStart = r;
-  masukRows.forEach((row, idx) => {
-    ws.getCell(r, 1).value = idx + 1;
-    ws.getCell(r, 1).alignment = { horizontal: "center" };
-    ws.getCell(r, 2).value = row.tanggal;
-    ws.getCell(r, 3).value = row.keterangan;
-    ws.getCell(r, 4).value = row.jumlah;
-    ws.getCell(r, 4).numFmt = RP_FMT;
-    xZebraBorder(ws, r, 4, idx % 2 === 1);
-    r++;
-  });
-  if (masukRows.length === 0) {
-    ["-", "-", "Tidak ada data", "-"].forEach((v, i) => ws.getCell(r, i + 1).value = v);
-    xZebraBorder(ws, r, 4, false);
-    r++;
-  }
-  const masukEnd = r - 1;
-  xMergeStyle(ws, r, 1, r, 3, { value: "TOTAL UANG MASUK", fill: XC.LIGHT, font: { bold: true, color: { argb: XC.RED } }, align: { horizontal: "left", vertical: "middle" } });
-  const totalMasukCell = ws.getCell(r, 4);
-  totalMasukCell.value = masukRows.length ? { formula: `SUM(D${masukStart}:D${masukEnd})` } : 0;
-  totalMasukCell.numFmt = RP_FMT;
-  totalMasukCell.font = { bold: true };
-  totalMasukCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: XC.LIGHT } };
-  const totalMasukAddr = `D${r}`;
-  r += 2;
-
-  // ---- II. Uang Keluar ----
-  xMergeStyle(ws, r, 1, r, 4, { value: "II. RINCIAN UANG KELUAR (PENGELUARAN)", fill: XC.RED, font: { bold: true, color: { argb: XC.WHITE } }, align: { horizontal: "left", vertical: "middle" } });
-  r++;
-  xHeaderRow(ws, r, ["No", "Tanggal", "Rincian Pengeluaran", "Jumlah (Rp)"]);
-  r++;
-  const keluarStart = r;
-  keluarRows.forEach((row, idx) => {
-    ws.getCell(r, 1).value = idx + 1;
-    ws.getCell(r, 1).alignment = { horizontal: "center" };
-    ws.getCell(r, 2).value = row.tanggal;
-    ws.getCell(r, 3).value = row.keterangan;
-    ws.getCell(r, 4).value = row.jumlah;
-    ws.getCell(r, 4).numFmt = RP_FMT;
-    xZebraBorder(ws, r, 4, idx % 2 === 1);
-    r++;
-  });
-  if (keluarRows.length === 0) {
-    ["-", "-", "Tidak ada data", "-"].forEach((v, i) => ws.getCell(r, i + 1).value = v);
-    xZebraBorder(ws, r, 4, false);
-    r++;
-  }
-  const keluarEnd = r - 1;
-  xMergeStyle(ws, r, 1, r, 3, { value: "TOTAL UANG KELUAR", fill: XC.LIGHT, font: { bold: true, color: { argb: XC.RED } }, align: { horizontal: "left", vertical: "middle" } });
-  const totalKeluarCell = ws.getCell(r, 4);
-  totalKeluarCell.value = keluarRows.length ? { formula: `SUM(D${keluarStart}:D${keluarEnd})` } : 0;
-  totalKeluarCell.numFmt = RP_FMT;
-  totalKeluarCell.font = { bold: true };
-  totalKeluarCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: XC.LIGHT } };
-  const totalKeluarAddr = `D${r}`;
-  r += 2;
-
-  // ---- Saldo akhir (RUMUS: total masuk - total keluar) ----
-  xMergeStyle(ws, r, 1, r, 3, { value: saldoLabel + " " + entitas.toUpperCase(), fill: XC.RED, font: { bold: true, size: 11, color: { argb: XC.WHITE } }, align: { horizontal: "left", vertical: "middle" } });
-  const saldoCell = ws.getCell(r, 4);
-  saldoCell.value = { formula: `${totalMasukAddr}-${totalKeluarAddr}` };
-  saldoCell.numFmt = RP_FMT;
-  saldoCell.font = { bold: true, size: 12, color: { argb: XC.WHITE } };
-  saldoCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: XC.RED } };
-  ws.getRow(r).height = 22;
-  r += 3;
-
-  // ---- Tanda tangan ----
-  ws.getCell(r, 1).value = "KETUA / PENANGGUNG JAWAB";
-  ws.getCell(r, 1).font = { bold: true, size: 9 };
-  ws.getCell(r, 3).value = "BENDAHARA KEUANGAN";
-  ws.getCell(r, 3).font = { bold: true, size: 9 };
-  r += 3;
-  ws.getCell(r, 1).value = ketuaNama || "(...........................)";
-  ws.getCell(r, 1).font = { bold: true, color: { argb: XC.RED } };
-  ws.getCell(r, 3).value = bendaharaNama || "(...........................)";
-  ws.getCell(r, 3).font = { bold: true, color: { argb: XC.RED } };
-
-  const buffer = await wb.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = fnamePrefix + "_" + (start || "semua") + "_" + (end || "data") + ".xlsx";
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-async function exportKeuanganExcel(params) {
-  await buildKeuanganLikeExcel({
-    ...params,
-    judulLaporan: "LAPORAN KEUANGAN",
-    statusLabel: "Berjalan",
-    saldoLabel: "SALDO AKHIR",
-    sheetName: "Laporan Keuangan",
-    fnamePrefix: "Keuangan",
-    apiPath: "/keuangan"
-  });
-}
-
-async function exportLPJExcel(params) {
-  await buildKeuanganLikeExcel({
-    ...params,
-    judulLaporan: "LAPORAN PERTANGGUNGJAWABAN (LPJ)",
-    statusLabel: "Selesai",
-    saldoLabel: "SISA SALDO / DANA",
-    sheetName: "LPJ",
-    fnamePrefix: "LPJ",
-    apiPath: "/keuangan"
-  });
-}
-
-// ===== PROPOSAL: export Excel =====
-async function exportProposalExcel({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
-  const entitas = "Karang Taruna Brigade Muda Soropati";
-  const status = "Berjalan";
-  const sekretarisNama = bendaharaNama;
-  const periodeLabel = (start && end) ? fmtIndoPeriode(start, end) : "Semua data";
-  const allProp = await api("/proposal");
-
-  const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet("Proposal");
-  ws.columns = [{ width: 6 }, { width: 42 }, { width: 16 }, { width: 20 }, { width: 20 }];
-
-  xTitleBlock(ws, "DAFTAR PROPOSAL KEGIATAN", entitas.toUpperCase(), 5);
-
-  let r = 4;
-  const jumlahRow = r + 1;
-  [["Entitas", entitas], ["Jumlah Proposal", null], ["Kegiatan Terkait", kegiatan || "-"], ["Periode", periodeLabel], ["Status", status]].forEach(([label, val]) => {
-    ws.getCell(r, 1).value = label;
-    ws.getCell(r, 1).font = { bold: true, color: { argb: XC.RED } };
-    ws.mergeCells(r, 2, r, 5);
-    if (val !== null) ws.getCell(r, 2).value = ": " + val;
-    r++;
-  });
-  r++; // baris kosong
-
-  xMergeStyle(ws, r, 1, r, 5, { value: "DAFTAR PROPOSAL", fill: XC.RED, font: { bold: true, color: { argb: XC.WHITE } }, align: { horizontal: "left", vertical: "middle" } });
-  r++;
-  xHeaderRow(ws, r, ["No", "Judul", "Status", "Dibuat Oleh", "Diubah Oleh"]);
-  r++;
-  const tableStart = r;
-  allProp.forEach((row, idx) => {
-    ws.getCell(r, 1).value = idx + 1;
-    ws.getCell(r, 1).alignment = { horizontal: "center" };
-    ws.getCell(r, 2).value = row.judul;
-    ws.getCell(r, 3).value = row.status;
-    ws.getCell(r, 3).alignment = { horizontal: "center" };
-    ws.getCell(r, 4).value = row.created_by;
-    ws.getCell(r, 5).value = row.updated_by || "-";
-    xZebraBorder(ws, r, 5, idx % 2 === 1);
-    r++;
-  });
-  if (allProp.length === 0) {
-    ["-", "Tidak ada data", "-", "-", "-"].forEach((v, i) => ws.getCell(r, i + 1).value = v);
-    xZebraBorder(ws, r, 5, false);
-    r++;
-  }
-  const tableEnd = r - 1;
-  // rumus: jumlah proposal otomatis mengikuti jumlah baris judul yang terisi (kolom B)
-  const jumlahCell = ws.getCell(jumlahRow, 2);
-  jumlahCell.value = allProp.length
-    ? { formula: `": " & COUNTA(B${tableStart}:B${tableEnd}) & " proposal"` }
-    : ": 0 proposal";
-  r += 2;
-
-  ws.getCell(r, 1).value = "KETUA / PENANGGUNG JAWAB";
-  ws.getCell(r, 1).font = { bold: true, size: 9 };
-  ws.getCell(r, 3).value = "SEKRETARIS";
-  ws.getCell(r, 3).font = { bold: true, size: 9 };
-  r += 3;
-  ws.getCell(r, 1).value = ketuaNama || "(...........................)";
-  ws.getCell(r, 1).font = { bold: true, color: { argb: XC.RED } };
-  ws.getCell(r, 3).value = sekretarisNama || "(...........................)";
-  ws.getCell(r, 3).font = { bold: true, color: { argb: XC.RED } };
-
-  const buffer = await wb.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "Proposal_" + (start || "semua") + "_" + (end || "data") + ".xlsx";
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-// ===== KEUANGAN & LPJ: export Word (konsep sama dengan versi PDF/Excel) =====
-async function buildKeuanganLikeWord({ kegiatan, ketuaNama, bendaharaNama, start, end, judulLaporan, statusLabel, saldoLabel, fnamePrefix, apiPath }) {
-  const entitas = "Karang Taruna Brigade Muda Soropati";
-  const allKeu = await api(apiPath);
-  const keu = (start && end) ? allKeu.filter(r => r.tanggal >= start && r.tanggal <= end) : allKeu;
-  const masukRows = keu.filter(r => r.jenis === "masuk").sort((a, b) => a.tanggal.localeCompare(b.tanggal));
-  const keluarRows = keu.filter(r => r.jenis !== "masuk").sort((a, b) => a.tanggal.localeCompare(b.tanggal));
-  const totalMasuk = masukRows.reduce((a, r) => a + (r.jumlah || 0), 0);
-  const totalKeluar = keluarRows.reduce((a, r) => a + (r.jumlah || 0), 0);
-  const sisa = totalMasuk - totalKeluar;
-  const periodeLabel = (start && end) ? fmtIndoPeriode(start, end) : "Semua data";
-
-  const masukRowsHtml = masukRows.length
-    ? masukRows.map((r, i) => wZebraRow([i + 1, fmtTgl(r.tanggal), r.keterangan, rp(r.jumlah)], i)).join("")
-    : wZebraRow(["-", "-", "Tidak ada data", "-"], 0);
-  const keluarRowsHtml = keluarRows.length
-    ? keluarRows.map((r, i) => wZebraRow([i + 1, fmtTgl(r.tanggal), r.keterangan, rp(r.jumlah)], i)).join("")
-    : wZebraRow(["-", "-", "Tidak ada data", "-"], 0);
-
-  const thStyle = "background:#F3F4F6;color:#171717;padding:8px;font-size:11px;text-align:left;border:1px solid #E5E7EB";
-
-  const html = `
-    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-    <head><meta charset="utf-8"><title>${judulLaporan}</title></head>
-    <body style="font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#171717;max-width:760px;margin:auto">
-      <div style="height:6px;background:#D9A406"></div>
-      <table cellspacing="0" cellpadding="0" style="width:100%;background:#171717;color:#fff"><tr>
-        <td style="padding:16px 20px;font-size:22px;font-weight:bold">${entitas.toUpperCase()}</td>
-        <td style="padding:16px 20px;text-align:right;color:#D9A406;font-size:12px">${judulLaporan}</td>
-      </tr></table>
-      <div style="height:2px;background:#D9A406"></div>
-
-      <table cellspacing="0" cellpadding="6" style="width:100%;background:#FDF6E3;border-left:4px solid #C00000;margin-top:14px;font-size:12px">
-        <tr>
-          <td style="width:15%;font-weight:bold;color:#C00000">Entitas</td><td style="width:35%">: ${entitas}</td>
-          <td style="width:15%;font-weight:bold;color:#C00000">Periode</td><td style="width:35%">: ${periodeLabel}</td>
-        </tr>
-        <tr>
-          <td style="font-weight:bold;color:#C00000">Kegiatan</td><td>: ${kegiatan || "-"}</td>
-          <td style="font-weight:bold;color:#C00000">Status</td><td>: ${statusLabel}</td>
-        </tr>
-      </table>
-
-      ${wSectionTitle("💰", "I. Rincian Uang Masuk (Penerimaan)")}
-      <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:12px">
-        <tr>${["No", "Tanggal", "Sumber Dana / Keterangan", "Jumlah (Rp)"].map(hh => `<th style="${thStyle}">${hh}</th>`).join("")}</tr>
-        ${masukRowsHtml}
-      </table>
-      <table cellspacing="0" cellpadding="8" style="width:100%;background:#FDF6E3;margin-top:4px"><tr>
-        <td style="font-weight:bold;color:#C00000">TOTAL UANG MASUK</td>
-        <td style="text-align:right;font-weight:bold">${rp(totalMasuk)}</td>
-      </tr></table>
-
-      ${wSectionTitle("📤", "II. Rincian Uang Keluar (Pengeluaran)")}
-      <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:12px">
-        <tr>${["No", "Tanggal", "Rincian Pengeluaran", "Jumlah (Rp)"].map(hh => `<th style="${thStyle}">${hh}</th>`).join("")}</tr>
-        ${keluarRowsHtml}
-      </table>
-      <table cellspacing="0" cellpadding="8" style="width:100%;background:#FDF6E3;margin-top:4px"><tr>
-        <td style="font-weight:bold;color:#C00000">TOTAL UANG KELUAR</td>
-        <td style="text-align:right;font-weight:bold">${rp(totalKeluar)}</td>
-      </tr></table>
-
-      <table cellspacing="0" cellpadding="10" style="width:100%;background:#C00000;color:#fff;margin-top:14px;border:2px solid #D9A406">
-        <tr>
-          <td style="font-weight:bold;font-size:11px">TOTAL UANG MASUK: ${rp(totalMasuk)}</td>
-          <td style="text-align:right;font-weight:bold;font-size:11px">TOTAL UANG KELUAR: ${rp(totalKeluar)}</td>
-        </tr>
-        <tr>
-          <td style="font-weight:bold;font-size:12px">${saldoLabel} ${entitas.toUpperCase()}:</td>
-          <td style="text-align:right;font-weight:bold;font-size:16px">${rp(sisa)}</td>
-        </tr>
-      </table>
-
-      <table cellspacing="0" cellpadding="0" style="width:100%;margin-top:50px;font-size:12px">
-        <tr>
-          <td style="width:50%;text-align:center;font-weight:bold">KETUA / PENANGGUNG JAWAB</td>
-          <td style="width:50%;text-align:center;font-weight:bold">BENDAHARA KEUANGAN</td>
-        </tr>
-        <tr>
-          <td style="height:50px"></td><td></td>
-        </tr>
-        <tr>
-          <td style="text-align:center;font-weight:bold;color:#C00000">${ketuaNama || "( &nbsp;.................................. &nbsp;)"}</td>
-          <td style="text-align:center;font-weight:bold;color:#C00000">${bendaharaNama || "( &nbsp;.................................. &nbsp;)"}</td>
-        </tr>
-      </table>
-
-      <div style="margin-top:26px;padding-top:10px;border-top:1px solid #E5E7EB;text-align:center;font-size:10px;color:#9CA3AF">
-        ${entitas.toUpperCase()} &middot; ${judulLaporan} &middot; Dicetak: ${new Date().toLocaleString("id-ID")}
-      </div>
-    </body>
-    </html>`;
-
-  const blob = new Blob(['\ufeff', html], { type: "application/msword" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = fnamePrefix + "_" + (start || "semua") + "_" + (end || "data") + ".doc";
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-async function exportKeuanganWord(params) {
-  await buildKeuanganLikeWord({
-    ...params,
-    judulLaporan: "LAPORAN KEUANGAN",
-    statusLabel: "Berjalan",
-    saldoLabel: "SALDO AKHIR",
-    fnamePrefix: "Keuangan",
-    apiPath: "/keuangan"
-  });
-}
-
-async function exportLPJWord(params) {
-  await buildKeuanganLikeWord({
-    ...params,
-    judulLaporan: "LAPORAN PERTANGGUNGJAWABAN (LPJ)",
-    statusLabel: "Selesai",
-    saldoLabel: "SISA SALDO / DANA",
-    fnamePrefix: "LPJ",
-    apiPath: "/keuangan"
-  });
-}
-
-// ===== PROPOSAL: export Word =====
-async function exportProposalWord({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
-  const entitas = "Karang Taruna Brigade Muda Soropati";
-  const status = "Berjalan";
-  const sekretarisNama = bendaharaNama;
-  const periodeLabel = (start && end) ? fmtIndoPeriode(start, end) : "Semua data";
-  const allProp = await api("/proposal");
-
-  const propRowsHtml = allProp.length
-    ? allProp.map((r, i) => wZebraRow([i + 1, `<b>${r.judul}</b>`, r.status, r.created_by, r.updated_by || "-"], i)).join("")
-    : wZebraRow(["-", "Tidak ada data", "-", "-", "-"], 0);
-
-  const thStyle = "background:#F3F4F6;color:#171717;padding:8px;font-size:11px;text-align:left;border:1px solid #E5E7EB";
-
-  const html = `
-    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-    <head><meta charset="utf-8"><title>Daftar Proposal Kegiatan</title></head>
-    <body style="font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#171717;max-width:760px;margin:auto">
-      <div style="height:6px;background:#D9A406"></div>
-      <table cellspacing="0" cellpadding="0" style="width:100%;background:#171717;color:#fff"><tr>
-        <td style="padding:16px 20px;font-size:22px;font-weight:bold">${entitas.toUpperCase()}</td>
-        <td style="padding:16px 20px;text-align:right;color:#D9A406;font-size:12px">DAFTAR PROPOSAL KEGIATAN</td>
-      </tr></table>
-      <div style="height:2px;background:#D9A406"></div>
-
-      <table cellspacing="0" cellpadding="6" style="width:100%;background:#FDF6E3;border-left:4px solid #C00000;margin-top:14px;font-size:12px">
-        <tr>
-          <td style="width:20%;font-weight:bold;color:#C00000">Entitas</td><td style="width:30%">: ${entitas}</td>
-          <td style="width:20%;font-weight:bold;color:#C00000">Periode</td><td style="width:30%">: ${periodeLabel}</td>
-        </tr>
-        <tr>
-          <td style="font-weight:bold;color:#C00000">Jumlah Proposal</td><td>: ${allProp.length} proposal</td>
-          <td style="font-weight:bold;color:#C00000">Status</td><td>: ${status}</td>
-        </tr>
-        <tr>
-          <td style="font-weight:bold;color:#C00000">Kegiatan Terkait</td><td colspan="3">: ${kegiatan || "-"}</td>
-        </tr>
-      </table>
-
-      ${wSectionTitle("📋", "Daftar Proposal")}
-      <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:12px">
-        <tr>${["No", "Judul", "Status", "Dibuat Oleh", "Diubah Oleh"].map(hh => `<th style="${thStyle}">${hh}</th>`).join("")}</tr>
-        ${propRowsHtml}
-      </table>
-
-      <table cellspacing="0" cellpadding="0" style="width:100%;margin-top:50px;font-size:12px">
-        <tr>
-          <td style="width:50%;text-align:center;font-weight:bold">KETUA / PENANGGUNG JAWAB</td>
-          <td style="width:50%;text-align:center;font-weight:bold">SEKRETARIS</td>
-        </tr>
-        <tr><td style="height:50px"></td><td></td></tr>
-        <tr>
-          <td style="text-align:center;font-weight:bold;color:#C00000">${ketuaNama || "( &nbsp;.................................. &nbsp;)"}</td>
-          <td style="text-align:center;font-weight:bold;color:#C00000">${sekretarisNama || "( &nbsp;.................................. &nbsp;)"}</td>
-        </tr>
-      </table>
-
-      <div style="margin-top:26px;padding-top:10px;border-top:1px solid #E5E7EB;text-align:center;font-size:10px;color:#9CA3AF">
-        ${entitas.toUpperCase()} &middot; DAFTAR PROPOSAL KEGIATAN &middot; Dicetak: ${new Date().toLocaleString("id-ID")}
-      </div>
-    </body>
-    </html>`;
-
-  const blob = new Blob(['\ufeff', html], { type: "application/msword" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "Proposal_" + (start || "semua") + "_" + (end || "data") + ".doc";
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 }
 
 start();
