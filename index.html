@@ -818,7 +818,8 @@ async function loadLog() {
 // ---- palet & helper styling (meniru desain "Laporan Keuangan Profesional") ----
 const XC = {
   DARK: 'FF171717', RED: 'FFC00000', LIGHT: 'FFF3F4F6',
-  BORDER: 'FFD1D5DB', ZEBRA: 'FFFAFAFA', WHITE: 'FFFFFFFF'
+  BORDER: 'FFD1D5DB', ZEBRA: 'FFFAFAFA', WHITE: 'FFFFFFFF',
+  GOLD: 'FFD9A406', CREAM: 'FFFDF6E3'
 };
 const RP_FMT = '"Rp" #,##0';
 
@@ -854,6 +855,53 @@ function xTitleBlock(ws, title, subtitle, colCount) {
   s.alignment = { horizontal: 'center' };
 }
 
+// ---- header bergaya "merah-putih-emas" (meniru tampilan versi PDF, dipakai bareng logo) ----
+function xReportHeader(ws, entitas, subtitle, colCount) {
+  ws.getRow(1).height = 24; ws.getRow(2).height = 16;
+  const t = ws.getCell(1, 1);
+  ws.mergeCells(1, 1, 1, colCount);
+  t.value = entitas.toUpperCase();
+  t.font = { size: 17, bold: true, color: { argb: XC.DARK } };
+  t.alignment = { horizontal: 'left', vertical: 'middle', indent: 2 };
+
+  const s = ws.getCell(2, 1);
+  ws.mergeCells(2, 1, 2, colCount);
+  s.value = subtitle;
+  s.font = { size: 10.5, bold: true, color: { argb: XC.GOLD } };
+  s.alignment = { horizontal: 'left', vertical: 'middle', indent: 2 };
+
+  // garis emas pemisah
+  ws.getRow(3).height = 4;
+  for (let c = 1; c <= colCount; c++) {
+    ws.getCell(3, c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XC.GOLD } };
+  }
+}
+
+// ---- kotak info krem dengan aksen merah di kiri (meniru kotak info PDF) ----
+function xInfoBox(ws, row, colCount, pairs) {
+  ws.getRow(row).height = 20;
+  for (let c = 1; c <= colCount; c++) {
+    const cell = ws.getCell(row, c);
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XC.CREAM } };
+    if (c === 1) cell.border = { left: { style: 'thick', color: { argb: XC.RED } } };
+  }
+  const half = Math.ceil(colCount / 2);
+  if (pairs[0]) {
+    ws.mergeCells(row, 1, row, half);
+    const c1 = ws.getCell(row, 1);
+    c1.value = pairs[0][0] + ": " + pairs[0][1];
+    c1.font = { bold: true, size: 10, color: { argb: XC.DARK } };
+    c1.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
+  }
+  if (pairs[1]) {
+    ws.mergeCells(row, half + 1, row, colCount);
+    const c2 = ws.getCell(row, half + 1);
+    c2.value = pairs[1][0] + ": " + pairs[1][1];
+    c2.font = { bold: true, size: 10, color: { argb: XC.DARK } };
+    c2.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
+  }
+}
+
 function xHeaderRow(ws, rowIdx, labels) {
   labels.forEach((lab, i) => {
     const c = ws.getCell(rowIdx, i + 1);
@@ -887,6 +935,20 @@ async function loadImageAsDataURL(url) {
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
+}
+
+function pdfFooter(doc, orgLine) {
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setDrawColor(225, 225, 225);
+    doc.setLineWidth(0.2);
+    doc.line(14, 285, 196, 285);
+    doc.setFontSize(7.5);
+    doc.setTextColor(150, 150, 150);
+    doc.text(orgLine, 14, 290);
+    doc.text("Halaman " + i + " dari " + pageCount, 196, 290, { align: "right" });
+  }
 }
 
 function fmtTgl(iso) {
@@ -1528,15 +1590,21 @@ async function exportKeuanganExcel({ kegiatan, ketuaNama, bendaharaNama, start, 
   ws.columns = [{ width: 6 }, { width: 14 }, { width: 34 }, { width: 17 }, { width: 17 }, { width: 17 }];
   const colCount = 6;
 
-  xTitleBlock(ws, entitas.toUpperCase(), "LAPORAN KEUANGAN — " + periodeLabel, colCount);
+  xReportHeader(ws, entitas, "LAPORAN KEUANGAN — " + periodeLabel, colCount);
   await xEmbedLogo(wb, ws);
 
   const infoRow = 4;
-  xMergeStyle(ws, infoRow, 1, infoRow, 3, { value: "Kegiatan: " + (kegiatan || "-") + "   |   Status: " + status, fill: XC.LIGHT, font: { bold: true, size: 10 }, align: { horizontal: "left", vertical: "middle" } });
-  xMergeStyle(ws, infoRow, 4, infoRow, 6, { value: "Ketua: " + (ketuaNama || "-") + "   |   Bendahara: " + (bendaharaNama || "-"), fill: XC.LIGHT, font: { bold: true, size: 10 }, align: { horizontal: "left", vertical: "middle" } });
-  ws.getRow(infoRow).height = 20;
+  xInfoBox(ws, infoRow, colCount, [
+    ["Kegiatan", kegiatan || "-"],
+    ["Status", status]
+  ]);
+  const infoRow2 = 5;
+  xInfoBox(ws, infoRow2, colCount, [
+    ["Ketua", ketuaNama || "-"],
+    ["Bendahara", bendaharaNama || "-"]
+  ]);
 
-  const HDR_ROW = 6;
+  const HDR_ROW = 7;
   xHeaderRow(ws, HDR_ROW, ["No", "Tanggal", "Keterangan", "Uang Masuk", "Uang Keluar", "Saldo"]);
   const firstDataRow = HDR_ROW + 1;
   const totalRows = rows.length + EXTRA_ROWS;
@@ -1648,13 +1716,13 @@ async function exportLPJExcel({ kegiatan, ketuaNama, bendaharaNama, start, end }
   ws.columns = [{ width: 6 }, { width: 14 }, { width: 34 }, { width: 18 }];
   const colCount = 4;
 
-  xTitleBlock(ws, entitas.toUpperCase(), "LAPORAN PERTANGGUNGJAWABAN (LPJ) — " + periodeLabel, colCount);
+  xReportHeader(ws, entitas, "LAPORAN PERTANGGUNGJAWABAN (LPJ) — " + periodeLabel, colCount);
   await xEmbedLogo(wb, ws);
 
   const infoRow = 4;
-  xMergeStyle(ws, infoRow, 1, infoRow, 2, { value: "Kegiatan: " + (kegiatan || "-"), fill: XC.LIGHT, font: { bold: true, size: 10 }, align: { horizontal: "left", vertical: "middle" } });
-  xMergeStyle(ws, infoRow, 3, infoRow, 4, { value: "Status: " + status, fill: XC.LIGHT, font: { bold: true, size: 10 }, align: { horizontal: "left", vertical: "middle" } });
-  ws.getRow(infoRow).height = 20;
+  xInfoBox(ws, infoRow, colCount, [["Kegiatan", kegiatan || "-"], ["Status", status]]);
+  const infoRow2 = 5;
+  xInfoBox(ws, infoRow2, colCount, [["Ketua", ketuaNama || "-"], ["Bendahara", bendaharaNama || "-"]]);
 
   function buildSection(title, list, startRow) {
     let r = startRow;
@@ -1684,7 +1752,7 @@ async function exportLPJExcel({ kegiatan, ketuaNama, bendaharaNama, start, end }
     return { nextRow: totalRow + 2, totalCellRef: `D${totalRow}` };
   }
 
-  const secMasuk = buildSection("Rincian Uang Masuk (Penerimaan)", masukRows, 6);
+  const secMasuk = buildSection("Rincian Uang Masuk (Penerimaan)", masukRows, 7);
   const secKeluar = buildSection("Rincian Uang Keluar (Pengeluaran)", keluarRows, secMasuk.nextRow);
 
   const saldoRow = secKeluar.nextRow;
@@ -1768,15 +1836,15 @@ async function exportProposalExcel({ kegiatan, ketuaNama, bendaharaNama, start, 
   ws.columns = [{ width: 6 }, { width: 42 }, { width: 16 }, { width: 20 }, { width: 20 }];
   const colCount = 5;
 
-  xTitleBlock(ws, entitas.toUpperCase(), "DAFTAR PROPOSAL KEGIATAN — " + periodeLabel, colCount);
+  xReportHeader(ws, entitas, "DAFTAR PROPOSAL KEGIATAN — " + periodeLabel, colCount);
   await xEmbedLogo(wb, ws);
 
   const infoRow = 4;
-  xMergeStyle(ws, infoRow, 1, infoRow, 2, { value: "Kegiatan Terkait: " + (kegiatan || "-"), fill: XC.LIGHT, font: { bold: true, size: 10 }, align: { horizontal: "left", vertical: "middle" } });
-  xMergeStyle(ws, infoRow, 3, infoRow, 5, { value: "Status: " + status + "   |   Jumlah Proposal: " + allProp.length, fill: XC.LIGHT, font: { bold: true, size: 10 }, align: { horizontal: "left", vertical: "middle" } });
-  ws.getRow(infoRow).height = 20;
+  xInfoBox(ws, infoRow, colCount, [["Kegiatan Terkait", kegiatan || "-"], ["Status", status]]);
+  const infoRow2 = 5;
+  xInfoBox(ws, infoRow2, colCount, [["Jumlah Proposal", allProp.length], ["Ketua", ketuaNama || "-"]]);
 
-  const HDR_ROW = 6;
+  const HDR_ROW = 7;
   xHeaderRow(ws, HDR_ROW, ["No", "Judul", "Status", "Dibuat Oleh", "Diubah Oleh"]);
   const firstDataRow = HDR_ROW + 1;
   const totalRows = allProp.length + EXTRA_ROWS;
