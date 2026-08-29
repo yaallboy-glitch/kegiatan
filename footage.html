@@ -303,9 +303,31 @@ function renderFolderTabs() {
   ` + allFolders.map(f => `
     <span class="folderPill">
       <button class="pillBtn ${String(currentFolderId)===String(f.id)?'active':''}" onclick="setFolderTab('${f.id}',this)">📁 ${escapeHtml(f.nama)}</button>
-      <span class="rm" title="Hapus folder" onclick="deleteFolder(${f.id},'${escapeAttr(f.nama)}')">✕</span>
+      <div class="itemMenuWrap" style="margin-top:0">
+        <button class="dotsBtn" title="Menu folder" onclick="toggleFolderMenu(event,${f.id})">⋮</button>
+        <div class="dropdownMenu" id="foldermenu-${f.id}">
+          <div onclick="renameFolder(${f.id},'${escapeAttr(f.nama)}')">✏️ Ganti nama</div>
+          <div class="danger" onclick="deleteFolder(${f.id},'${escapeAttr(f.nama)}')">🗑️ Hapus</div>
+        </div>
+      </div>
     </span>
   `).join("");
+}
+function toggleFolderMenu(ev, id) {
+  ev.stopPropagation();
+  document.querySelectorAll(".dropdownMenu.open").forEach(m => { if (m.id !== "foldermenu-" + id) m.classList.remove("open"); });
+  document.getElementById("foldermenu-" + id).classList.toggle("open");
+}
+async function renameFolder(id, oldNama) {
+  const nama = prompt("Nama folder baru:", oldNama);
+  if (!nama || !nama.trim() || nama.trim() === oldNama) return;
+  try {
+    await apiPost("/footage/folders/rename", { id, nama: nama.trim() });
+    await loadFolders();
+    await loadFootage();
+  } catch (err) {
+    showUploadErr(err.message);
+  }
 }
 
 function renderUploadFolderSelect() {
