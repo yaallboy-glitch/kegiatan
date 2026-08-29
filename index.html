@@ -264,10 +264,11 @@ tr:hover td{background:#1d1d20}
       </div>
 
       <div class="statGrid">
-        <div class="statCard">
-          <div class="ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
-          <h3>Event Sebelumnya</h3>
-          <p>Kegiatan telah selesai</p>
+        <div class="statCard" onclick="openAnggotaModal()" style="cursor:pointer">
+          <div class="ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <h3>Jumlah Anggota</h3>
+          <div class="big" id="statTotalAnggota">-</div>
+          <p>Tap untuk lihat daftar nama</p>
         </div>
         <div class="statCard">
           <div class="ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="17" cy="16" r="1.4" fill="currentColor" stroke="none"/></svg></div>
@@ -460,6 +461,18 @@ tr:hover td{background:#1d1d20}
   </div>
 </div>
 
+<div id="anggotaModalOverlay" class="modalOverlay" onclick="if(event.target===this) closeAnggotaModal()">
+  <div class="modalBox">
+    <div class="modalHead">
+      <b>👥 Daftar Anggota</b>
+      <button type="button" class="modalClose" onclick="closeAnggotaModal()">&times;</button>
+    </div>
+    <div id="anggotaModalList" style="max-height:60vh;overflow-y:auto">
+      <p style="color:var(--text-dim2);font-size:13px;margin:0">Memuat data...</p>
+    </div>
+  </div>
+</div>
+
 <script>
 // ======== GANTI SESUAI URL WORKER KAMU (tanpa garis miring / di akhir) ========
 const API = "https://kegiatan-api.newbrigademudasoropati.workers.dev";
@@ -589,7 +602,7 @@ async function start() {
   profRole.textContent = me.role;
   avatarInit.textContent = (me.nama||"?").trim().charAt(0).toUpperCase();
   try {
-    await Promise.all([loadKeu(), loadSpj(), loadProp(), loadLog(), loadDashboardFiles()]);
+    await Promise.all([loadKeu(), loadSpj(), loadProp(), loadLog(), loadDashboardFiles(), loadAnggota()]);
   } catch (err) {
     showErr("errBox2", err.message || String(err));
   }
@@ -1197,6 +1210,44 @@ function openExportModal(type) {
 function closeExportModal() {
   document.getElementById("exportModalOverlay").classList.remove("open");
   exportModalType = null;
+}
+
+let allAnggota = [];
+
+async function loadAnggota() {
+  try {
+    allAnggota = await api("/users");
+    document.getElementById("statTotalAnggota").textContent = allAnggota.length;
+  } catch {
+    document.getElementById("statTotalAnggota").textContent = "-";
+  }
+}
+
+function roleLabel(role) {
+  return role === "admin" ? "Admin" : "Anggota";
+}
+
+function openAnggotaModal() {
+  const box = document.getElementById("anggotaModalList");
+  if (allAnggota.length === 0) {
+    box.innerHTML = `<p style="color:var(--text-dim2);font-size:13px;margin:0">Belum ada anggota terdaftar.</p>`;
+  } else {
+    box.innerHTML = allAnggota.map(u => `
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--border)">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--gold-soft);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex:0 0 32px">
+          ${(u.nama||"?").trim().charAt(0).toUpperCase()}
+        </div>
+        <div style="flex:1;min-width:0">
+          <b style="display:block;font-size:13.5px">${u.nama}</b>
+          <small style="color:var(--text-dim2);font-size:11px">@${u.username} &bull; ${roleLabel(u.role)}</small>
+        </div>
+      </div>`).join("");
+  }
+  document.getElementById("anggotaModalOverlay").classList.add("open");
+}
+
+function closeAnggotaModal() {
+  document.getElementById("anggotaModalOverlay").classList.remove("open");
 }
 
 async function submitExportModal() {
