@@ -179,11 +179,26 @@ tr:hover td{background:#1d1d20}
     <div class="loginTitle">Karang Taruna</div>
     <div class="loginSub">Bersatu &bull; Berkarya &bull; Berdaya</div>
     <div id="errBox"></div>
-    <form onsubmit="login(event)">
+    <form id="loginForm" onsubmit="login(event)">
       <input id="luser" placeholder="Username" required>
       <input id="lpass" type="password" placeholder="Password" required>
       <button id="btnLogin" class="btnGold">Login</button>
     </form>
+    <p id="loginSwitchText" style="text-align:center;font-size:12.5px;color:var(--text-dim);margin:12px 0 0">
+      Belum punya akun? <a onclick="toggleAuthMode('register')" style="color:var(--gold);cursor:pointer;font-weight:700">Daftar di sini</a>
+    </p>
+
+    <form id="registerForm" onsubmit="register(event)" style="display:none">
+      <input id="rNama" placeholder="Nama Asli Lengkap (mis: Ahmad Fauzi)" required>
+      <input id="rUser" placeholder="Username (3-20 karakter, tanpa spasi)" required>
+      <input id="rPass" type="password" placeholder="Password (min. 6 karakter)" required>
+      <input id="rPass2" type="password" placeholder="Ulangi Password" required>
+      <button id="btnRegister" class="btnGold">Daftar</button>
+    </form>
+    <p id="regSwitchBack" style="display:none;text-align:center;font-size:12.5px;color:var(--text-dim);margin:12px 0 0">
+      Sudah punya akun? <a onclick="toggleAuthMode('login')" style="color:var(--gold);cursor:pointer;font-weight:700">Login di sini</a>
+    </p>
+
     <div id="debugBox">API target: <span id="apiShown"></span></div>
   </div>
 </div>
@@ -516,6 +531,51 @@ async function login(e) {
 }
 
 function logout() { localStorage.removeItem("token"); location.reload(); }
+
+function toggleAuthMode(mode) {
+  clearErr("errBox");
+  const isLogin = mode === "login";
+  document.getElementById("loginForm").style.display = isLogin ? "block" : "none";
+  document.getElementById("loginSwitchText").style.display = isLogin ? "block" : "none";
+  document.getElementById("registerForm").style.display = isLogin ? "none" : "block";
+  document.getElementById("regSwitchBack").style.display = isLogin ? "none" : "block";
+}
+
+async function register(e) {
+  e.preventDefault();
+  clearErr("errBox");
+
+  if (rPass.value !== rPass2.value) {
+    showErr("errBox", "Konfirmasi password tidak cocok.");
+    return;
+  }
+
+  const btn = document.getElementById("btnRegister");
+  btn.disabled = true; btn.textContent = "Memproses...";
+  try {
+    const r = await fetch(API+"/register", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ nama: rNama.value, username: rUser.value, password: rPass.value })
+    });
+    let d;
+    try {
+      d = await r.json();
+    } catch {
+      throw new Error("Server merespon status " + r.status + " tapi bukan JSON.");
+    }
+    if (!r.ok) throw new Error(d.error || ("Pendaftaran gagal (status " + r.status + ")"));
+
+    alert("Pendaftaran berhasil! Silakan login dengan akun yang baru dibuat.");
+    rNama.value = rUser.value = rPass.value = rPass2.value = "";
+    toggleAuthMode("login");
+    luser.value = "";
+  } catch (err) {
+    showErr("errBox", err.message || String(err));
+  } finally {
+    btn.disabled = false; btn.textContent = "Daftar";
+  }
+}
 
 async function start() {
   if (!token) return;
