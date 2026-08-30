@@ -265,17 +265,20 @@ const ICON = {
   refresh: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px;margin-right:5px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>`,
 };
 
+const ROLE_LABEL_MAP = { admin:"Admin", bendahara:"Bendahara", pdd:"PDD", ketua:"Ketua", anggota:"Anggota" };
+function roleLabel(role) { return ROLE_LABEL_MAP[role] || "Anggota"; }
+
 let me = {};
 try {
   const payload = atob(token).split("|");
   me = { username: payload[0], nama: payload[1], role: payload[2] };
   document.getElementById("profName").textContent = me.nama;
-  document.getElementById("profRole").textContent = me.role;
+  document.getElementById("profRole").textContent = roleLabel(me.role);
   document.getElementById("avatarInit").textContent = (me.nama || "?").trim().charAt(0).toUpperCase();
 
   // ===== TOP-RIGHT PROFILE MENU: isi data & foto profil =====
   document.getElementById("pmName").textContent = me.nama;
-  document.getElementById("pmRole").textContent = me.role;
+  document.getElementById("pmRole").textContent = roleLabel(me.role);
   document.getElementById("pmAdminBtn").style.display = (me.role === "admin" || me.role === "ketua") ? "" : "none";
   applyFotoProfil();
 } catch { location.href = "index.html"; }
