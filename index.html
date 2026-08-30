@@ -72,12 +72,20 @@ button{font-family:inherit}
 .topRight{display:flex;align-items:center;gap:14px}
 .bell{width:38px;height:38px;border-radius:50%;background:var(--card2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer}
 .bell .dot{position:absolute;top:8px;right:9px;width:7px;height:7px;border-radius:50%;background:var(--gold)}
-.bellPreview{position:absolute;top:48px;right:0;max-width:0;overflow:hidden;white-space:nowrap;
-  background:var(--card2);border:1px solid var(--gold-dark);color:var(--text);font-size:12.5px;
-  line-height:1.4;padding:0;border-radius:10px;opacity:0;box-shadow:0 8px 20px rgba(0,0,0,.4);
-  transition:max-width .45s ease, opacity .3s ease, padding .45s ease;z-index:40;cursor:pointer}
-.bellPreview.show{max-width:260px;opacity:1;padding:10px 13px;white-space:normal}
-.bellPreview b{display:block;color:var(--gold);font-size:11.5px;margin-bottom:3px}
+.bellPreview{position:absolute;top:48px;right:0;width:0;height:36px;overflow:hidden;
+  background:var(--card2);border:1px solid var(--gold-dark);color:var(--text);
+  border-radius:10px;opacity:0;box-shadow:0 8px 20px rgba(0,0,0,.4);
+  transition:width .4s ease, opacity .3s ease;z-index:40;cursor:pointer}
+.bellPreview.show{width:250px;opacity:1}
+.bellPreview .marqueeInner{position:absolute;top:0;left:100%;height:100%;display:flex;align-items:center;
+  white-space:nowrap;font-size:12px;line-height:1.3;animation:bellMarquee 7s linear forwards}
+.bellPreview .marqueeInner b{color:var(--gold);margin-right:6px;font-weight:700}
+@keyframes bellMarquee{
+  0%{left:100%}
+  15%{left:12px}
+  82%{left:12px}
+  100%{left:-100%}
+}
 .orgSwitch{display:flex;align-items:center;gap:9px;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:6px 12px 6px 8px;cursor:pointer}
 .orgSwitch .mini{width:30px;height:30px;border-radius:50%;background:linear-gradient(145deg,#f4d675,#b8860b);display:flex;align-items:center;justify-content:center;font-weight:800;color:#1a1a1a;font-size:11px}
 .orgSwitch b{font-size:13px;display:block}
@@ -873,9 +881,13 @@ async function checkPengumumanBell() {
     if (dot) dot.style.display = "block";
     if (preview) {
       const judul = latest.judul || "(Tanpa judul)";
-      const isiSingkat = (latest.isi || "").slice(0, 70) + ((latest.isi || "").length > 70 ? "..." : "");
-      preview.innerHTML = `<b>📢 ${judul}</b>${isiSingkat}`;
-      setTimeout(() => preview.classList.add("show"), 300); // efek "mekar"
+      const isiSingkat = (latest.isi || "").slice(0, 90) + ((latest.isi || "").length > 90 ? "..." : "");
+      preview.innerHTML = `<div class="marqueeInner"><b>📢 ${judul}</b>${isiSingkat}</div>`;
+      const inner = preview.querySelector(".marqueeInner");
+      setTimeout(() => preview.classList.add("show"), 300); // strip melebar dulu
+      inner.addEventListener("animationend", () => {
+        preview.classList.remove("show"); // lalu teks selesai berjalan & strip menutup lagi
+      }, { once: true });
     }
   } catch {
     // diam saja kalau gagal (misal role tidak diizinkan), jangan ganggu dashboard
