@@ -72,6 +72,12 @@ button{font-family:inherit}
 .topRight{display:flex;align-items:center;gap:14px}
 .bell{width:38px;height:38px;border-radius:50%;background:var(--card2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer}
 .bell .dot{position:absolute;top:8px;right:9px;width:7px;height:7px;border-radius:50%;background:var(--gold)}
+.bellPreview{position:absolute;top:48px;right:0;max-width:0;overflow:hidden;white-space:nowrap;
+  background:var(--card2);border:1px solid var(--gold-dark);color:var(--text);font-size:12.5px;
+  line-height:1.4;padding:0;border-radius:10px;opacity:0;box-shadow:0 8px 20px rgba(0,0,0,.4);
+  transition:max-width .45s ease, opacity .3s ease, padding .45s ease;z-index:40;cursor:pointer}
+.bellPreview.show{max-width:260px;opacity:1;padding:10px 13px;white-space:normal}
+.bellPreview b{display:block;color:var(--gold);font-size:11.5px;margin-bottom:3px}
 .orgSwitch{display:flex;align-items:center;gap:9px;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:6px 12px 6px 8px;cursor:pointer}
 .orgSwitch .mini{width:30px;height:30px;border-radius:50%;background:linear-gradient(145deg,#f4d675,#b8860b);display:flex;align-items:center;justify-content:center;font-weight:800;color:#1a1a1a;font-size:11px}
 .orgSwitch b{font-size:13px;display:block}
@@ -395,7 +401,11 @@ tr:hover td{background:#1d1d20}
           <p>Kelola kegiatan dan data Karang Taruna dengan mudah.</p>
         </div>
         <div class="topRight">
-          <div class="bell"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg><span class="dot"></span></div>
+          <div class="bell" id="pengumumanBell" onclick="goToPengumumanFromBell()" title="Pengumuman" style="display:none">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11 13.5v3a2 2 0 0 0 4 0v-2"/></svg>
+            <span class="dot" id="pengumumanDot" style="display:none"></span>
+            <div class="bellPreview" id="pengumumanPreview"></div>
+          </div>
         </div>
       </div>
 
@@ -555,11 +565,11 @@ tr:hover td{background:#1d1d20}
       <div class="topbar">
         <div>
           <h1>Modul <span>Pengumuman</span></h1>
-          <p>Papan pengumuman internal untuk Admin, Ketua, Bendahara &amp; PDD.</p>
+          <p>Papan pengumuman internal Karang Taruna — bisa dibaca semua anggota.</p>
         </div>
       </div>
 
-      <form class="formCard" id="pengumumanForm" onsubmit="addPengumuman(event)">
+      <form class="formCard" id="pengumumanForm" onsubmit="addPengumuman(event)" style="display:none">
         <input id="pgJudul" placeholder="Judul pengumuman" required>
         <textarea id="pgIsi" placeholder="Isi pengumuman..." rows="3" required></textarea>
         <button class="mainBtn">
@@ -837,7 +847,53 @@ function applyRoleVisibility() {
   }
 
   const navPengumuman = document.getElementById("navPengumuman");
-  if (navPengumuman) navPengumuman.style.display = isNonAnggotaRole(me.role) ? "" : "none";
+  if (navPengumuman) navPengumuman.style.display = ""; // semua orang boleh baca pengumuman
+
+  const pengumumanForm = document.getElementById("pengumumanForm");
+  if (pengumumanForm) pengumumanForm.style.display = isNonAnggotaRole(me.role) ? "" : "none";
+
+  const bell = document.getElementById("pengumumanBell");
+  if (bell) {
+    bell.style.display = "flex"; // semua orang boleh dapat notif pengumuman
+    checkPengumumanBell();
+  }
+}
+
+// ===== BELL PENGUMUMAN (icon broadcast di kanan atas) =====
+async function checkPengumumanBell() {
+  try {
+    const rows = await api("/pengumuman");
+    if (!rows || !rows.length) return;
+    const latest = [...rows].sort((a, b) => new Date(b.dibuat_at || 0) - new Date(a.dibuat_at || 0))[0];
+    const lastSeenId = localStorage.getItem("lastSeenPengumumanId");
+    if (String(latest.id) === String(lastSeenId)) return; // sudah pernah dibaca
+
+    const dot = document.getElementById("pengumumanDot");
+    const preview = document.getElementById("pengumumanPreview");
+    if (dot) dot.style.display = "block";
+    if (preview) {
+      const judul = latest.judul || "(Tanpa judul)";
+      const isiSingkat = (latest.isi || "").slice(0, 70) + ((latest.isi || "").length > 70 ? "..." : "");
+      preview.innerHTML = `<b>📢 ${judul}</b>${isiSingkat}`;
+      setTimeout(() => preview.classList.add("show"), 300); // efek "mekar"
+    }
+  } catch {
+    // diam saja kalau gagal (misal role tidak diizinkan), jangan ganggu dashboard
+  }
+}
+
+function goToPengumumanFromBell() {
+  showPage("page-pengumuman", document.getElementById("navPengumuman"));
+  loadPengumuman();
+  document.getElementById("pengumumanDot").style.display = "none";
+  const preview = document.getElementById("pengumumanPreview");
+  preview.classList.remove("show");
+  api("/pengumuman").then(rows => {
+    if (rows && rows.length) {
+      const latest = [...rows].sort((a, b) => new Date(b.dibuat_at || 0) - new Date(a.dibuat_at || 0))[0];
+      localStorage.setItem("lastSeenPengumumanId", latest.id);
+    }
+  }).catch(() => {});
 }
 
 async function start() {
@@ -1193,7 +1249,6 @@ async function loadLog() {
 let pengumumanLoaded = false;
 
 async function loadPengumuman() {
-  if (!isNonAnggotaRole(me.role)) return;
   const errBox = document.getElementById("pengumumanErr");
   const listBox = document.getElementById("pengumumanList");
   clearErr("pengumumanErr");
