@@ -74,6 +74,7 @@ button{font-family:inherit}
 #bulkBar{display:none;align-items:center;gap:10px;background:var(--card2);border:1px solid var(--gold-dark);border-radius:10px;padding:10px 14px;margin-bottom:14px;flex-wrap:wrap}
 
 .folderToolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.folderMobileWrap{display:none}
 .folderPill{display:inline-flex;align-items:center;gap:2px}
 .folderPill .rm{cursor:pointer;color:var(--text-dim2);padding:2px 6px;margin-left:-6px;font-size:12px}
 .folderPill .rm:hover{color:#ef4444}
@@ -109,6 +110,10 @@ button{font-family:inherit}
   .footItem small{font-size:11px}
   .itemActions{font-size:13px;gap:6px}
   .folderToolbar{gap:6px}
+  #folderTabs{display:none}
+  .folderMobileWrap{display:flex;gap:8px;flex:1 1 100%}
+  #folderTabSelect{flex:1;min-width:0;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:9px 10px;font-size:13px}
+  #folderMobileDelBtn{flex:0 0 auto;background:var(--card2);border:1px solid var(--border);color:#ef4444;border-radius:9px;padding:0 14px;cursor:pointer;font-size:14px}
   #bulkBar{padding:8px 10px;gap:8px}
   .dropdownMenu{min-width:135px}
   .modalBox{width:min(290px,92vw)}
@@ -190,7 +195,11 @@ button{font-family:inherit}
 
     <div class="folderToolbar">
       <div class="pillGroup" id="folderTabs">
-        <button class="pillBtn active" onclick="setFolderTab('ALL',this)">📁 Semua</button>
+        <button class="pillBtn active" data-val="ALL" onclick="setFolderTab('ALL')">📁 Semua</button>
+      </div>
+      <div class="folderMobileWrap">
+        <select id="folderTabSelect" onchange="setFolderTab(this.value)"></select>
+        <button type="button" id="folderMobileDelBtn" onclick="deleteCurrentFolderMobile()" title="Hapus folder ini" style="display:none">🗑️</button>
       </div>
       <button class="pillBtn" onclick="createFolder()">+ Folder Baru</button>
     </div>
@@ -316,11 +325,11 @@ async function loadFolders() {
 function renderFolderTabs() {
   const wrap = document.getElementById("folderTabs");
   wrap.innerHTML = `
-    <button class="pillBtn ${currentFolderId==='ALL'?'active':''}" onclick="setFolderTab('ALL',this)">📁 Semua</button>
-    <button class="pillBtn ${currentFolderId==='ROOT'?'active':''}" onclick="setFolderTab('ROOT',this)">🗂 Tanpa Folder</button>
+    <button class="pillBtn ${currentFolderId==='ALL'?'active':''}" data-val="ALL" onclick="setFolderTab('ALL')">📁 Semua</button>
+    <button class="pillBtn ${currentFolderId==='ROOT'?'active':''}" data-val="ROOT" onclick="setFolderTab('ROOT')">🗂 Tanpa Folder</button>
   ` + allFolders.map(f => `
     <span class="folderPill">
-      <button class="pillBtn ${String(currentFolderId)===String(f.id)?'active':''}" onclick="setFolderTab('${f.id}',this)">📁 ${escapeHtml(f.nama)}</button>
+      <button class="pillBtn ${String(currentFolderId)===String(f.id)?'active':''}" data-val="${f.id}" onclick="setFolderTab('${f.id}')">📁 ${escapeHtml(f.nama)}</button>
       <div class="itemMenuWrap" style="margin-top:0">
         <button class="dotsBtn" title="Menu folder" onclick="toggleFolderMenu(event,${f.id})">⋮</button>
         <div class="dropdownMenu" id="foldermenu-${f.id}">
@@ -330,6 +339,13 @@ function renderFolderTabs() {
       </div>
     </span>
   `).join("");
+
+  // versi dropdown, khusus tampilan HP (disinkronkan dengan pill di atas)
+  const sel = document.getElementById("folderTabSelect");
+  sel.innerHTML = `<option value="ALL">📁 Semua Folder</option><option value="ROOT">🗂 Tanpa Folder</option>` +
+    allFolders.map(f => `<option value="${f.id}">📁 ${escapeHtml(f.nama)}</option>`).join("");
+  sel.value = currentFolderId;
+  updateFolderMobileDeleteBtn();
 }
 function toggleFolderMenu(ev, id) {
   ev.stopPropagation();
@@ -354,11 +370,22 @@ function renderUploadFolderSelect() {
     allFolders.map(f => `<option value="${f.id}">${escapeHtml(f.nama)}</option>`).join("");
 }
 
-function setFolderTab(val, btn) {
-  document.querySelectorAll("#folderTabs .pillBtn").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
+function setFolderTab(val) {
   currentFolderId = val;
+  document.querySelectorAll("#folderTabs .pillBtn").forEach(b => b.classList.toggle("active", b.dataset.val === String(val)));
+  const sel = document.getElementById("folderTabSelect");
+  if (sel) sel.value = val;
+  updateFolderMobileDeleteBtn();
   renderFootage();
+}
+function updateFolderMobileDeleteBtn() {
+  const btn = document.getElementById("folderMobileDelBtn");
+  if (!btn) return;
+  btn.style.display = (currentFolderId !== "ALL" && currentFolderId !== "ROOT") ? "" : "none";
+}
+function deleteCurrentFolderMobile() {
+  const f = allFolders.find(x => String(x.id) === String(currentFolderId));
+  if (f) deleteFolder(f.id, f.nama);
 }
 
 function escapeHtml(s) { return (s || "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
