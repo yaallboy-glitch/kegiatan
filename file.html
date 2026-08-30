@@ -8,7 +8,7 @@
 :root{
   --bg:#0a0a0b;--bg-soft:#0d0d0f;--card:#161618;--card2:#1b1b1e;--border:#2a2a2e;
   --gold:#e0ac2b;--gold-soft:#caa23c33;--gold-dark:#8a6d1f;
-  --text:#f4f4f5;--text-dim:#9ca0a8;--text-dim2:#6b6f76;
+  --text:#f4f4f5;--text-dim:#9ca0a8;--text-dim2:#6b6f76;--red:#ef4444;
 }
 *{box-sizing:border-box}
 body{font-family:'Segoe UI',Arial,sans-serif;margin:0;background:var(--bg);color:var(--text)}
@@ -89,6 +89,29 @@ button{font-family:inherit}
   .fMeta b{font-size:13px}
   .fRight{width:100%;margin-top:2px;font-size:11px}
 }
+
+/* ---------- TOP-RIGHT PROFILE MENU ---------- */
+.globalTopBar{display:flex;justify-content:flex-end;margin-bottom:10px}
+.topProfileWrap{position:relative}
+.topProfileBtn{width:42px;height:42px;border-radius:50%;border:2px solid var(--gold-dark);background:var(--gold-soft);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;cursor:pointer;padding:0;background-size:cover;background-position:center;overflow:hidden}
+.topProfileBtn:hover{border-color:var(--gold)}
+.profileMenu{display:none;position:absolute;top:50px;right:0;background:var(--card);border:1px solid var(--border);border-radius:12px;min-width:224px;box-shadow:0 16px 40px rgba(0,0,0,.5);padding:8px;z-index:90}
+.profileMenu.open{display:block}
+.profileMenu .pmHead{display:flex;align-items:center;gap:10px;padding:8px 8px 12px;border-bottom:1px solid var(--border);margin-bottom:6px}
+.profileMenu .pmHead .pmAvatar{width:38px;height:38px;border-radius:50%;background:var(--gold-soft);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:0 0 38px;background-size:cover;background-position:center}
+.profileMenu .pmHead .pmWho{min-width:0}
+.profileMenu .pmHead b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.profileMenu .pmHead small{color:var(--text-dim2);font-size:11px}
+.pmItem{display:flex;align-items:center;gap:9px;width:100%;padding:9px 10px;border-radius:8px;border:0;background:transparent;color:var(--text);font-size:13px;cursor:pointer;text-align:left;box-sizing:border-box}
+.pmItem svg{flex:0 0 16px;width:16px;height:16px;color:var(--text-dim)}
+.pmItem:hover{background:var(--card2)}
+.pmItem.pmDanger{color:var(--red)}
+.pmItem.pmDanger svg{color:var(--red)}
+.pmSep{height:1px;background:var(--border);margin:6px 2px}
+@media(max-width:600px){
+  .topProfileBtn{width:38px;height:38px}
+  .profileMenu{min-width:200px;top:46px}
+}
 </style>
 </head>
 <body>
@@ -137,6 +160,40 @@ button{font-family:inherit}
   </aside>
 
   <main class="main">
+    <div class="globalTopBar">
+      <div class="topProfileWrap" id="topProfileWrap">
+        <button class="topProfileBtn" id="topProfileBtn" onclick="toggleProfileMenu(event)" title="Akun">
+          <span id="topAvatarInit">A</span>
+        </button>
+        <div class="profileMenu" id="profileMenu">
+          <div class="pmHead">
+            <div class="pmAvatar" id="pmAvatarInit">A</div>
+            <div class="pmWho">
+              <b id="pmName">Nama</b>
+              <small id="pmRole">Role</small>
+            </div>
+          </div>
+          <label class="pmItem" for="fotoProfilInput" style="cursor:pointer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z"/><circle cx="12" cy="13" r="4"/></svg>
+            Ganti Foto Profil
+          </label>
+          <input type="file" id="fotoProfilInput" accept="image/*" style="display:none">
+          <button class="pmItem" onclick="goToProfil()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Profil Saya
+          </button>
+          <button class="pmItem" id="pmAdminBtn" style="display:none" onclick="goToAdminPanel()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+            Panel Admin
+          </button>
+          <div class="pmSep"></div>
+          <button class="pmItem pmDanger" onclick="logout()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
     <div class="topbar">
       <div>
         <h1>Manajemen <span>File</span></h1>
@@ -185,9 +242,76 @@ try {
   document.getElementById("profName").textContent = me.nama;
   document.getElementById("profRole").textContent = me.role;
   document.getElementById("avatarInit").textContent = (me.nama || "?").trim().charAt(0).toUpperCase();
+
+  // ===== TOP-RIGHT PROFILE MENU: isi data & foto profil =====
+  document.getElementById("pmName").textContent = me.nama;
+  document.getElementById("pmRole").textContent = me.role;
+  document.getElementById("pmAdminBtn").style.display = (me.role === "admin" || me.role === "ketua") ? "" : "none";
+  applyFotoProfil();
 } catch { location.href = "index.html"; }
 
 function logout() { localStorage.removeItem("token"); location.href = "index.html"; }
+
+// ===== TOP-RIGHT PROFILE MENU =====
+function toggleProfileMenu(e) {
+  e.stopPropagation();
+  document.getElementById("profileMenu").classList.toggle("open");
+}
+document.addEventListener("click", function (e) {
+  const wrap = document.getElementById("topProfileWrap");
+  const menu = document.getElementById("profileMenu");
+  if (wrap && menu && !wrap.contains(e.target)) menu.classList.remove("open");
+});
+
+function fotoKey() { return "ktFotoProfil_" + (me.username || "guest"); }
+
+function applyFotoProfil() {
+  const saved = localStorage.getItem(fotoKey());
+  const initial = (me.nama || "?").trim().charAt(0).toUpperCase();
+  [document.getElementById("topProfileBtn"), document.getElementById("pmAvatarInit"), document.getElementById("avatarInit")].forEach(el => {
+    if (!el) return;
+    if (saved) { el.style.backgroundImage = "url('" + saved + "')"; el.textContent = ""; }
+    else { el.style.backgroundImage = ""; el.textContent = initial; }
+  });
+  const topInit = document.getElementById("topAvatarInit");
+  if (topInit) topInit.textContent = saved ? "" : initial;
+}
+
+const fotoProfilInputEl = document.getElementById("fotoProfilInput");
+if (fotoProfilInputEl) {
+  fotoProfilInputEl.addEventListener("change", function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { alert("File harus berupa gambar."); return; }
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      const img = new Image();
+      img.onload = function () {
+        const size = 240;
+        const canvas = document.createElement("canvas");
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        const scale = Math.max(size / img.width, size / img.height);
+        const w = img.width * scale, h = img.height * scale;
+        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        try {
+          localStorage.setItem(fotoKey(), dataUrl);
+          applyFotoProfil();
+          document.getElementById("profileMenu").classList.remove("open");
+        } catch (err) {
+          alert("Gagal menyimpan foto profil (mungkin ukuran terlalu besar).");
+        }
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  });
+}
+
+function goToProfil() { sessionStorage.setItem("ktOpenProfil", "1"); location.href = "index.html"; }
+function goToAdminPanel() { sessionStorage.setItem("ktOpenAdmin", "1"); location.href = "index.html"; }
 
 function toggleSidebar() {
   document.getElementById("sidebar").classList.toggle("open");
