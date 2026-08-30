@@ -927,7 +927,21 @@ async function start() {
   profRole.textContent = roleLabel(me.role);
   avatarInit.textContent = (me.nama||"?").trim().charAt(0).toUpperCase();
   applyRoleVisibility();
-
+// ===== Navigasi dari halaman lain (hash) =====
+function handleHashNavigation() {
+  const hash = location.hash.replace("#", "");
+  if (hash === "bendahara") {
+    showPage("page-bendahara", document.getElementById("navBendahara"));
+  } else if (hash === "pengumuman") {
+    showPage("page-pengumuman", document.getElementById("navPengumuman"));
+    loadPengumuman();
+  } else if (hash === "sosmed") {
+    openSosmedModal();
+  }
+}
+handleHashNavigation();
+window.addEventListener("hashchange", handleHashNavigation);
+  
   pmName.textContent = me.nama;
   pmRole.textContent = roleLabel(me.role);
   document.getElementById("pmAdminBtn").style.display = isAdminRole(me.role) ? "" : "none";
