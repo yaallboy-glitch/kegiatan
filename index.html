@@ -195,6 +195,29 @@ tr:hover td{background:#1d1d20}
   .sectionTitle{font-size:14.5px}
   .modalBox{padding:16px}
 }
+
+/* ---------- TOP-RIGHT PROFILE MENU ---------- */
+.globalTopBar{display:flex;justify-content:flex-end;margin-bottom:10px}
+.topProfileWrap{position:relative}
+.topProfileBtn{width:42px;height:42px;border-radius:50%;border:2px solid var(--gold-dark);background:var(--gold-soft);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;cursor:pointer;padding:0;background-size:cover;background-position:center;overflow:hidden}
+.topProfileBtn:hover{border-color:var(--gold)}
+.profileMenu{display:none;position:absolute;top:50px;right:0;background:var(--card);border:1px solid var(--border);border-radius:12px;min-width:224px;box-shadow:0 16px 40px rgba(0,0,0,.5);padding:8px;z-index:90}
+.profileMenu.open{display:block}
+.profileMenu .pmHead{display:flex;align-items:center;gap:10px;padding:8px 8px 12px;border-bottom:1px solid var(--border);margin-bottom:6px}
+.profileMenu .pmHead .pmAvatar{width:38px;height:38px;border-radius:50%;background:var(--gold-soft);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:0 0 38px;background-size:cover;background-position:center}
+.profileMenu .pmHead .pmWho{min-width:0}
+.profileMenu .pmHead b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.profileMenu .pmHead small{color:var(--text-dim2);font-size:11px}
+.pmItem{display:flex;align-items:center;gap:9px;width:100%;padding:9px 10px;border-radius:8px;border:0;background:transparent;color:var(--text);font-size:13px;cursor:pointer;text-align:left;box-sizing:border-box}
+.pmItem svg{flex:0 0 16px;width:16px;height:16px;color:var(--text-dim)}
+.pmItem:hover{background:var(--card2)}
+.pmItem.pmDanger{color:var(--red)}
+.pmItem.pmDanger svg{color:var(--red)}
+.pmSep{height:1px;background:var(--border);margin:6px 2px}
+@media(max-width:600px){
+  .topProfileBtn{width:38px;height:38px}
+  .profileMenu{min-width:200px;top:46px}
+}
 </style>
 </head>
 <body>
@@ -306,6 +329,66 @@ tr:hover td{background:#1d1d20}
   </aside>
 
   <main class="main">
+    <div class="globalTopBar">
+      <div class="topProfileWrap" id="topProfileWrap">
+        <button class="topProfileBtn" id="topProfileBtn" onclick="toggleProfileMenu(event)" title="Akun">
+          <span id="topAvatarInit">A</span>
+        </button>
+        <div class="profileMenu" id="profileMenu">
+          <div class="pmHead">
+            <div class="pmAvatar" id="pmAvatarInit">A</div>
+            <div class="pmWho">
+              <b id="pmName">Nama</b>
+              <small id="pmRole">Role</small>
+            </div>
+          </div>
+          <label class="pmItem" for="fotoProfilInput" style="cursor:pointer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z"/><circle cx="12" cy="13" r="4"/></svg>
+            Ganti Foto Profil
+          </label>
+          <input type="file" id="fotoProfilInput" accept="image/*" style="display:none">
+          <button class="pmItem" onclick="openProfilSayaModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Profil Saya
+          </button>
+          <button class="pmItem" id="pmAdminBtn" style="display:none" onclick="document.getElementById('profileMenu').classList.remove('open');openAnggotaModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+            Panel Admin
+          </button>
+          <div class="pmSep"></div>
+          <button class="pmItem pmDanger" onclick="logout()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= MODAL: PROFIL SAYA ================= -->
+    <div id="profilSayaOverlay" class="modalOverlay">
+      <div class="modalBox" style="max-width:380px">
+        <div class="modalHead">
+          <b>Profil Saya</b>
+          <button class="modalClose" onclick="closeProfilSayaModal()">&times;</button>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:16px">
+          <div class="pmAvatar" id="psAvatarBig" style="width:64px;height:64px;font-size:22px;margin-bottom:10px"></div>
+          <div style="display:flex;gap:10px">
+            <label class="pillBtn" for="fotoProfilInput" style="cursor:pointer">Ganti Foto</label>
+            <button type="button" class="pillBtn" onclick="removeFotoProfil()">Hapus Foto</button>
+          </div>
+        </div>
+        <form class="formCard" onsubmit="return false" style="grid-template-columns:1fr">
+          <input id="psNamaInput" placeholder="Nama Asli" maxlength="100">
+        </form>
+        <p style="color:var(--text-dim2);font-size:12px;margin:0 0 12px">
+          Username: <b id="psUsername" style="color:var(--text)"></b> &bull; Role: <b id="psRole" style="color:var(--gold)"></b>
+        </p>
+        <div id="profilSayaErr" class="errBox"></div>
+        <button class="mainBtn" style="width:100%" onclick="saveProfilSaya()" id="profilSayaSaveBtn">Simpan Perubahan</button>
+      </div>
+    </div>
+
     <div id="errBox2" class="errBox"></div>
 
     <!-- ============ PAGE: DASHBOARD ============ -->
@@ -746,10 +829,145 @@ async function start() {
   profRole.textContent = roleLabel(me.role);
   avatarInit.textContent = (me.nama||"?").trim().charAt(0).toUpperCase();
   applyRoleVisibility();
+
+  // ===== TOP-RIGHT PROFILE MENU: isi data & foto profil =====
+  pmName.textContent = me.nama;
+  pmRole.textContent = roleLabel(me.role);
+  document.getElementById("pmAdminBtn").style.display = isAdminRole(me.role) ? "" : "none";
+  applyFotoProfil();
+
+  // Kalau tadi diarahkan dari halaman lain (File/Footage) untuk buka Profil/Panel Admin
+  if (sessionStorage.getItem("ktOpenProfil")) {
+    sessionStorage.removeItem("ktOpenProfil");
+    openProfilSayaModal();
+  }
+  if (sessionStorage.getItem("ktOpenAdmin")) {
+    sessionStorage.removeItem("ktOpenAdmin");
+    if (isAdminRole(me.role)) openAnggotaModal();
+  }
+
   try {
     await Promise.all([loadKeu(), loadSpj(), loadProp(), loadLog(), loadDashboardFiles(), loadAnggota()]);
   } catch (err) {
     showErr("errBox2", err.message || String(err));
+  }
+}
+
+// ===== TOP-RIGHT PROFILE MENU =====
+function toggleProfileMenu(e) {
+  e.stopPropagation();
+  document.getElementById("profileMenu").classList.toggle("open");
+}
+document.addEventListener("click", function (e) {
+  const wrap = document.getElementById("topProfileWrap");
+  const menu = document.getElementById("profileMenu");
+  if (wrap && menu && !wrap.contains(e.target)) menu.classList.remove("open");
+});
+
+function fotoKey() { return "ktFotoProfil_" + (me.username || "guest"); }
+
+function applyFotoProfil() {
+  const saved = localStorage.getItem(fotoKey());
+  const initial = (me.nama || "?").trim().charAt(0).toUpperCase();
+  [document.getElementById("topProfileBtn"), document.getElementById("pmAvatarInit"), document.getElementById("avatarInit")].forEach(el => {
+    if (!el) return;
+    if (saved) { el.style.backgroundImage = "url('" + saved + "')"; el.textContent = ""; }
+    else { el.style.backgroundImage = ""; el.textContent = initial; }
+  });
+  const topInit = document.getElementById("topAvatarInit");
+  if (topInit) topInit.textContent = saved ? "" : initial;
+}
+
+const fotoProfilInputEl = document.getElementById("fotoProfilInput");
+if (fotoProfilInputEl) {
+  fotoProfilInputEl.addEventListener("change", function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { alert("File harus berupa gambar."); return; }
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      const img = new Image();
+      img.onload = function () {
+        const size = 240;
+        const canvas = document.createElement("canvas");
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        const scale = Math.max(size / img.width, size / img.height);
+        const w = img.width * scale, h = img.height * scale;
+        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        try {
+          localStorage.setItem(fotoKey(), dataUrl);
+          applyFotoProfil();
+          const big = document.getElementById("psAvatarBig");
+          if (big) { big.style.backgroundImage = "url('" + dataUrl + "')"; big.textContent = ""; }
+          document.getElementById("profileMenu").classList.remove("open");
+        } catch (err) {
+          alert("Gagal menyimpan foto profil (mungkin ukuran terlalu besar).");
+        }
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  });
+}
+
+function removeFotoProfil() {
+  localStorage.removeItem(fotoKey());
+  applyFotoProfil();
+  const big = document.getElementById("psAvatarBig");
+  if (big) { big.style.backgroundImage = ""; big.textContent = (me.nama || "?").trim().charAt(0).toUpperCase(); }
+}
+
+function openProfilSayaModal() {
+  document.getElementById("profileMenu").classList.remove("open");
+  document.getElementById("psNamaInput").value = me.nama || "";
+  document.getElementById("psUsername").textContent = me.username || "-";
+  document.getElementById("psRole").textContent = roleLabel(me.role);
+  document.getElementById("profilSayaErr").style.display = "none";
+  const saved = localStorage.getItem(fotoKey());
+  const big = document.getElementById("psAvatarBig");
+  if (saved) { big.style.backgroundImage = "url('" + saved + "')"; big.textContent = ""; }
+  else { big.style.backgroundImage = ""; big.textContent = (me.nama || "?").trim().charAt(0).toUpperCase(); }
+  document.getElementById("profilSayaOverlay").classList.add("open");
+}
+function closeProfilSayaModal() {
+  document.getElementById("profilSayaOverlay").classList.remove("open");
+}
+
+async function saveProfilSaya() {
+  const errBox = document.getElementById("profilSayaErr");
+  errBox.style.display = "none";
+  const nama = document.getElementById("psNamaInput").value.trim();
+  if (!nama) {
+    errBox.innerHTML = ICON.warning + "Nama tidak boleh kosong.";
+    errBox.style.display = "block";
+    return;
+  }
+  const btn = document.getElementById("profilSayaSaveBtn");
+  const oldText = btn.textContent;
+  btn.textContent = "Menyimpan..."; btn.disabled = true;
+  try {
+    const r = await fetch(API + "/auth/set-name", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + localStorage.getItem("token") },
+      body: JSON.stringify({ nama })
+    });
+    let d;
+    try {
+      d = await r.json();
+    } catch {
+      throw new Error("Server merespon status " + r.status + " tapi bukan JSON.");
+    }
+    if (!r.ok) throw new Error(d.error || ("Gagal menyimpan (status " + r.status + ")"));
+    if (!d.token) throw new Error("Server tidak mengirim token baru.");
+    localStorage.setItem("token", d.token);
+    location.reload();
+  } catch (err) {
+    errBox.innerHTML = ICON.warning + (err.message || String(err));
+    errBox.style.display = "block";
+    btn.textContent = oldText; btn.disabled = false;
   }
 }
 
