@@ -9,20 +9,21 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 :root{
-  --bg:#0a0a0b;
-  --bg-soft:#0d0d0f;
-  --card:#161618;
-  --card2:#1b1b1e;
-  --border:#2a2a2e;
-  --gold:#e0ac2b;
-  --gold-soft:#caa23c33;
-  --gold-dark:#8a6d1f;
-  --text:#f4f4f5;
-  --text-dim:#9ca0a8;
-  --text-dim2:#6b6f76;
-  --green:#22c55e;
-  --red:#ef4444;
+  --bg:#0c0c0e;
+  --bg-soft:#0f0f12;
+  --card:#16161a;
+  --card2:#1c1c21;
+  --border:#2a2a30;
+  --gold:#facc15;
+  --gold-soft:#facc1533;
+  --gold-dark:#a16207;
+  --text:#f5f5f7;
+  --text-dim:#a0a0aa;
+  --text-dim2:#6b6b76;
+  --red:#e11d48;
   --blue:#3b82f6;
+  --blue-soft:#3b82f633;
+  --green:#22c55e;
 }
 *{box-sizing:border-box}
 body{font-family:'Segoe UI',Arial,sans-serif;margin:0;background:var(--bg);color:var(--text)}
@@ -30,14 +31,14 @@ a{color:inherit;text-decoration:none}
 button{font-family:inherit}
 
 /* ---------- LOGIN ---------- */
-.loginWrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 0%,#1a1508 0%,#0a0a0b 60%)}
+.loginWrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 0%,#1a1508 0%,#0c0c0e 60%)}
 .loginCard{width:100%;max-width:360px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px 28px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
 .loginLogo{width:64px;height:64px;border-radius:50%;margin:0 auto 14px;display:block;object-fit:cover;background:#0a0a0b;border:3px solid #0a0a0b;box-shadow:0 0 0 2px var(--gold)}
 .loginTitle{text-align:center;font-size:18px;font-weight:700;margin-bottom:2px}
 .loginSub{text-align:center;color:var(--text-dim);font-size:12.5px;margin-bottom:22px}
 .loginCard input{width:100%;padding:11px 12px;margin:6px 0;background:var(--bg-soft);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px}
 .loginCard input:focus{outline:none;border-color:var(--gold)}
-.btnGold{width:100%;padding:11px;background:linear-gradient(145deg,#f0c14b,#c9932a);color:#181205;border:0;border-radius:8px;font-weight:700;cursor:pointer;margin-top:10px;font-size:14px}
+.btnGold{width:100%;padding:11px;background:linear-gradient(145deg,#facc15,#eab308);color:#181205;border:0;border-radius:8px;font-weight:700;cursor:pointer;margin-top:10px;font-size:14px}
 .btnGold:disabled{opacity:.55;cursor:not-allowed}
 #debugBox{background:var(--bg-soft);color:var(--text-dim2);padding:8px 10px;border-radius:8px;margin-top:14px;font-size:11px;word-break:break-all;border:1px solid var(--border)}
 #errBox,#errBox2,.errBox{display:none;background:#3a1414;color:#fca5a5;border:1px solid #5c1f1f;padding:11px 12px;border-radius:8px;margin:10px 0;font-size:13px;white-space:pre-wrap;word-break:break-word}
@@ -53,7 +54,7 @@ button{font-family:inherit}
 .navlink{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:9px;color:var(--text-dim);font-size:14px;font-weight:500;cursor:pointer;margin-bottom:4px;border:0;background:transparent;width:100%;text-align:left}
 .navlink svg{flex:0 0 18px;width:18px;height:18px}
 .navlink:hover{background:var(--card2);color:var(--text)}
-.navlink.active{background:linear-gradient(90deg,#e0ac2b,#c9932a);color:#181205;font-weight:700}
+.navlink.active{background:linear-gradient(90deg,#facc15,#eab308);color:#181205;font-weight:700}
 
 .navSpacer{flex:1}
 .profileBox{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:var(--card2);border:1px solid var(--border)}
@@ -129,7 +130,8 @@ button{font-family:inherit}
 
 .modalOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center;padding:16px}
 .modalOverlay.open{display:flex}
-.modalBox{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modalBox{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.5);animation:modalIn .3s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes modalIn{from{opacity:0;transform:scale(.94) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .modalHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 .modalHead b{font-size:16px}
 .modalClose{background:transparent;border:0;color:var(--text-dim);font-size:22px;line-height:1;cursor:pointer;padding:0 4px}
@@ -150,14 +152,14 @@ button{font-family:inherit}
 /* ---------- BENDAHARA ---------- */
 .subnav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
 .subnav button{padding:9px 14px;border-radius:9px;border:1px solid var(--border);background:var(--card2);color:var(--text-dim);font-size:13px;cursor:pointer;font-weight:600}
-.subnav button.active{background:linear-gradient(90deg,#e0ac2b,#c9932a);color:#181205;border-color:transparent}
+.subnav button.active{background:linear-gradient(90deg,#facc15,#eab308);color:#181205;border-color:transparent}
 .card{background:var(--card);padding:16px 18px;border-radius:12px;display:inline-block;margin:0 10px 10px 0;min-width:150px;border:1px solid var(--border)}
 form.formCard{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:12px;margin:0 0 16px}
 input,select,textarea{padding:10px;margin:5px 0;width:100%;box-sizing:border-box;background:var(--bg-soft);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13.5px;font-family:inherit}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
-button.mainBtn{padding:10px 16px;background:linear-gradient(145deg,#f0c14b,#c9932a);color:#181205;border:0;border-radius:8px;cursor:pointer;margin-top:6px;font-weight:700;font-size:13.5px}
-button.secondary{background:linear-gradient(145deg,#3fdc7c,#16a34a);color:#0a1f10}
-button.word{background:linear-gradient(145deg,#5b9bff,#1d4ed8);color:#08122e}
+button.mainBtn{padding:10px 16px;background:linear-gradient(145deg,#facc15,#eab308);color:#181205;border:0;border-radius:8px;cursor:pointer;margin-top:6px;font-weight:700;font-size:13.5px}
+button.secondary{background:linear-gradient(145deg,#22c55e,#16a34a);color:#0a1f10}
+button.word{background:linear-gradient(145deg,#3b82f6,#2563eb);color:#08122e}
 button:disabled{opacity:.5;cursor:not-allowed}
 table{width:100%;border-collapse:collapse;background:var(--card);font-size:13.5px;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
 th,td{border:1px solid var(--border);padding:9px 10px;text-align:left}
@@ -235,6 +237,18 @@ tr:hover td{background:#1d1d20}
 @media(max-width:600px){
   .topProfileBtn{width:38px;height:38px}
   .profileMenu{min-width:200px;top:46px}
+}
+
+/* ===== Micro-animations ===== */
+button, .navlink, .pillBtn, .statCard, .panel, .fileRow {
+  transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+button:hover, .navlink:hover, .pillBtn:hover {
+  transform: translateY(-1px);
+}
+.statCard:hover, .panel:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(0,0,0,.3);
 }
 </style>
 </head>
@@ -771,8 +785,6 @@ async function handleGoogleCredential(response) {
   }
 }
 
-// Decode payload JWT Google (hanya untuk PRE-ISI nama di popup, bukan untuk
-// verifikasi keamanan — verifikasi aslinya tetap dilakukan di server).
 function decodeJwtPayload(jwt) {
   try {
     const base64 = jwt.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
@@ -828,27 +840,20 @@ async function submitNamaAsli() {
 
 function logout() { localStorage.removeItem("token"); location.reload(); }
 
-// ===== HAK EDIT PER ROLE (Admin / Bendahara / PDD / Anggota) =====
-// Catatan: ini HANYA mengatur hak TAMBAH/UBAH/HAPUS. Untuk MELIHAT data,
-// semua role yang sudah login selalu bisa (nav & halaman tidak disembunyikan).
 const ROLE_EDIT = {
   admin:     { bendahara: true,  footage: true,  file: true },
   bendahara: { bendahara: true,  footage: false, file: false },
   pdd:       { bendahara: false, footage: true,  file: true },
   ketua:     { bendahara: true,  footage: true,  file: true },
-  anggota:   { bendahara: true,  footage: true,  file: true }, // perilaku lama, tidak berubah
+  anggota:   { bendahara: true,  footage: true,  file: true },
 };
 function myEdit() { return ROLE_EDIT[me.role] || ROLE_EDIT.anggota; }
 
-// Ketua diberi akses setara Admin (lihat & kelola semuanya), kecuali disebutkan lain
 function isAdminRole(role) { return role === "admin" || role === "ketua"; }
 
-// Pengumuman: hanya untuk role selain "anggota" (Admin, Ketua, Bendahara, PDD)
 function isNonAnggotaRole(role) { return role && role !== "anggota"; }
 
 function applyRoleVisibility() {
-  // Sembunyikan HANYA kontrol edit (form tambah, tombol export) di area
-  // Bendahara kalau role ini tidak boleh mengedit — halaman tetap bisa dilihat.
   const canEditBendahara = myEdit().bendahara;
   document.querySelectorAll(".bendaharaEdit").forEach(el => {
     el.style.display = canEditBendahara ? "" : "none";
@@ -859,26 +864,25 @@ function applyRoleVisibility() {
   }
 
   const navPengumuman = document.getElementById("navPengumuman");
-  if (navPengumuman) navPengumuman.style.display = ""; // semua orang boleh baca pengumuman
+  if (navPengumuman) navPengumuman.style.display = "";
 
   const pengumumanForm = document.getElementById("pengumumanForm");
   if (pengumumanForm) pengumumanForm.style.display = isNonAnggotaRole(me.role) ? "" : "none";
 
   const bell = document.getElementById("pengumumanBell");
   if (bell) {
-    bell.style.display = "flex"; // semua orang boleh dapat notif pengumuman
+    bell.style.display = "flex";
     checkPengumumanBell();
   }
 }
 
-// ===== BELL PENGUMUMAN (icon broadcast di kanan atas) =====
 async function checkPengumumanBell() {
   try {
     const rows = await api("/pengumuman");
     if (!rows || !rows.length) return;
     const latest = [...rows].sort((a, b) => new Date(b.dibuat_at || 0) - new Date(a.dibuat_at || 0))[0];
     const lastSeenId = localStorage.getItem("lastSeenPengumumanId");
-    if (String(latest.id) === String(lastSeenId)) return; // sudah pernah dibaca
+    if (String(latest.id) === String(lastSeenId)) return;
 
     const dot = document.getElementById("pengumumanDot");
     const preview = document.getElementById("pengumumanPreview");
@@ -888,13 +892,12 @@ async function checkPengumumanBell() {
       const isiSingkat = (latest.isi || "").slice(0, 90) + ((latest.isi || "").length > 90 ? "..." : "");
       preview.innerHTML = `<div class="marqueeInner"><b>📢 ${judul}</b>${isiSingkat}</div>`;
       const inner = preview.querySelector(".marqueeInner");
-      setTimeout(() => preview.classList.add("show"), 300); // strip melebar dulu
+      setTimeout(() => preview.classList.add("show"), 300);
       inner.addEventListener("animationend", () => {
-        preview.classList.remove("show"); // lalu teks selesai berjalan & strip menutup lagi
+        preview.classList.remove("show");
       }, { once: true });
     }
   } catch {
-    // diam saja kalau gagal (misal role tidak diizinkan), jangan ganggu dashboard
   }
 }
 
@@ -925,13 +928,11 @@ async function start() {
   avatarInit.textContent = (me.nama||"?").trim().charAt(0).toUpperCase();
   applyRoleVisibility();
 
-  // ===== TOP-RIGHT PROFILE MENU: isi data & foto profil =====
   pmName.textContent = me.nama;
   pmRole.textContent = roleLabel(me.role);
   document.getElementById("pmAdminBtn").style.display = isAdminRole(me.role) ? "" : "none";
   applyFotoProfil();
 
-  // Kalau tadi diarahkan dari halaman lain (File/Footage) untuk buka Profil/Panel Admin
   if (sessionStorage.getItem("ktOpenProfil")) {
     sessionStorage.removeItem("ktOpenProfil");
     openProfilSayaModal();
@@ -949,7 +950,6 @@ async function start() {
   }
 }
 
-// ===== TOP-RIGHT PROFILE MENU =====
 function toggleProfileMenu(e) {
   e.stopPropagation();
   document.getElementById("profileMenu").classList.toggle("open");
@@ -1067,7 +1067,6 @@ async function saveProfilSaya() {
   }
 }
 
-// ===== FILE & FOOTAGE (dashboard) =====
 function fmtSizeDash(bytes) {
   if (!bytes) return "0 KB";
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB";
@@ -1148,7 +1147,6 @@ async function loadDashboardFiles() {
   recentFoto.forEach(f => loadDashThumb(f.id));
 }
 
-// ---- buka/tutup sidebar (mobile & tablet, termasuk iPad) ----
 function toggleSidebar() {
   document.getElementById("sidebar").classList.toggle("open");
   document.getElementById("sidebarOverlay").classList.toggle("open");
@@ -1160,7 +1158,6 @@ function closeSidebarIfMobile() {
   }
 }
 
-// ---- navigasi halaman utama (Dashboard / Bendahara) ----
 function showPage(pageId, btn) {
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
   document.getElementById(pageId).classList.add("active");
@@ -1169,13 +1166,11 @@ function showPage(pageId, btn) {
   closeSidebarIfMobile();
 }
 
-// ---- navigasi sub-tab di dalam Bendahara ----
 function show(id) {
   ["dash","keu","spj","prop","log"].forEach(x => document.getElementById(x).hidden = (x!==id));
   document.querySelectorAll(".subnav button").forEach(b => b.classList.toggle("active", b.dataset.tab===id));
 }
 
-// ===== KEUANGAN =====
 async function loadKeu() {
   const rows = await api("/keuangan");
   const t = document.getElementById("tKeu");
@@ -1209,7 +1204,6 @@ async function delKeu(id) {
   catch (err) { showErr("errBox2", err.message); }
 }
 
-// ===== LPJ =====
 async function loadSpj() {
   const rows = await api("/spj");
   const t = document.getElementById("tSpj");
@@ -1235,7 +1229,6 @@ async function setStatus(id, status) {
   catch (err) { showErr("errBox2", err.message); }
 }
 
-// ===== PROPOSAL =====
 async function loadProp() {
   const rows = await api("/proposal");
   const t = document.getElementById("tProp");
@@ -1251,7 +1244,6 @@ async function addProp(e) {
   } catch (err) { showErr("errBox2", err.message); }
 }
 
-// ===== LOG =====
 async function loadLog() {
   const rows = await api("/log");
   const t = document.getElementById("tLog");
@@ -1260,9 +1252,6 @@ async function loadLog() {
     `<td>${r.waktu}</td><td><b>${r.username}</b></td><td>${r.aktivitas}</td>`);
 }
 
-// ===== PENGUMUMAN (khusus role selain "anggota": Admin, Ketua, Bendahara, PDD) =====
-// Dimuat lazy (hanya saat halaman dibuka), supaya kalau endpoint /pengumuman
-// belum ada di backend, dashboard utama TIDAK ikut error/rusak.
 let pengumumanLoaded = false;
 
 async function loadPengumuman() {
@@ -1345,8 +1334,6 @@ async function deletePengumuman(id) {
   }
 }
 
-// ===== EXPORT (Excel helpers - dipakai bersama Keuangan/LPJ/Proposal) =====
-// ---- palet & helper styling (meniru desain "Laporan Keuangan Profesional") ----
 const XC = {
   DARK: 'FF171717', RED: 'FFC00000', LIGHT: 'FFF3F4F6',
   BORDER: 'FFD1D5DB', ZEBRA: 'FFFAFAFA', WHITE: 'FFFFFFFF',
@@ -1386,7 +1373,6 @@ function xTitleBlock(ws, title, subtitle, colCount) {
   s.alignment = { horizontal: 'center' };
 }
 
-// ---- header bergaya "merah-putih-emas" (meniru tampilan versi PDF, dipakai bareng logo) ----
 function xReportHeader(ws, entitas, subtitle, colCount) {
   ws.getRow(1).height = 24; ws.getRow(2).height = 16;
   const t = ws.getCell(1, 1);
@@ -1401,14 +1387,12 @@ function xReportHeader(ws, entitas, subtitle, colCount) {
   s.font = { size: 10.5, bold: true, color: { argb: XC.GOLD } };
   s.alignment = { horizontal: 'left', vertical: 'middle', indent: 2 };
 
-  // garis emas pemisah
   ws.getRow(3).height = 4;
   for (let c = 1; c <= colCount; c++) {
     ws.getCell(3, c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XC.GOLD } };
   }
 }
 
-// ---- kotak info krem dengan aksen merah di kiri (meniru kotak info PDF) ----
 function xInfoBox(ws, row, colCount, pairs) {
   ws.getRow(row).height = 20;
   for (let c = 1; c <= colCount; c++) {
@@ -1509,8 +1493,6 @@ function pdfLpjSectionBar(doc, text, y, redColor) {
   return y + 10;
 }
 
-// ===== LPJ: cetak PDF formal (merah-putih-emas), meniru gaya contoh laporan =====
-// ===== MODAL EXPORT (dipakai bersama oleh Keuangan, LPJ, dan Proposal) =====
 let exportModalType = null;
 let exportModalFormat = "pdf";
 const exportModalTitles = {
@@ -1549,7 +1531,6 @@ function setExportFormat(fmt) {
 
 let allAnggota = [];
 
-// Tampilkan nama asli orangnya, bukan username (yang dibuat dari alamat email)
 function namaFromUsername(username) {
   if (!username) return "-";
   const u = allAnggota.find(a => a.username === username);
@@ -1641,7 +1622,6 @@ function renderAnggotaSemua() {
     </div>`).join("");
 }
 
-// ===== GIFT ROLE: khusus admin, hanya untuk akun yang email Google-nya sudah tertaut =====
 const GIFT_ROLES = [
   { role: "bendahara", label: "Bendahara", icon: ICON.bank },
   { role: "ketua",     label: "Ketua",     icon: ICON.crown },
@@ -1783,7 +1763,6 @@ async function exportLPJPDF({ kegiatan, ketuaNama, bendaharaNama, start, end }) 
     const doc = new jsPDF();
     const RED = [192, 0, 0], GOLD = [217, 164, 6], DARK = [23, 23, 23], GRAY = [120, 120, 120], LIGHTGRAY = [243, 244, 246];
 
-    // jaga jarak aman dari footer (garis+teks footer ada di y=285/290)
     const pdfEnsureSpace = (yNow, needed, topAfterBreak = 20) => {
       if (yNow + needed > 272) { doc.addPage(); return topAfterBreak; }
       return yNow;
@@ -1915,7 +1894,6 @@ async function exportLPJPDF({ kegiatan, ketuaNama, bendaharaNama, start, end }) 
   }
 }
 
-// ===== KEUANGAN: cetak PDF formal (merah-putih-emas), tema sama seperti LPJ =====
 async function exportKeuanganPDF({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
   const entitas = "Karang Taruna Brigade Muda Soropati";
   const status = "Berjalan";
@@ -2066,7 +2044,6 @@ async function exportKeuanganPDF({ kegiatan, ketuaNama, bendaharaNama, start, en
   }
 }
 
-// ===== PROPOSAL: cetak PDF formal (merah-putih-emas), tema sama seperti LPJ =====
 async function exportProposalPDF({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
   const entitas = "Karang Taruna Brigade Muda Soropati";
   const status = "Berjalan";
@@ -2172,12 +2149,8 @@ async function exportProposalPDF({ kegiatan, ketuaNama, bendaharaNama, start, en
   }
 }
 
-// ===================================================================
-// ===== FORMAT LAIN (EXCEL & WORD) UNTUK MODAL EXPORT YANG SAMA =====
-// Konsep & data identik dengan versi PDF di atas, hanya beda output.
-// ===================================================================
 const NEW_LOGO_URL = "https://raw.githubusercontent.com/yaallboy-glitch/kegiatan/refs/heads/main/IMG_6411.png";
-const EXTRA_ROWS = 25; // baris kosong siap-rumus di Excel supaya bisa dilanjutkan manual
+const EXTRA_ROWS = 25;
 
 function xSaveBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
@@ -2196,7 +2169,6 @@ async function xEmbedLogo(wb, ws) {
   } catch {}
 }
 
-// ----- helper HTML untuk Word (memakai wZebraRow & wSectionTitle yang sudah ada) -----
 function wHeader(logoData, entitas, subtitle) {
   return `
     <table cellspacing="0" cellpadding="0" style="width:100%;margin-bottom:6px"><tr>
@@ -2249,7 +2221,6 @@ function wDocFooter(orgLine) {
   return `<div style="margin-top:26px;padding-top:10px;border-top:1px solid #E5E7EB;text-align:center;font-size:10px;color:#9CA3AF">${orgLine} &middot; Dicetak: ${new Date().toLocaleString("id-ID")}</div>`;
 }
 
-// ===== KEUANGAN =====
 async function exportKeuanganExcel({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
   const entitas = "Karang Taruna Brigade Muda Soropati";
   const status = "Berjalan";
@@ -2374,7 +2345,6 @@ async function exportKeuanganWord({ kegiatan, ketuaNama, bendaharaNama, start, e
   xSaveBlob(new Blob(["\ufeff", html], { type: "application/msword" }), "Keuangan_" + (start || "semua") + "_" + (end || "data") + ".doc");
 }
 
-// ===== LPJ (konsep & sumber data sama seperti exportLPJPDF) =====
 async function exportLPJExcel({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
   const entitas = "Karang Taruna Brigade Muda Soropati";
   const status = "Selesai";
@@ -2496,7 +2466,6 @@ async function exportLPJWord({ kegiatan, ketuaNama, bendaharaNama, start, end })
   xSaveBlob(new Blob(["\ufeff", html], { type: "application/msword" }), "LPJ_" + (start || "semua") + "_" + (end || "data") + ".doc");
 }
 
-// ===== PROPOSAL =====
 async function exportProposalExcel({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
   const entitas = "Karang Taruna Brigade Muda Soropati";
   const status = "Berjalan";
