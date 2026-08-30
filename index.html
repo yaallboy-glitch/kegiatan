@@ -310,11 +310,6 @@ tr:hover td{background:#1d1d20}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
       Sosial Media
     </button>
-    <button class="navlink" id="navAdmin" onclick="openAnggotaModal()" style="display:none;color:var(--gold)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
-      Panel Admin
-    </button>
-
     <div class="navSpacer"></div>
     <div class="profileBox">
       <div class="avatar" id="avatarInit">A</div>
@@ -802,9 +797,6 @@ function myEdit() { return ROLE_EDIT[me.role] || ROLE_EDIT.anggota; }
 function isAdminRole(role) { return role === "admin" || role === "ketua"; }
 
 function applyRoleVisibility() {
-  const navAdmin = document.getElementById("navAdmin");
-  if (navAdmin) navAdmin.style.display = isAdminRole(me.role) ? "" : "none";
-
   // Sembunyikan HANYA kontrol edit (form tambah, tombol export) di area
   // Bendahara kalau role ini tidak boleh mengedit — halaman tetap bisa dilihat.
   const canEditBendahara = myEdit().bendahara;
