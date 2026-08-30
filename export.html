@@ -171,12 +171,31 @@ try {
   me = { username: payload[0], nama: payload[1], role: payload[2] };
 } catch { location.href = "index.html"; }
 
+// ===== FUNGSI API (PENTING) =====
+async function api(path, opt={}) {
+  let r;
+  try {
+    r = await fetch(API+path, { headers:{ "Content-Type":"application/json","Authorization":"Bearer "+token }, ...opt });
+  } catch (netErr) {
+    throw new Error("Tidak bisa menghubungi server (" + API + path + "). Cek koneksi.");
+  }
+  let d;
+  try {
+    d = await r.json();
+  } catch {
+    throw new Error("Server tidak mengembalikan JSON yang valid (status " + r.status + ").");
+  }
+  if (r.status === 401) { logout(); throw new Error("Sesi habis, silakan login lagi."); }
+  if (!r.ok) throw new Error(d.error || ("Error " + r.status));
+  return d;
+}
+
 // ===== URL PARAMS =====
 const params = new URLSearchParams(location.search);
 const exportType = params.get("jenis") || "keuangan"; // keuangan, lpj, proposal
 
 const titles = { keuangan: "Laporan Keuangan", lpj: "LPJ (Laporan Pertanggungjawaban)", proposal: "Daftar Proposal" };
-document.getElementById("exTitle").textContent = "Export " + titles[exportType] || "Export Laporan";
+document.getElementById("exTitle").textContent = "Export " + (titles[exportType] || "Laporan");
 
 // ===== PROFILE MENU =====
 function toggleProfileMenu(e) { e.stopPropagation(); document.getElementById("profileMenu").classList.toggle("open"); }
@@ -325,7 +344,6 @@ function pdfInfoBox(doc, y, pairs){
   doc.setFontSize(9);
   doc.setFont(undefined,"bold");
   doc.setTextColor(192,0,0);
-  const colWidth = 98;
   doc.text(pairs[0][0], 20, y + 7);
   doc.text(pairs[1][0], 20, y + 16);
   doc.text(pairs[2][0], 118, y + 7);
@@ -526,9 +544,7 @@ async function exportProposalPDF({ kegiatan, ketuaNama, bendaharaNama, start, en
 }
 
 // ===== EXCEL & WORD =====
-// Fungsi-fungsi Excel dan Word diambil dari file sebelumnya (tetap sama, sudah lengkap)
-// Saya sertakan di bawah ini dengan lengkap agar Anda tinggal salin.
-
+// Semua helper Excel/Word
 const XC = { DARK:'FF171717', RED:'FFC00000', LIGHT:'FFF3F4F6', BORDER:'FFD1D5DB', ZEBRA:'FFFAFAFA', WHITE:'FFFFFFFF', GOLD:'FFD9A406', CREAM:'FFFDF6E3' };
 const RP_FMT = '"Rp" #,##0';
 
