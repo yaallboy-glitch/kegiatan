@@ -78,14 +78,15 @@ button{font-family:inherit}
   border-radius:10px;opacity:0;box-shadow:0 8px 20px rgba(0,0,0,.4);
   transition:width .4s ease, opacity .3s ease;z-index:40;cursor:pointer}
 .bellPreview.show{width:250px;opacity:1}
-.bellPreview .marqueeInner{position:absolute;top:0;left:100%;height:100%;display:flex;align-items:center;
-  white-space:nowrap;font-size:12px;line-height:1.3;animation:bellMarquee 7s linear forwards}
+.bellPreview .marqueeInner{position:absolute;top:0;left:0;height:100%;display:flex;align-items:center;
+  white-space:nowrap;font-size:12px;line-height:1.3;animation:bellMarquee 10s linear forwards;
+  transform:translateX(100%);} /* default: di luar kanan */
 .bellPreview .marqueeInner b{color:var(--gold);margin-right:6px;font-weight:700}
 @keyframes bellMarquee{
-  0%{left:100%}
-  15%{left:12px}
-  82%{left:12px}
-  100%{left:-100%}
+  0%{transform:translateX(100%)}   /* mulai dari kanan luar */
+  12%{transform:translateX(0)}     /* masuk ke dalam (rata kiri) */
+  80%{transform:translateX(0)}     /* pause lama */
+  100%{transform:translateX(-100%)}/* keluar ke kiri penuh */
 }
 .orgSwitch{display:flex;align-items:center;gap:9px;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:6px 12px 6px 8px;cursor:pointer}
 .orgSwitch .mini{width:30px;height:30px;border-radius:50%;background:linear-gradient(145deg,#f4d675,#b8860b);display:flex;align-items:center;justify-content:center;font-weight:800;color:#1a1a1a;font-size:11px}
