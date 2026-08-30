@@ -98,6 +98,32 @@ button{font-family:inherit}
 .modalBox select{width:100%;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px;margin-bottom:14px;font-size:13.5px}
 .modalActions{display:flex;gap:8px;justify-content:flex-end}
 
+/* ===== Preview foto/video (mirip lightbox Claude, tidak full-screen) ===== */
+.previewOverlay{display:none;position:fixed;inset:0;background:rgba(6,4,3,.82);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:90;align-items:center;justify-content:center;padding:32px}
+.previewOverlay.open{display:flex;animation:pvFade .16s ease}
+.previewBox{position:relative;width:fit-content;max-width:min(620px,88vw);max-height:86vh;background:var(--card);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:10px;box-shadow:0 24px 60px rgba(0,0,0,.55);animation:pvPop .32s cubic-bezier(.22,.9,.3,1.18)}
+.previewBox::before{content:"";position:absolute;inset:0;border-radius:16px;padding:2px;background:linear-gradient(135deg,#d8483c,#e0ac2b 45%,#d8483c);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;animation:pvGlow 2.6s ease-in-out infinite}
+@keyframes pvFade{from{opacity:0}to{opacity:1}}
+@keyframes pvPop{from{opacity:0;transform:scale(.93) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes pvGlow{0%,100%{opacity:.55;filter:brightness(1)}50%{opacity:1;filter:brightness(1.25)}}
+.previewMedia{display:flex;align-items:center;justify-content:center;min-width:200px;min-height:140px;max-width:calc(88vw - 24px);max-height:70vh;border-radius:11px;overflow:hidden;background:#000}
+.previewMedia img,.previewMedia video{display:block;max-width:100%;max-height:70vh;width:auto;height:auto;border-radius:11px;object-fit:contain;animation:pvMediaIn .3s ease}
+@keyframes pvMediaIn{from{opacity:0}to{opacity:1}}
+.previewClose{position:absolute;top:-15px;right:-15px;width:34px;height:34px;border-radius:50%;background:var(--card2);border:2px solid #d8483c;color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;transition:transform .18s ease,background .18s ease}
+.previewClose:hover{background:#d8483c;color:#fff;transform:rotate(90deg) scale(1.05)}
+.previewFooter{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 4px}
+.previewFooter b{font-size:13px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;font-weight:600}
+.previewDlBtn{display:flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--gold-dark);color:var(--gold);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;flex:0 0 auto}
+.previewDlBtn:hover{background:var(--gold);color:#181205}
+.previewLoading{display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--text-dim);padding:56px 60px;font-size:12.5px}
+.previewLoading svg{animation:pvSpin .9s linear infinite}
+@keyframes pvSpin{to{transform:rotate(360deg)}}
+@media(max-width:600px){
+  .previewOverlay{padding:16px}
+  .previewBox{padding:10px}
+  .previewClose{top:-12px;right:-12px;width:30px;height:30px}
+}
+
 .menuToggle{display:none;position:fixed;top:16px;left:16px;z-index:70;width:42px;height:42px;border-radius:10px;background:var(--card2);border:1px solid var(--border);color:var(--text);align-items:center;justify-content:center;cursor:pointer}
 .sidebarOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:45}
 .sidebarOverlay.open{display:block}
@@ -250,6 +276,21 @@ button{font-family:inherit}
     <div class="modalActions">
       <button class="pillBtn" onclick="closeMoveModal()">Batal</button>
       <button class="pillBtn" style="background:var(--gold);color:#181205" onclick="confirmMove()">Pindahkan</button>
+    </div>
+  </div>
+</div>
+
+<div class="previewOverlay" id="previewOverlay" onclick="if(event.target===this) closePreview()">
+  <div class="previewBox">
+    <button class="previewClose" onclick="closePreview()" aria-label="Tutup pratinjau">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="previewMedia" id="previewMedia"></div>
+    <div class="previewFooter">
+      <b id="previewTitle"></b>
+      <button class="previewDlBtn" onclick="downloadFootage(previewCurrentId, previewCurrentTitle)">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>Unduh
+      </button>
     </div>
   </div>
 </div>
@@ -554,17 +595,49 @@ document.addEventListener("click", () => {
   document.querySelectorAll(".dropdownMenu.open").forEach(m => m.classList.remove("open"));
 });
 
+let previewCurrentId = null;
+let previewCurrentTitle = "";
+let previewObjectUrl = null;
+
 async function viewFootage(id, mime) {
+  const item = allFootage.find(x => x.id === id);
+  previewCurrentId = id;
+  previewCurrentTitle = item ? item.judul : "footage";
+
+  document.getElementById("previewTitle").textContent = previewCurrentTitle;
+  const media = document.getElementById("previewMedia");
+  media.innerHTML = `<div class="previewLoading">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+    Memuat pratinjau...
+  </div>`;
+  document.getElementById("previewOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+
   try {
     const r = await fetch(API + "/footage/view?id=" + id, { headers: { Authorization: "Bearer " + token } });
     if (!r.ok) { const d = await r.json(); throw new Error(d.error || "Gagal memuat"); }
     const blob = await r.blob();
     const url = URL.createObjectURL(blob);
-    window.open(url, "_blank");
+    previewObjectUrl = url;
+    if (previewCurrentId !== id) return; // pratinjau sudah ditutup/berganti sebelum selesai memuat
+    if ((mime || "").startsWith("video/")) {
+      media.innerHTML = `<video src="${url}" controls autoplay playsinline></video>`;
+    } else {
+      media.innerHTML = `<img src="${url}" alt="${escapeAttr(previewCurrentTitle)}">`;
+    }
   } catch (err) {
-    showUploadErr(err.message);
+    media.innerHTML = `<div class="previewLoading" style="color:#f87171">${ICON.warning}${err.message}</div>`;
   }
 }
+
+function closePreview() {
+  document.getElementById("previewOverlay").classList.remove("open");
+  document.body.style.overflow = "";
+  document.getElementById("previewMedia").innerHTML = "";
+  if (previewObjectUrl) { URL.revokeObjectURL(previewObjectUrl); previewObjectUrl = null; }
+  previewCurrentId = null;
+}
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePreview(); });
 
 async function doUploadFootage() {
   clearUploadErr();
