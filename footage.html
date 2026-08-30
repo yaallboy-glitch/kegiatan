@@ -74,10 +74,22 @@ button{font-family:inherit}
 #bulkBar{display:none;align-items:center;gap:10px;background:var(--card2);border:1px solid var(--gold-dark);border-radius:10px;padding:10px 14px;margin-bottom:14px;flex-wrap:wrap}
 
 .folderToolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
-.folderMobileWrap{display:none}
-.folderPill{display:inline-flex;align-items:center;gap:2px}
-.folderPill .rm{cursor:pointer;color:var(--text-dim2);padding:2px 6px;margin-left:-6px;font-size:12px}
-.folderPill .rm:hover{color:#ef4444}
+.folderDropdownWrap{position:relative}
+#folderDropdownBtn{display:inline-flex;align-items:center;gap:6px;max-width:230px}
+#folderDropdownLabel{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;display:inline-block;vertical-align:middle}
+.ddArrow{font-size:10px;opacity:.7}
+.folderDropdownPanel{display:none;position:absolute;left:0;top:calc(100% + 6px);background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:8px;min-width:250px;max-width:min(340px,80vw);z-index:30;box-shadow:0 10px 26px rgba(0,0,0,.45)}
+.folderDropdownPanel.open{display:block}
+.folderDropdownList{max-height:280px;overflow-y:auto}
+.folderRow{display:flex;align-items:center;gap:8px;padding:8px 6px;border-radius:8px}
+.folderRow:hover{background:var(--card)}
+.folderCheck{cursor:pointer;font-size:16px;flex:0 0 auto;user-select:none;line-height:1}
+.folderRowName{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;cursor:pointer}
+.folderRowName:hover{color:var(--gold)}
+.folderRow.active .folderRowName{color:var(--gold);font-weight:700}
+.folderBulkBar{display:flex;align-items:center;gap:8px;padding:4px 6px 10px;margin-bottom:6px;border-bottom:1px solid var(--border);font-size:12.5px}
+.folderAddRow{width:100%;margin-top:6px;padding:8px;background:transparent;border:1px dashed var(--gold-dark);color:var(--gold);border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer}
+.folderAddRow:hover{background:var(--gold);color:#181205;border-style:solid}
 
 .modalOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:80;align-items:center;justify-content:center}
 .modalOverlay.open{display:flex}
@@ -110,10 +122,6 @@ button{font-family:inherit}
   .footItem small{font-size:11px}
   .itemActions{font-size:13px;gap:6px}
   .folderToolbar{gap:6px}
-  #folderTabs{display:none}
-  .folderMobileWrap{display:flex;gap:8px;flex:1 1 100%}
-  #folderTabSelect{flex:1;min-width:0;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:9px 10px;font-size:13px}
-  #folderMobileDelBtn{flex:0 0 auto;background:var(--card2);border:1px solid var(--border);color:#ef4444;border-radius:9px;padding:0 14px;cursor:pointer;font-size:14px}
   #bulkBar{padding:8px 10px;gap:8px}
   .dropdownMenu{min-width:135px}
   .modalBox{width:min(290px,92vw)}
@@ -194,14 +202,26 @@ button{font-family:inherit}
     </div>
 
     <div class="folderToolbar">
-      <div class="pillGroup" id="folderTabs">
-        <button class="pillBtn active" data-val="ALL" onclick="setFolderTab('ALL')">📁 Semua</button>
+      <div class="folderDropdownWrap">
+        <button type="button" class="pillBtn" id="folderDropdownBtn" onclick="toggleFolderDropdown(event)">
+          <span id="folderDropdownLabel">📁 Semua Folder</span><span class="ddArrow">▾</span>
+        </button>
+        <div class="folderDropdownPanel" id="folderDropdownPanel">
+          <div class="folderBulkBar" id="folderBulkBar" style="display:none">
+            <b id="folderBulkCount"></b>
+            <div style="flex:1"></div>
+            <div class="itemMenuWrap" style="margin-top:0">
+              <button type="button" class="dotsBtn" onclick="toggleFolderBulkMenu(event)">⋮</button>
+              <div class="dropdownMenu" id="folderBulkMenu">
+                <div id="folderBulkRenameItem" onclick="bulkFolderRenameFromMenu()" style="display:none">✏️ Ganti Nama</div>
+                <div class="danger" onclick="bulkFolderDeleteFromMenu()">🗑️ Hapus</div>
+              </div>
+            </div>
+          </div>
+          <div class="folderDropdownList" id="folderDropdownList"></div>
+          <button type="button" class="folderAddRow" onclick="createFolder()">+ Folder Baru</button>
+        </div>
       </div>
-      <div class="folderMobileWrap">
-        <select id="folderTabSelect" onchange="setFolderTab(this.value)"></select>
-        <button type="button" id="folderMobileDelBtn" onclick="deleteCurrentFolderMobile()" title="Hapus folder ini" style="display:none">🗑️</button>
-      </div>
-      <button class="pillBtn" onclick="createFolder()">+ Folder Baru</button>
     </div>
 
     <div id="bulkBar">
@@ -322,36 +342,76 @@ async function loadFolders() {
   renderUploadFolderSelect();
 }
 
+let selectedFolderIds = new Set();
+
 function renderFolderTabs() {
-  const wrap = document.getElementById("folderTabs");
-  wrap.innerHTML = `
-    <button class="pillBtn ${currentFolderId==='ALL'?'active':''}" data-val="ALL" onclick="setFolderTab('ALL')">📁 Semua</button>
-    <button class="pillBtn ${currentFolderId==='ROOT'?'active':''}" data-val="ROOT" onclick="setFolderTab('ROOT')">🗂 Tanpa Folder</button>
-  ` + allFolders.map(f => `
-    <span class="folderPill">
-      <button class="pillBtn ${String(currentFolderId)===String(f.id)?'active':''}" data-val="${f.id}" onclick="setFolderTab('${f.id}')">📁 ${escapeHtml(f.nama)}</button>
-      <div class="itemMenuWrap" style="margin-top:0">
-        <button class="dotsBtn" title="Menu folder" onclick="toggleFolderMenu(event,${f.id})">⋮</button>
-        <div class="dropdownMenu" id="foldermenu-${f.id}">
-          <div onclick="renameFolder(${f.id},'${escapeAttr(f.nama)}')">✏️ Ganti nama</div>
-          <div class="danger" onclick="deleteFolder(${f.id},'${escapeAttr(f.nama)}')">🗑️ Hapus</div>
-        </div>
-      </div>
-    </span>
+  const label = document.getElementById("folderDropdownLabel");
+  let labelText = "📁 Semua Folder";
+  if (currentFolderId === "ROOT") labelText = "🗂 Tanpa Folder";
+  else if (currentFolderId !== "ALL") {
+    const f = allFolders.find(x => String(x.id) === String(currentFolderId));
+    labelText = f ? "📁 " + f.nama : "📁 Semua Folder";
+  }
+  label.textContent = labelText;
+  label.title = labelText;
+
+  const rows = [
+    { val: "ALL", name: "📁 Semua Folder", checkable: false },
+    { val: "ROOT", name: "🗂 Tanpa Folder", checkable: false },
+    ...allFolders.map(f => ({ val: String(f.id), name: "📁 " + f.nama, rawName: f.nama, checkable: true })),
+  ];
+
+  document.getElementById("folderDropdownList").innerHTML = rows.map(r => `
+    <div class="folderRow ${String(currentFolderId)===String(r.val)?'active':''}">
+      ${r.checkable
+        ? `<span class="folderCheck" onclick="toggleFolderSelect(event,'${r.val}')">${selectedFolderIds.has(r.val) ? "✅" : "⚪"}</span>`
+        : `<span style="width:16px;flex:0 0 auto"></span>`}
+      <span class="folderRowName" title="${escapeAttr(r.rawName || r.name)}" onclick="openFolderFromDropdown('${r.val}')">${escapeHtml(r.name)}</span>
+    </div>
   `).join("");
 
-  // versi dropdown, khusus tampilan HP (disinkronkan dengan pill di atas)
-  const sel = document.getElementById("folderTabSelect");
-  sel.innerHTML = `<option value="ALL">📁 Semua Folder</option><option value="ROOT">🗂 Tanpa Folder</option>` +
-    allFolders.map(f => `<option value="${f.id}">📁 ${escapeHtml(f.nama)}</option>`).join("");
-  sel.value = currentFolderId;
-  updateFolderMobileDeleteBtn();
+  renderFolderBulkBar();
 }
-function toggleFolderMenu(ev, id) {
+
+function toggleFolderDropdown(ev) {
   ev.stopPropagation();
-  document.querySelectorAll(".dropdownMenu.open").forEach(m => { if (m.id !== "foldermenu-" + id) m.classList.remove("open"); });
-  document.getElementById("foldermenu-" + id).classList.toggle("open");
+  document.getElementById("folderDropdownPanel").classList.toggle("open");
 }
+document.addEventListener("click", (e) => {
+  const panel = document.getElementById("folderDropdownPanel");
+  const wrap = document.getElementById("folderDropdownBtn")?.closest(".folderDropdownWrap");
+  if (panel && wrap && !wrap.contains(e.target)) panel.classList.remove("open");
+});
+
+function openFolderFromDropdown(val) {
+  setFolderTab(val);
+  selectedFolderIds.clear();
+  renderFolderTabs();
+  document.getElementById("folderDropdownPanel").classList.remove("open");
+}
+
+function toggleFolderSelect(ev, val) {
+  ev.stopPropagation();
+  if (selectedFolderIds.has(val)) selectedFolderIds.delete(val);
+  else selectedFolderIds.add(val);
+  renderFolderTabs();
+  document.getElementById("folderDropdownPanel").classList.add("open");
+}
+
+function renderFolderBulkBar() {
+  const bar = document.getElementById("folderBulkBar");
+  const n = selectedFolderIds.size;
+  if (n === 0) { bar.style.display = "none"; return; }
+  bar.style.display = "flex";
+  document.getElementById("folderBulkCount").textContent = n + " dipilih";
+  document.getElementById("folderBulkRenameItem").style.display = n === 1 ? "block" : "none";
+}
+
+function toggleFolderBulkMenu(ev) {
+  ev.stopPropagation();
+  document.getElementById("folderBulkMenu").classList.toggle("open");
+}
+
 async function renameFolder(id, oldNama) {
   const nama = prompt("Nama folder baru:", oldNama);
   if (!nama || !nama.trim() || nama.trim() === oldNama) return;
@@ -364,6 +424,33 @@ async function renameFolder(id, oldNama) {
   }
 }
 
+async function bulkFolderRenameFromMenu() {
+  const id = Array.from(selectedFolderIds)[0];
+  const f = allFolders.find(x => String(x.id) === String(id));
+  document.getElementById("folderBulkMenu").classList.remove("open");
+  if (!f) return;
+  await renameFolder(f.id, f.nama);
+  selectedFolderIds.clear();
+  renderFolderTabs();
+}
+
+async function bulkFolderDeleteFromMenu() {
+  const ids = Array.from(selectedFolderIds);
+  document.getElementById("folderBulkMenu").classList.remove("open");
+  if (ids.length === 0) return;
+  const names = ids.map(id => { const f = allFolders.find(x => String(x.id) === String(id)); return f ? f.nama : id; }).join(", ");
+  if (!confirm(`Hapus ${ids.length} folder (${names})? Footage di dalamnya akan dipindahkan ke "Tanpa Folder".`)) return;
+  for (const id of ids) {
+    try {
+      await fetch(API + "/footage/folders?id=" + id, { method: "DELETE", headers: { Authorization: "Bearer " + token } });
+    } catch {}
+  }
+  if (ids.includes(String(currentFolderId))) currentFolderId = "ALL";
+  selectedFolderIds.clear();
+  await loadFolders();
+  await loadFootage();
+}
+
 function renderUploadFolderSelect() {
   const sel = document.getElementById("uploadFolder");
   sel.innerHTML = `<option value="">(Tanpa folder)</option>` +
@@ -372,20 +459,8 @@ function renderUploadFolderSelect() {
 
 function setFolderTab(val) {
   currentFolderId = val;
-  document.querySelectorAll("#folderTabs .pillBtn").forEach(b => b.classList.toggle("active", b.dataset.val === String(val)));
-  const sel = document.getElementById("folderTabSelect");
-  if (sel) sel.value = val;
-  updateFolderMobileDeleteBtn();
+  renderFolderTabs();
   renderFootage();
-}
-function updateFolderMobileDeleteBtn() {
-  const btn = document.getElementById("folderMobileDelBtn");
-  if (!btn) return;
-  btn.style.display = (currentFolderId !== "ALL" && currentFolderId !== "ROOT") ? "" : "none";
-}
-function deleteCurrentFolderMobile() {
-  const f = allFolders.find(x => String(x.id) === String(currentFolderId));
-  if (f) deleteFolder(f.id, f.nama);
 }
 
 function escapeHtml(s) { return (s || "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
@@ -656,20 +731,6 @@ async function createFolder() {
   }
 }
 
-async function deleteFolder(id, nama) {
-  if (!confirm(`Hapus folder "${nama}"? Footage di dalamnya akan dipindahkan ke "Tanpa Folder".`)) return;
-  try {
-    const r = await fetch(API + "/footage/folders?id=" + id, { method: "DELETE", headers: { Authorization: "Bearer " + token } });
-    const d = await r.json();
-    if (r.status === 401) { logout(); return; }
-    if (!r.ok) throw new Error(d.error || ("Error " + r.status));
-    if (String(currentFolderId) === String(id)) currentFolderId = "ALL";
-    await loadFolders();
-    await loadFootage();
-  } catch (err) {
-    showUploadErr(err.message);
-  }
-}
 
 async function syncFootage() {
   clearUploadErr();
