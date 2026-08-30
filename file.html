@@ -152,7 +152,7 @@ button{font-family:inherit}
       <input type="text" id="uploadKategori" placeholder="Kategori (mis: Proposal Kegiatan)" style="max-width:220px;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:9px 12px;font-size:13px">
       <input type="file" id="fileInput" style="display:none" onchange="doUploadFile()">
       <button class="pillBtn" id="uploadBtn" onclick="document.getElementById('fileInput').click()">+ Unggah File</button>
-      <button class="pillBtn" id="syncBtn" onclick="syncFiles()">🔄 Sync Drive</button>
+      <button class="pillBtn" id="syncBtn" onclick="syncFiles()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:5px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>Sync Drive</button>
     </div>
 
     <div id="uploadErr" style="display:none;background:#3a1414;color:#fca5a5;border:1px solid #5c1f1f;padding:11px 12px;border-radius:8px;margin:0 0 14px;font-size:13px"></div>
@@ -169,6 +169,14 @@ button{font-family:inherit}
 const API = "https://kegiatan-api.newbrigademudasoropati.workers.dev";
 const token = localStorage.getItem("token") || "";
 if (!token) { location.href = "index.html"; }
+
+// ===== IKON (SVG line-icon simpel, senada dengan ikon sidebar) =====
+const ICON = {
+  warning: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px;margin-right:5px;flex:0 0 auto"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>`,
+  trash:   `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`,
+  download:`<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>`,
+  refresh: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px;margin-right:5px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>`,
+};
 
 let me = {};
 try {
@@ -188,7 +196,7 @@ function toggleSidebar() {
 
 function showUploadErr(msg) {
   const b = document.getElementById("uploadErr");
-  b.textContent = "⚠️ " + msg;
+  b.innerHTML = ICON.warning + msg;
   b.style.display = "block";
 }
 function clearUploadErr() {
@@ -238,7 +246,7 @@ function iconFor(mime, filename) {
 async function syncFiles() {
   clearUploadErr();
   const btn = document.getElementById("syncBtn");
-  const oldText = btn.textContent;
+  const oldHtml = btn.innerHTML;
   btn.textContent = "Menyinkronkan..."; btn.disabled = true;
   try {
     const r = await fetch(API + "/file/sync", { method: "POST", headers: { Authorization: "Bearer " + token } });
@@ -250,7 +258,7 @@ async function syncFiles() {
   } catch (err) {
     showUploadErr(err.message);
   } finally {
-    btn.textContent = oldText; btn.disabled = false;
+    btn.innerHTML = oldHtml; btn.disabled = false;
   }
 }
 
@@ -284,8 +292,8 @@ function renderFiles() {
       <div class="fMeta"><b>${f.filename}</b><small>${f.kategori || "Umum"}</small></div>
       <div class="fRight">
         ${fmtSize(f.size)} &middot; ${fmtDate(f.uploaded_at)}
-        <span class="dlBtn" onclick="downloadFile(${f.id},'${f.filename.replace(/'/g, "\\'")}')" title="Unduh">&#8681;</span>
-        <span class="dlBtn" onclick="deleteFile(${f.id})" title="Hapus" style="color:#ef4444">&#128465;</span>
+        <span class="dlBtn" onclick="downloadFile(${f.id},'${f.filename.replace(/'/g, "\\'")}')" title="Unduh">${ICON.download}</span>
+        <span class="dlBtn" onclick="deleteFile(${f.id})" title="Hapus" style="color:#ef4444">${ICON.trash}</span>
       </div>
     </div>`;
   }).join("");
