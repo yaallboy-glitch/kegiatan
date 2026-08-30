@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Karang Taruna | File</title>
+<style>
+:root{
+  --bg:#0a0a0b;--bg-soft:#0d0d0f;--card:#161618;--card2:#1b1b1e;--border:#2a2a2e;
+  --gold:#e0ac2b;--gold-soft:#caa23c33;--gold-dark:#8a6d1f;
+  --text:#f4f4f5;--text-dim:#9ca0a8;--text-dim2:#6b6f76;--red:#ef4444;
+}
+*{box-sizing:border-box}
+body{font-family:'Segoe UI',Arial,sans-serif;margin:0;background:var(--bg);color:var(--text)}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit}
+
+.layout{display:flex;min-height:100vh}
+.sidebar{width:250px;flex:0 0 250px;background:var(--bg-soft);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:22px 16px;position:sticky;top:0;height:100vh}
+.brand{display:flex;flex-direction:column;align-items:center;text-align:center;padding-bottom:20px;margin-bottom:14px;border-bottom:1px solid var(--border)}
+.brand .logo{width:60px;height:60px;border-radius:50%;object-fit:cover;background:#0a0a0b;margin-bottom:10px;border:3px solid #0a0a0b;box-shadow:0 0 0 2px var(--gold)}
+.brand b{font-size:15px;letter-spacing:.4px}
+.brand span{font-size:10.5px;color:var(--gold);letter-spacing:.6px;margin-top:2px}
+.navlink{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:9px;color:var(--text-dim);font-size:14px;font-weight:500;cursor:pointer;margin-bottom:4px;border:0;background:transparent;width:100%;text-align:left}
+.navlink svg{flex:0 0 18px;width:18px;height:18px}
+.navlink:hover{background:var(--card2);color:var(--text)}
+.navlink.active{background:linear-gradient(90deg,#e0ac2b,#c9932a);color:#181205;font-weight:700}
+.navSpacer{flex:1}
+.profileBox{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:var(--card2);border:1px solid var(--border)}
+.profileBox .avatar{width:34px;height:34px;border-radius:50%;background:var(--gold-soft);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:0 0 34px}
+.profileBox .who{flex:1;min-width:0}
+.profileBox .who b{display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.profileBox .who small{color:var(--text-dim2);font-size:10.5px}
+.logoutBtn{background:transparent;border:0;color:var(--text-dim2);cursor:pointer;padding:4px}
+.logoutBtn:hover{color:#ef4444}
+
+.main{flex:1;min-width:0;padding:26px 30px 40px}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:16px;flex-wrap:wrap}
+.topbar h1{font-size:22px;margin:0}
+.topbar h1 span{color:var(--gold)}
+.topbar p{margin:4px 0 0;color:var(--text-dim);font-size:13.5px}
+
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center}
+.searchBox{flex:1;min-width:200px;display:flex;align-items:center;gap:8px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:9px 12px}
+.searchBox input{background:transparent;border:0;outline:0;color:var(--text);font-size:13.5px;width:100%}
+.searchBox svg{color:var(--text-dim2);flex:0 0 auto}
+.pillBtn{border:1px solid var(--gold-dark);color:var(--gold);background:transparent;padding:9px 16px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.pillBtn:hover{background:var(--gold);color:#181205}
+
+.panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px}
+.fileRow{display:flex;align-items:center;gap:12px;padding:13px 4px;border-bottom:1px solid var(--border)}
+.fileRow:last-child{border-bottom:0}
+.fIcon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800;flex:0 0 38px}
+.fIcon.pdf{background:#c0362c}
+.fIcon.doc{background:#2b579a}
+.fIcon.xls{background:#1e7145}
+.fMeta{flex:1;min-width:0}
+.fMeta b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fMeta small{color:var(--text-dim2);font-size:11.5px}
+.fRight{text-align:right;font-size:12px;color:var(--text-dim);flex:0 0 auto;display:flex;align-items:center;gap:12px}
+.dlBtn{color:var(--gold);cursor:pointer}
+
+.emptyNote{text-align:center;padding:40px 20px;color:var(--text-dim2)}
+.emptyNote svg{color:var(--gold-dark);margin-bottom:10px}
+.emptyNote b{display:block;color:var(--text-dim);margin-bottom:4px;font-size:14px}
+.emptyNote p{font-size:12.5px;margin:0}
+
+.menuToggle{display:none;position:fixed;top:16px;left:16px;z-index:70;width:42px;height:42px;border-radius:10px;background:var(--card2);border:1px solid var(--border);color:var(--text);align-items:center;justify-content:center;cursor:pointer}
+.sidebarOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:45}
+.sidebarOverlay.open{display:block}
+@media(max-width:1024px){
+  .menuToggle{display:flex}
+  .sidebar{position:fixed;top:0;left:-270px;height:100vh;transition:left .25s ease;z-index:50}
+  .sidebar.open{left:0}
+  .main{padding-top:66px}
+  .footGrid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:600px){
+  .main{padding-left:14px;padding-right:14px;padding-bottom:30px}
+  .topbar h1{font-size:19px}
+  .topbar p{font-size:12.5px}
+  .toolbar{gap:8px}
+  .searchBox{flex:1 1 100%}
+  .pillBtn{padding:8px 12px;font-size:12.5px}
+  .panel{padding:14px}
+  .fileRow{gap:8px;padding:11px 2px;flex-wrap:wrap}
+  .fIcon{width:34px;height:34px;font-size:10px}
+  .fMeta{min-width:0}
+  .fMeta b{font-size:13px}
+  .fRight{width:100%;margin-top:2px;font-size:11px}
+}
+
+/* ---------- TOP-RIGHT PROFILE MENU ---------- */
+.globalTopBar{display:flex;justify-content:flex-end;margin-bottom:10px}
+.topProfileWrap{position:relative}
+.topProfileBtn{width:42px;height:42px;border-radius:50%;border:2px solid var(--gold-dark);background:var(--gold-soft);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;cursor:pointer;padding:0;background-size:cover;background-position:center;overflow:hidden}
+.topProfileBtn:hover{border-color:var(--gold)}
+.profileMenu{display:none;position:absolute;top:50px;right:0;background:var(--card);border:1px solid var(--border);border-radius:12px;min-width:224px;box-shadow:0 16px 40px rgba(0,0,0,.5);padding:8px;z-index:90}
+.profileMenu.open{display:block}
+.profileMenu .pmHead{display:flex;align-items:center;gap:10px;padding:8px 8px 12px;border-bottom:1px solid var(--border);margin-bottom:6px}
+.profileMenu .pmHead .pmAvatar{width:38px;height:38px;border-radius:50%;background:var(--gold-soft);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:0 0 38px;background-size:cover;background-position:center}
+.profileMenu .pmHead .pmWho{min-width:0}
+.profileMenu .pmHead b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.profileMenu .pmHead small{color:var(--text-dim2);font-size:11px}
+.pmItem{display:flex;align-items:center;gap:9px;width:100%;padding:9px 10px;border-radius:8px;border:0;background:transparent;color:var(--text);font-size:13px;cursor:pointer;text-align:left;box-sizing:border-box}
+.pmItem svg{flex:0 0 16px;width:16px;height:16px;color:var(--text-dim)}
+.pmItem:hover{background:var(--card2)}
+.pmItem.pmDanger{color:var(--red)}
+.pmItem.pmDanger svg{color:var(--red)}
+.pmSep{height:1px;background:var(--border);margin:6px 2px}
+@media(max-width:600px){
+  .topProfileBtn{width:38px;height:38px}
+  .profileMenu{min-width:200px;top:46px}
+}
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <button class="menuToggle" id="menuToggle" onclick="toggleSidebar()" aria-label="Buka menu">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+  </button>
+  <div class="sidebarOverlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <img class="logo" src="https://raw.githubusercontent.com/yaallboy-glitch/kegiatan/refs/heads/main/IMG_6411.png" alt="Logo Karang Taruna">
+      <b>KARANG TARUNA</b>
+      <span>BRIGADE &bull; MUDA &bull; SOROPATI</span>
+    </div>
+
+    <a class="navlink" href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>
+      Dashboard
+    </a>
+    <a class="navlink" href="index.html#bendahara">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/><path d="M6 14h4"/></svg>
+      Bendahara
+    </a>
+    <a class="navlink active" href="file.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>
+      File
+    </a>
+    <a class="navlink" href="footage.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="15" height="12" rx="2"/><path d="M17 10l5-3v10l-5-3"/></svg>
+      Footage
+    </a>
+
+    <div class="navSpacer"></div>
+    <div class="profileBox">
+      <div class="avatar" id="avatarInit">A</div>
+      <div class="who">
+        <b id="profName">Admin</b>
+        <small id="profRole">Administrator</small>
+      </div>
+      <button class="logoutBtn" title="Logout" onclick="logout()">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="globalTopBar">
+      <div class="topProfileWrap" id="topProfileWrap">
+        <button class="topProfileBtn" id="topProfileBtn" onclick="toggleProfileMenu(event)" title="Akun">
+          <span id="topAvatarInit">A</span>
+        </button>
+        <div class="profileMenu" id="profileMenu">
+          <div class="pmHead">
+            <div class="pmAvatar" id="pmAvatarInit">A</div>
+            <div class="pmWho">
+              <b id="pmName">Nama</b>
+              <small id="pmRole">Role</small>
+            </div>
+          </div>
+          <label class="pmItem" for="fotoProfilInput" style="cursor:pointer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z"/><circle cx="12" cy="13" r="4"/></svg>
+            Ganti Foto Profil
+          </label>
+          <input type="file" id="fotoProfilInput" accept="image/*" style="display:none">
+          <button class="pmItem" onclick="goToProfil()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Profil Saya
+          </button>
+          <button class="pmItem" id="pmAdminBtn" style="display:none" onclick="goToAdminPanel()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+            Panel Admin
+          </button>
+          <div class="pmSep"></div>
+          <button class="pmItem pmDanger" onclick="logout()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="topbar">
+      <div>
+        <h1>Manajemen <span>File</span></h1>
+        <p>Kelola dokumen dan berkas kegiatan Karang Taruna.</p>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="searchBox">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+        <input id="fileSearch" placeholder="Cari file..." oninput="renderFiles()">
+      </div>
+      <input type="text" id="uploadKategori" placeholder="Kategori (mis: Proposal Kegiatan)" style="max-width:220px;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:9px 12px;font-size:13px">
+      <input type="file" id="fileInput" style="display:none" onchange="doUploadFile()">
+      <button class="pillBtn" id="uploadBtn" onclick="document.getElementById('fileInput').click()">+ Unggah File</button>
+      <button class="pillBtn" id="syncBtn" onclick="syncFiles()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:5px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>Sync Drive</button>
+    </div>
+
+    <div id="uploadErr" style="display:none;background:#3a1414;color:#fca5a5;border:1px solid #5c1f1f;padding:11px 12px;border-radius:8px;margin:0 0 14px;font-size:13px"></div>
+
+    <div class="panel">
+      <div id="fileList">
+        <div class="emptyNote"><p>Memuat data...</p></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const API = "https://kegiatan-api.newbrigademudasoropati.workers.dev";
+const token = localStorage.getItem("token") || "";
+if (!token) { location.href = "index.html"; }
+
+// ===== IKON (SVG line-icon simpel, senada dengan ikon sidebar) =====
+const ICON = {
+  warning: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px;margin-right:5px;flex:0 0 auto"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>`,
+  trash:   `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`,
+  download:`<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>`,
+  refresh: `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px;margin-right:5px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>`,
+};
+
+let me = {};
+try {
+  const payload = atob(token).split("|");
+  me = { username: payload[0], nama: payload[1], role: payload[2] };
+  document.getElementById("profName").textContent = me.nama;
+  document.getElementById("profRole").textContent = me.role;
+  document.getElementById("avatarInit").textContent = (me.nama || "?").trim().charAt(0).toUpperCase();
+
+  // ===== TOP-RIGHT PROFILE MENU: isi data & foto profil =====
+  document.getElementById("pmName").textContent = me.nama;
+  document.getElementById("pmRole").textContent = me.role;
+  document.getElementById("pmAdminBtn").style.display = (me.role === "admin" || me.role === "ketua") ? "" : "none";
+  applyFotoProfil();
+} catch { location.href = "index.html"; }
+
+function logout() { localStorage.removeItem("token"); location.href = "index.html"; }
+
+// ===== TOP-RIGHT PROFILE MENU =====
+function toggleProfileMenu(e) {
+  e.stopPropagation();
+  document.getElementById("profileMenu").classList.toggle("open");
+}
+document.addEventListener("click", function (e) {
+  const wrap = document.getElementById("topProfileWrap");
+  const menu = document.getElementById("profileMenu");
+  if (wrap && menu && !wrap.contains(e.target)) menu.classList.remove("open");
+});
+
+function fotoKey() { return "ktFotoProfil_" + (me.username || "guest"); }
+
+function applyFotoProfil() {
+  const saved = localStorage.getItem(fotoKey());
+  const initial = (me.nama || "?").trim().charAt(0).toUpperCase();
+  [document.getElementById("topProfileBtn"), document.getElementById("pmAvatarInit"), document.getElementById("avatarInit")].forEach(el => {
+    if (!el) return;
+    if (saved) { el.style.backgroundImage = "url('" + saved + "')"; el.textContent = ""; }
+    else { el.style.backgroundImage = ""; el.textContent = initial; }
+  });
+  const topInit = document.getElementById("topAvatarInit");
+  if (topInit) topInit.textContent = saved ? "" : initial;
+}
+
+const fotoProfilInputEl = document.getElementById("fotoProfilInput");
+if (fotoProfilInputEl) {
+  fotoProfilInputEl.addEventListener("change", function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { alert("File harus berupa gambar."); return; }
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      const img = new Image();
+      img.onload = function () {
+        const size = 240;
+        const canvas = document.createElement("canvas");
+        canvas.width = size; canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        const scale = Math.max(size / img.width, size / img.height);
+        const w = img.width * scale, h = img.height * scale;
+        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+        try {
+          localStorage.setItem(fotoKey(), dataUrl);
+          applyFotoProfil();
+          document.getElementById("profileMenu").classList.remove("open");
+        } catch (err) {
+          alert("Gagal menyimpan foto profil (mungkin ukuran terlalu besar).");
+        }
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  });
+}
+
+function goToProfil() { sessionStorage.setItem("ktOpenProfil", "1"); location.href = "index.html"; }
+function goToAdminPanel() { sessionStorage.setItem("ktOpenAdmin", "1"); location.href = "index.html"; }
+
+function toggleSidebar() {
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("sidebarOverlay").classList.toggle("open");
+}
+
+function showUploadErr(msg) {
+  const b = document.getElementById("uploadErr");
+  b.innerHTML = ICON.warning + msg;
+  b.style.display = "block";
+}
+function clearUploadErr() {
+  document.getElementById("uploadErr").style.display = "none";
+}
+
+async function apiGet(path) {
+  const r = await fetch(API + path, { headers: { Authorization: "Bearer " + token } });
+  if (r.status === 401) { logout(); throw new Error("Sesi habis, silakan login lagi."); }
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || ("Error " + r.status));
+  return d;
+}
+async function apiUpload(path, formData) {
+  const r = await fetch(API + path, { method: "POST", headers: { Authorization: "Bearer " + token }, body: formData });
+  if (r.status === 401) { logout(); throw new Error("Sesi habis, silakan login lagi."); }
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || ("Error " + r.status));
+  return d;
+}
+async function apiDelete(path) {
+  const r = await fetch(API + path, { method: "DELETE", headers: { Authorization: "Bearer " + token } });
+  if (r.status === 401) { logout(); throw new Error("Sesi habis, silakan login lagi."); }
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || ("Error " + r.status));
+  return d;
+}
+
+function fmtSize(bytes) {
+  if (!bytes) return "0 KB";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+}
+function fmtDate(iso) {
+  try {
+    return new Date(iso.replace(" ", "T") + "Z").toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  } catch { return iso; }
+}
+function iconFor(mime, filename) {
+  const ext = (filename.split(".").pop() || "").toLowerCase();
+  if (mime?.includes("pdf") || ext === "pdf") return ["pdf", "PDF"];
+  if (mime?.includes("word") || ["doc", "docx"].includes(ext)) return ["doc", "DOC"];
+  if (mime?.includes("sheet") || mime?.includes("excel") || ["xls", "xlsx"].includes(ext)) return ["xls", "XLS"];
+  return ["doc", "FILE"];
+}
+
+async function syncFiles() {
+  clearUploadErr();
+  const btn = document.getElementById("syncBtn");
+  const oldHtml = btn.innerHTML;
+  btn.textContent = "Menyinkronkan..."; btn.disabled = true;
+  try {
+    const r = await fetch(API + "/file/sync", { method: "POST", headers: { Authorization: "Bearer " + token } });
+    const d = await r.json();
+    if (r.status === 401) { logout(); return; }
+    if (!r.ok) throw new Error(d.error || ("Error " + r.status));
+    await loadFiles();
+    alert(`Sync selesai. ${d.added} file baru ditambahkan dari Drive (total di folder Drive: ${d.total_di_drive}).`);
+  } catch (err) {
+    showUploadErr(err.message);
+  } finally {
+    btn.innerHTML = oldHtml; btn.disabled = false;
+  }
+}
+
+let allFiles = [];
+
+async function loadFiles() {
+  try {
+    allFiles = await apiGet("/file");
+    renderFiles();
+  } catch (err) {
+    document.getElementById("fileList").innerHTML =
+      `<div class="emptyNote"><b>Gagal memuat file</b><p>${err.message}</p></div>`;
+  }
+}
+
+function renderFiles() {
+  const q = (document.getElementById("fileSearch").value || "").toLowerCase();
+  const rows = allFiles.filter(f => f.filename.toLowerCase().includes(q) || (f.kategori || "").toLowerCase().includes(q));
+  const list = document.getElementById("fileList");
+  if (rows.length === 0) {
+    list.innerHTML = `<div class="emptyNote">
+      <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>
+      <b>Belum ada file</b><p>Klik "+ Unggah File" untuk menambahkan dokumen pertama.</p>
+    </div>`;
+    return;
+  }
+  list.innerHTML = rows.map(f => {
+    const [cls, label] = iconFor(f.mime_type, f.filename);
+    return `<div class="fileRow">
+      <div class="fIcon ${cls}">${label}</div>
+      <div class="fMeta"><b>${f.filename}</b><small>${f.kategori || "Umum"}</small></div>
+      <div class="fRight">
+        ${fmtSize(f.size)} &middot; ${fmtDate(f.uploaded_at)}
+        <span class="dlBtn" onclick="downloadFile(${f.id},'${f.filename.replace(/'/g, "\\'")}')" title="Unduh">${ICON.download}</span>
+        <span class="dlBtn" onclick="deleteFile(${f.id})" title="Hapus" style="color:#ef4444">${ICON.trash}</span>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+async function doUploadFile() {
+  clearUploadErr();
+  const input = document.getElementById("fileInput");
+  const file = input.files[0];
+  if (!file) return;
+  const kategori = document.getElementById("uploadKategori").value || "Umum";
+  const btn = document.getElementById("uploadBtn");
+  btn.textContent = "Mengunggah..."; btn.disabled = true;
+  try {
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("kategori", kategori);
+    await apiUpload("/file", fd);
+    input.value = "";
+    document.getElementById("uploadKategori").value = "";
+    await loadFiles();
+  } catch (err) {
+    showUploadErr(err.message);
+  } finally {
+    btn.textContent = "+ Unggah File"; btn.disabled = false;
+  }
+}
+
+async function downloadFile(id, filename) {
+  try {
+    const r = await fetch(API + "/file/download?id=" + id, { headers: { Authorization: "Bearer " + token } });
+    if (!r.ok) { const d = await r.json(); throw new Error(d.error || "Gagal mengunduh"); }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    showUploadErr(err.message);
+  }
+}
+
+async function deleteFile(id) {
+  if (!confirm("Hapus file ini?")) return;
+  try {
+    await apiDelete("/file?id=" + id);
+    await loadFiles();
+  } catch (err) {
+    showUploadErr(err.message);
+  }
+}
+
+loadFiles();
+</script>
+<script src="chat-widget.js"></script>
+</body>
+</html>
