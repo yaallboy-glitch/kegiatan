@@ -73,20 +73,21 @@ button{font-family:inherit}
 .topRight{display:flex;align-items:center;gap:14px;margin-left:auto}
 .bell{width:38px;height:38px;border-radius:50%;background:var(--card2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer}
 .bell .dot{position:absolute;top:8px;right:9px;width:7px;height:7px;border-radius:50%;background:var(--gold)}
-.bellPreview{position:absolute;top:48px;right:0;width:0;height:36px;overflow:hidden;
+.bellPreview{position:absolute;top:50%;right:calc(100% + 10px);width:0;height:36px;overflow:hidden;
   background:var(--card2);border:1px solid var(--gold-dark);color:var(--text);
   border-radius:10px;opacity:0;box-shadow:0 8px 20px rgba(0,0,0,.4);
-  transition:width .4s ease, opacity .3s ease;z-index:40;cursor:pointer}
-.bellPreview.show{width:250px;opacity:1}
+  transition:width .4s ease, opacity .3s ease, transform .4s ease;z-index:40;cursor:pointer;
+  transform:translateY(-50%)}
+.bellPreview.show{width:230px;opacity:1}
 .bellPreview .marqueeInner{position:absolute;top:0;left:0;height:100%;display:flex;align-items:center;
   white-space:nowrap;font-size:12px;line-height:1.3;animation:bellMarquee 10s linear forwards;
-  transform:translateX(100%);} /* default: di luar kanan */
+  transform:translateX(100%)}
 .bellPreview .marqueeInner b{color:var(--gold);margin-right:6px;font-weight:700}
 @keyframes bellMarquee{
-  0%{transform:translateX(100%)}   /* mulai dari kanan luar */
-  12%{transform:translateX(0)}     /* masuk ke dalam (rata kiri) */
-  80%{transform:translateX(0)}     /* pause lama */
-  100%{transform:translateX(-100%)}/* keluar ke kiri penuh */
+  0%{transform:translateX(100%)}
+  12%{transform:translateX(0)}
+  80%{transform:translateX(0)}
+  100%{transform:translateX(-100%)}
 }
 .orgSwitch{display:flex;align-items:center;gap:9px;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:6px 12px 6px 8px;cursor:pointer}
 .orgSwitch .mini{width:30px;height:30px;border-radius:50%;background:linear-gradient(145deg,#f4d675,#b8860b);display:flex;align-items:center;justify-content:center;font-weight:800;color:#1a1a1a;font-size:11px}
@@ -191,7 +192,7 @@ tr:hover td{background:#1d1d20}
   .topRight{gap:8px}
   .topbar{align-items:flex-start}
   .bell{width:34px;height:34px}
-  .bellPreview{top:40px;right:-6px}
+  .bellPreview{top:40px;right:-6px;transform:none}
   .bellPreview.show{width:min(78vw,230px)}
   .orgSwitch small{display:none}
   .statGrid{gap:10px}
@@ -929,21 +930,7 @@ async function start() {
   profRole.textContent = roleLabel(me.role);
   avatarInit.textContent = (me.nama||"?").trim().charAt(0).toUpperCase();
   applyRoleVisibility();
-// ===== Navigasi dari halaman lain (hash) =====
-function handleHashNavigation() {
-  const hash = location.hash.replace("#", "");
-  if (hash === "bendahara") {
-    showPage("page-bendahara", document.getElementById("navBendahara"));
-  } else if (hash === "pengumuman") {
-    showPage("page-pengumuman", document.getElementById("navPengumuman"));
-    loadPengumuman();
-  } else if (hash === "sosmed") {
-    openSosmedModal();
-  }
-}
-handleHashNavigation();
-window.addEventListener("hashchange", handleHashNavigation);
-  
+
   pmName.textContent = me.nama;
   pmRole.textContent = roleLabel(me.role);
   document.getElementById("pmAdminBtn").style.display = isAdminRole(me.role) ? "" : "none";
@@ -957,6 +944,21 @@ window.addEventListener("hashchange", handleHashNavigation);
     sessionStorage.removeItem("ktOpenAdmin");
     if (isAdminRole(me.role)) openAnggotaModal();
   }
+
+  // ===== Navigasi dari halaman lain (hash) =====
+  function handleHashNavigation() {
+    const hash = location.hash.replace("#", "");
+    if (hash === "bendahara") {
+      showPage("page-bendahara", document.getElementById("navBendahara"));
+    } else if (hash === "pengumuman") {
+      showPage("page-pengumuman", document.getElementById("navPengumuman"));
+      loadPengumuman();
+    } else if (hash === "sosmed") {
+      openSosmedModal();
+    }
+  }
+  handleHashNavigation();
+  window.addEventListener("hashchange", handleHashNavigation);
 
   try {
     await loadAnggota();
