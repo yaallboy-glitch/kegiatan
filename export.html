@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Karang Taruna | Export Laporan</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{
+  --bg:#0c0c0e;--bg-soft:#0f0f12;--card:#16161a;--card2:#1c1c21;--border:#2a2a30;
+  --gold:#facc15;--gold-soft:#facc1533;--gold-dark:#a16207;--text:#f5f5f7;--text-dim:#a0a0aa;--text-dim2:#6b6b76;--red:#e11d48;--blue:#3b82f6;--green:#22c55e;
+}
+*{box-sizing:border-box}
+body{font-family:'Segoe UI',Arial,sans-serif;margin:0;background:var(--bg);color:var(--text)}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit}
+
+.layout{display:flex;min-height:100vh}
+.sidebar{width:250px;flex:0 0 250px;background:var(--bg-soft);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:22px 16px;position:sticky;top:0;height:100vh}
+.brand{display:flex;flex-direction:column;align-items:center;text-align:center;padding-bottom:20px;margin-bottom:14px;border-bottom:1px solid var(--border)}
+.brand .logo{width:60px;height:60px;border-radius:50%;object-fit:cover;background:#0a0a0b;margin-bottom:10px;border:3px solid #0a0a0b;box-shadow:0 0 0 2px var(--gold)}
+.brand b{font-size:15px;letter-spacing:.4px}
+.brand span{font-size:10.5px;color:var(--gold);letter-spacing:.6px;margin-top:2px}
+.navlink{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:9px;color:var(--text-dim);font-size:14px;font-weight:500;cursor:pointer;margin-bottom:4px;border:0;background:transparent;width:100%;text-align:left}
+.navlink svg{flex:0 0 18px;width:18px;height:18px}
+.navlink:hover{background:var(--card2);color:var(--text)}
+.navlink.active{background:linear-gradient(90deg,#facc15,#eab308);color:#181205;font-weight:700}
+.navSpacer{flex:1}
+.profileBox{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:var(--card2);border:1px solid var(--border)}
+.profileBox .avatar{width:34px;height:34px;border-radius:50%;background:var(--gold-soft);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:0 0 34px}
+.profileBox .who{flex:1;min-width:0}
+.profileBox .who b{display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.profileBox .who small{color:var(--text-dim2);font-size:10.5px}
+.logoutBtn{background:transparent;border:0;color:var(--text-dim2);cursor:pointer;padding:4px}
+.logoutBtn:hover{color:var(--red)}
+
+.main{flex:1;min-width:0;padding:26px 30px 40px}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:16px;flex-wrap:wrap}
+.topbar h1{font-size:22px;margin:0}
+.topbar h1 span{color:var(--gold)}
+.topbar p{margin:4px 0 0;color:var(--text-dim);font-size:13.5px}
+
+.card{background:var(--card);padding:16px 18px;border-radius:12px;margin:0 10px 10px 0;min-width:150px;border:1px solid var(--border)}
+form.formCard{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:12px;margin:0 0 16px}
+input,select,textarea{padding:10px;margin:5px 0;width:100%;box-sizing:border-box;background:var(--bg-soft);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13.5px;font-family:inherit}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
+button.mainBtn{padding:10px 16px;background:linear-gradient(145deg,#facc15,#eab308);color:#181205;border:0;border-radius:8px;cursor:pointer;margin-top:6px;font-weight:700;font-size:13.5px}
+button.secondary{background:linear-gradient(145deg,#22c55e,#16a34a);color:#0a1f10}
+button.word{background:linear-gradient(145deg,#3b82f6,#2563eb);color:#08122e}
+button:disabled{opacity:.5;cursor:not-allowed}
+.pillBtn{border:1px solid var(--gold-dark);color:var(--gold);background:transparent;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer}
+.pillBtn.active,.pillBtn:hover{background:var(--gold);color:#181205;border-color:var(--gold)}
+.pillGroup{display:flex;gap:8px}
+.errBox{display:none;background:#3a1414;color:#fca5a5;border:1px solid #5c1f1f;padding:11px 12px;border-radius:8px;margin:10px 0;font-size:13px;white-space:pre-wrap;word-break:break-word}
+
+.globalTopBar{display:flex;justify-content:flex-end;margin-bottom:10px}
+.topProfileWrap{position:relative}
+.topProfileBtn{width:42px;height:42px;border-radius:50%;border:2px solid var(--gold-dark);background:var(--gold-soft);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;cursor:pointer;padding:0;background-size:cover;background-position:center;overflow:hidden}
+.topProfileBtn:hover{border-color:var(--gold)}
+.profileMenu{display:none;position:absolute;top:50px;right:0;background:var(--card);border:1px solid var(--border);border-radius:12px;min-width:224px;box-shadow:0 16px 40px rgba(0,0,0,.5);padding:8px;z-index:90}
+.profileMenu.open{display:block}
+.profileMenu .pmHead{display:flex;align-items:center;gap:10px;padding:8px 8px 12px;border-bottom:1px solid var(--border);margin-bottom:6px}
+.profileMenu .pmHead .pmAvatar{width:38px;height:38px;border-radius:50%;background:var(--gold-soft);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:0 0 38px;background-size:cover;background-position:center}
+.profileMenu .pmHead .pmWho{min-width:0}
+.profileMenu .pmHead b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.profileMenu .pmHead small{color:var(--text-dim2);font-size:11px}
+.pmItem{display:flex;align-items:center;gap:9px;width:100%;padding:9px 10px;border-radius:8px;border:0;background:transparent;color:var(--text);font-size:13px;cursor:pointer;text-align:left;box-sizing:border-box}
+.pmItem svg{flex:0 0 16px;width:16px;height:16px;color:var(--text-dim)}
+.pmItem:hover{background:var(--card2)}
+.pmItem.pmDanger{color:var(--red)}
+.pmItem.pmDanger svg{color:var(--red)}
+.pmSep{height:1px;background:var(--border);margin:6px 2px}
+
+@media(max-width:1024px){
+  .menuToggle{display:flex}
+  .sidebar{position:fixed;top:0;left:-270px;height:100vh;transition:left .25s ease;z-index:50}
+  .sidebar.open{left:0}
+  .main{padding-top:66px}
+}
+@media(max-width:600px){
+  .main{padding-left:14px;padding-right:14px;padding-bottom:30px}
+  .topbar h1{font-size:19px}
+  .topbar p{font-size:12.5px}
+}
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <button class="menuToggle" id="menuToggle" onclick="toggleSidebar()"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+  <div class="sidebarOverlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <img class="logo" src="https://raw.githubusercontent.com/yaallboy-glitch/kegiatan/refs/heads/main/IMG_6411.png" alt="Logo">
+      <b>KARANG TARUNA</b>
+      <span>BRIGADE &bull; MUDA &bull; SOROPATI</span>
+    </div>
+    <a class="navlink" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>Dashboard</a>
+    <a class="navlink" href="bendahara.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/><path d="M6 14h4"/></svg>Bendahara</a>
+    <a class="navlink" href="file.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>File</a>
+    <a class="navlink" href="footage.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="15" height="12" rx="2"/><path d="M17 10l5-3v10l-5-3"/></svg>Footage</a>
+    <a class="navlink" href="index.html#sosmed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>Sosial Media</a>
+    <a class="navlink" href="index.html#pengumuman"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11 13.5v3a2 2 0 0 0 4 0v-2"/></svg>Pengumuman</a>
+    <div class="navSpacer"></div>
+    <div class="profileBox">
+      <div class="avatar" id="avatarInit">A</div>
+      <div class="who"><b id="profName">Admin</b><small id="profRole">Administrator</small></div>
+      <button class="logoutBtn" onclick="logout()"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="globalTopBar">
+      <div class="topProfileWrap" id="topProfileWrap">
+        <button class="topProfileBtn" id="topProfileBtn" onclick="toggleProfileMenu(event)"><span id="topAvatarInit">A</span></button>
+        <div class="profileMenu" id="profileMenu">
+          <div class="pmHead"><div class="pmAvatar" id="pmAvatarInit">A</div><div class="pmWho"><b id="pmName">Nama</b><small id="pmRole">Role</small></div></div>
+          <label class="pmItem" for="fotoProfilInput" style="cursor:pointer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z"/><circle cx="12" cy="13" r="4"/></svg>Ganti Foto Profil</label>
+          <input type="file" id="fotoProfilInput" accept="image/*" style="display:none">
+          <button class="pmItem" onclick="goToProfil()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profil Saya</button>
+          <button class="pmItem" id="pmAdminBtn" style="display:none" onclick="goToAdminPanel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>Panel Admin</button>
+          <div class="pmSep"></div>
+          <button class="pmItem pmDanger" onclick="logout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>Logout</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="topbar">
+      <div><h1>Export <span>Laporan</span></h1><p>Pilih jenis export & isi detail, lalu unduh.</p></div>
+    </div>
+
+    <div id="exportArea">
+      <div class="card" style="max-width:520px;margin:0 auto;padding:20px">
+        <h3 id="exTitle" style="margin:0 0 16px">Export Laporan</h3>
+        <form id="exportForm" onsubmit="return false">
+          <label style="font-size:12.5px;color:var(--text-dim)">Periode</label>
+          <input type="date" id="exPeriodeStart">
+          <input type="date" id="exPeriodeEnd">
+          <label style="font-size:12.5px;color:var(--text-dim)">Nama Kegiatan / Program</label>
+          <input id="exKegiatan" placeholder="Nama Kegiatan / Program">
+          <label style="font-size:12.5px;color:var(--text-dim)">Nama Ketua / Penanggung Jawab</label>
+          <input id="exKetua" placeholder="Nama Ketua / Penanggung Jawab">
+          <label style="font-size:12.5px;color:var(--text-dim)">Nama Bendahara</label>
+          <input id="exBendahara" placeholder="Nama Bendahara">
+          <label style="font-size:12.5px;color:var(--text-dim);display:block;margin:16px 0 6px">Format File</label>
+          <div class="pillGroup" id="exFormatGroup">
+            <button type="button" class="pillBtn active" data-fmt="pdf" onclick="setFormat('pdf')">PDF</button>
+            <button type="button" class="pillBtn" data-fmt="excel" onclick="setFormat('excel')">Excel</button>
+            <button type="button" class="pillBtn" data-fmt="word" onclick="setFormat('word')">Word</button>
+          </div>
+          <div id="exErr" class="errBox"></div>
+          <button class="mainBtn" style="width:100%;margin-top:16px" onclick="generateExport()">Export Sekarang</button>
+        </form>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ======== API ========
+const API = "https://kegiatan-api.newbrigademudasoropati.workers.dev";
+let token = localStorage.getItem("token") || "";
+if (!token) { location.href = "index.html"; }
+
+let me = {};
+try {
+  const payload = atob(token).split("|");
+  me = { username: payload[0], nama: payload[1], role: payload[2] };
+} catch { location.href = "index.html"; }
+
+// ===== URL PARAMS =====
+const params = new URLSearchParams(location.search);
+const exportType = params.get("jenis") || "keuangan"; // keuangan, lpj, proposal
+
+const titles = { keuangan: "Laporan Keuangan", lpj: "LPJ (Laporan Pertanggungjawaban)", proposal: "Daftar Proposal" };
+document.getElementById("exTitle").textContent = "Export " + titles[exportType] || "Export Laporan";
+
+// ===== PROFILE MENU =====
+function toggleProfileMenu(e) { e.stopPropagation(); document.getElementById("profileMenu").classList.toggle("open"); }
+document.addEventListener("click", function(e){ const wrap=document.getElementById("topProfileWrap"); const menu=document.getElementById("profileMenu"); if(wrap&&menu&&!wrap.contains(e.target)) menu.classList.remove("open"); });
+function goToProfil(){ sessionStorage.setItem("ktOpenProfil","1"); location.href="index.html"; }
+function goToAdminPanel(){ sessionStorage.setItem("ktOpenAdmin","1"); location.href="index.html"; }
+function logout(){ localStorage.removeItem("token"); location.href="index.html"; }
+function toggleSidebar(){ document.getElementById("sidebar").classList.toggle("open"); document.getElementById("sidebarOverlay").classList.toggle("open"); }
+
+// ===== PROFILE DATA =====
+document.getElementById("profName").textContent = me.nama;
+document.getElementById("profRole").textContent = me.role;
+document.getElementById("avatarInit").textContent = (me.nama||"?").trim().charAt(0).toUpperCase();
+document.getElementById("pmName").textContent = me.nama;
+document.getElementById("pmRole").textContent = me.role;
+document.getElementById("pmAdminBtn").style.display = (me.role === "admin" || me.role === "ketua") ? "" : "none";
+
+function fotoKey(){ return "ktFotoProfil_"+ (me.username||"guest"); }
+function applyFotoProfil(){
+  const saved=localStorage.getItem(fotoKey()); const initial=(me.nama||"?").trim().charAt(0).toUpperCase();
+  [document.getElementById("topProfileBtn"),document.getElementById("pmAvatarInit"),document.getElementById("avatarInit")].forEach(el=>{ if(!el)return; if(saved){el.style.backgroundImage=`url('${saved}')`;el.textContent="";}else{el.style.backgroundImage="";el.textContent=initial;} });
+  const topInit=document.getElementById("topAvatarInit"); if(topInit) topInit.textContent=saved?"":initial;
+}
+applyFotoProfil();
+const fotoProfilInput=document.getElementById("fotoProfilInput");
+if(fotoProfilInput){ fotoProfilInput.addEventListener("change",function(e){ const file=e.target.files[0]; if(!file)return; const reader=new FileReader(); reader.onload=function(ev){ const img=new Image(); img.onload=function(){ const size=240; const canvas=document.createElement("canvas"); canvas.width=size; canvas.height=size; const ctx=canvas.getContext("2d"); const scale=Math.max(size/img.width,size/img.height); const w=img.width*scale,h=img.height*scale; ctx.drawImage(img,(size-w)/2,(size-h)/2,w,h); try{ localStorage.setItem(fotoKey(),canvas.toDataURL("image/jpeg",0.85)); applyFotoProfil(); }catch(err){alert("Gagal menyimpan foto");} }; img.src=ev.target.result; }; reader.readAsDataURL(file); e.target.value=""; }); }
+
+// ===== HELPER =====
+function showErr(boxId, msg) { const b=document.getElementById(boxId); b.innerHTML=msg; b.style.display="block"; }
+function clearErr(boxId) { const b=document.getElementById(boxId); b.style.display="none"; b.textContent=""; }
+const rp = n => "Rp " + Number(n||0).toLocaleString("id-ID");
+
+// ===== FORMAT =====
+let currentFormat = "pdf";
+function setFormat(fmt){
+  currentFormat = fmt;
+  document.querySelectorAll("#exFormatGroup .pillBtn").forEach(b=>b.classList.toggle("active",b.dataset.fmt===fmt));
+}
+
+// ===== GENERATE =====
+async function generateExport(){
+  clearErr("exErr");
+  const start = document.getElementById("exPeriodeStart").value;
+  const end = document.getElementById("exPeriodeEnd").value;
+  const kegiatan = (document.getElementById("exKegiatan").value || "-").trim();
+  const ketua = (document.getElementById("exKetua").value || "").trim();
+  const bendahara = (document.getElementById("exBendahara").value || "").trim();
+  const params = { start, end, kegiatan, ketuaNama:ketua, bendaharaNama:bendahara };
+  const btn = document.querySelector("button.mainBtn");
+  const oldText = btn.textContent; btn.textContent="Memproses..."; btn.disabled=true;
+  try {
+    // Pilih fungsi berdasarkan exportType dan currentFormat
+    let fn = null;
+    if (exportType === "keuangan") {
+      if (currentFormat === "pdf") fn = exportKeuanganPDF;
+      else if (currentFormat === "excel") fn = exportKeuanganExcel;
+      else fn = exportKeuanganWord;
+    } else if (exportType === "lpj") {
+      if (currentFormat === "pdf") fn = exportLPJPDF;
+      else if (currentFormat === "excel") fn = exportLPJExcel;
+      else fn = exportLPJWord;
+    } else if (exportType === "proposal") {
+      if (currentFormat === "pdf") fn = exportProposalPDF;
+      else if (currentFormat === "excel") fn = exportProposalExcel;
+      else fn = exportProposalWord;
+    }
+    if (!fn) throw new Error("Jenis export tidak valid");
+    await fn(params);
+  } catch(err) {
+    showErr("exErr", err.message || String(err));
+  } finally {
+    btn.innerHTML = oldText; btn.disabled = false;
+  }
+}
+
+// ===================================================================
+// ===== SEMUA FUNGSI EXPORT (diambil dari bendahara/index asli) =====
+// ===================================================================
+
+async function loadImageAsDataURL(url){
+  const res = await fetch(url);
+  const blob = await res.blob();
+  return new Promise((resolve,reject)=>{ const reader=new FileReader(); reader.onload=()=>resolve(reader.result); reader.onerror=reject; reader.readAsDataURL(blob); });
+}
+
+function pdfFooter(doc, orgLine){
+  const pageCount = doc.internal.getNumberOfPages();
+  for(let i=1;i<=pageCount;i++){
+    doc.setPage(i);
+    doc.setDrawColor(225,225,225);
+    doc.setLineWidth(0.2);
+    doc.line(14,285,196,285);
+    doc.setFontSize(7.5);
+    doc.setTextColor(150,150,150);
+    doc.text(orgLine,14,290);
+    doc.text("Halaman "+i+" dari "+pageCount,196,290,{align:"right"});
+  }
+}
+
+function fmtTgl(iso){
+  try{ const [y,m,d]=String(iso).split("-"); return d+"/"+m+"/"+y; }catch{ return iso; }
+}
+
+function fmtIndoPeriode(start,end){
+  const bulan=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+  try{
+    const s=new Date(start+"T00:00:00");
+    const e=new Date(end+"T00:00:00");
+    if(s.getMonth()===e.getMonth()&&s.getFullYear()===e.getFullYear()) return bulan[s.getMonth()]+" "+s.getFullYear();
+    return fmtTgl(start)+" s/d "+fmtTgl(end);
+  }catch{ return start+" s/d "+end; }
+}
+
+function pdfLpjSectionBar(doc,text,y,redColor){
+  doc.setFillColor(...redColor);
+  doc.rect(14,y,182,7,"F");
+  doc.setTextColor(255,255,255);
+  doc.setFont(undefined,"bold");
+  doc.setFontSize(9.5);
+  doc.text(text,18,y+5);
+  return y+10;
+}
+
+// ===== PDF: LPJ =====
+async function exportLPJPDF({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
+  const entitas = "Karang Taruna Brigade Muda Soropati";
+  const status = "Selesai";
+  const allKeu = await api("/keuangan");
+  const keu = (start && end) ? allKeu.filter(r => r.tanggal >= start && r.tanggal <= end) : allKeu;
+  const masukRows = keu.filter(r => r.jenis === "masuk").sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+  const keluarRows = keu.filter(r => r.jenis !== "masuk").sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+  const totalMasuk = masukRows.reduce((a, r) => a + (r.jumlah || 0), 0);
+  const totalKeluar = keluarRows.reduce((a, r) => a + (r.jumlah || 0), 0);
+  const sisa = totalMasuk - totalKeluar;
+  const periodeLabel = (start && end) ? fmtIndoPeriode(start, end) : "Semua data";
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const RED = [192, 0, 0], GOLD = [217, 164, 6], DARK = [23, 23, 23], GRAY = [120, 120, 120], LIGHTGRAY = [243, 244, 246];
+  const pdfEnsureSpace = (yNow, needed, topAfterBreak = 20) => { if (yNow + needed > 272) { doc.addPage(); return topAfterBreak; } return yNow; };
+
+  let logoData = null;
+  try { logoData = await loadImageAsDataURL("https://raw.githubusercontent.com/yaallboy-glitch/kegiatan/refs/heads/main/IMG_6411.png"); } catch {}
+
+  if (logoData) doc.addImage(logoData, "PNG", 14, 12, 20, 20);
+  doc.setTextColor(...DARK);
+  doc.setFont(undefined, "bold");
+  doc.setFontSize(19);
+  doc.text(entitas.toUpperCase(), logoData ? 38 : 14, 21);
+  doc.setTextColor(...GOLD);
+  doc.setFontSize(10.5);
+  doc.text("LAPORAN PERTANGGUNGJAWABAN (LPJ)", logoData ? 38 : 14, 28);
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(1);
+  doc.line(14, 36, 196, 36);
+
+  doc.setFillColor(253, 246, 227);
+  doc.rect(14, 41, 182, 20, "F");
+  doc.setFillColor(...RED);
+  doc.rect(14, 41, 1.6, 20, "F");
+  doc.setFontSize(9);
+  doc.setFont(undefined, "bold");
+  doc.setTextColor(...RED);
+  doc.text("Entitas", 20, 48);
+  doc.text("Kegiatan", 20, 56);
+  doc.text("Periode", 110, 48);
+  doc.text("Status", 110, 56);
+  doc.setFont(undefined, "normal");
+  doc.setTextColor(...DARK);
+  doc.text(": " + entitas, 38, 48);
+  doc.text(": " + kegiatan, 38, 56);
+  doc.text(": " + periodeLabel, 128, 48);
+  doc.text(": " + status, 128, 56);
+
+  const tableCommon = {
+    styles: { fontSize: 9, cellPadding: 3, textColor: DARK },
+    headStyles: { fillColor: LIGHTGRAY, textColor: DARK, fontStyle: "bold" },
+    columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 26 }, 3: { halign: "right", cellWidth: 34 } },
+    theme: "plain",
+    showHead: "everyPage",
+    margin: { left: 14, right: 14, top: 20, bottom: 22 }
+  };
+
+  let y = 70;
+  y = pdfLpjSectionBar(doc, "I. RINCIAN UANG MASUK (PENERIMAAN)", y, RED);
+  const bodyMasuk = masukRows.map((r, i) => [i + 1, fmtTgl(r.tanggal), r.keterangan, rp(r.jumlah)]);
+  doc.autoTable({ ...tableCommon, startY: y, head: [["NO", "TANGGAL", "SUMBER DANA / KETERANGAN", "JUMLAH (RP)"]], body: bodyMasuk.length ? bodyMasuk : [["-", "-", "Tidak ada data", "-"]] });
+  y = doc.lastAutoTable.finalY;
+  y = pdfEnsureSpace(y, 8);
+  doc.setFillColor(253, 246, 227);
+  doc.rect(14, y, 182, 8, "F");
+  doc.setFont(undefined, "bold");
+  doc.setTextColor(...RED);
+  doc.setFontSize(9.5);
+  doc.text("TOTAL UANG MASUK", 20, y + 5.5);
+  doc.text(rp(totalMasuk), 196, y + 5.5, { align: "right" });
+  y += 16;
+
+  y = pdfEnsureSpace(y, 40);
+  y = pdfLpjSectionBar(doc, "II. RINCIAN UANG KELUAR (PENGELUARAN)", y, RED);
+  const bodyKeluar = keluarRows.map((r, i) => [i + 1, fmtTgl(r.tanggal), r.keterangan, rp(r.jumlah)]);
+  doc.autoTable({ ...tableCommon, startY: y, head: [["NO", "TANGGAL", "RINCIAN PENGELUARAN", "JUMLAH (RP)"]], body: bodyKeluar.length ? bodyKeluar : [["-", "-", "Tidak ada data", "-"]] });
+  y = doc.lastAutoTable.finalY;
+  y = pdfEnsureSpace(y, 8);
+  doc.setFillColor(253, 246, 227);
+  doc.rect(14, y, 182, 8, "F");
+  doc.setFont(undefined, "bold");
+  doc.setTextColor(...RED);
+  doc.text("TOTAL UANG KELUAR", 20, y + 5.5);
+  doc.text(rp(totalKeluar), 196, y + 5.5, { align: "right" });
+  y += 18;
+
+  y = pdfEnsureSpace(y, 22);
+  doc.setFillColor(...RED);
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.8);
+  doc.roundedRect(14, y, 182, 22, 2, 2, "FD");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont(undefined, "bold");
+  doc.setFontSize(9.5);
+  doc.text("TOTAL UANG MASUK: " + rp(totalMasuk), 20, y + 8);
+  doc.text("TOTAL UANG KELUAR: " + rp(totalKeluar), 196, y + 8, { align: "right" });
+  doc.setFontSize(10.5);
+  doc.text("SISA SALDO / DANA " + entitas.toUpperCase() + ":", 20, y + 17);
+  doc.setFontSize(13);
+  doc.text(rp(sisa), 196, y + 17, { align: "right" });
+  y += 36;
+
+  y = pdfEnsureSpace(y, 32, 30);
+  const colW = 92;
+  doc.setFont(undefined, "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...DARK);
+  doc.text("KETUA / PENANGGUNG JAWAB", 14 + colW / 2, y, { align: "center" });
+  doc.text("BENDAHARA KEUANGAN", 104 + colW / 2, y, { align: "center" });
+  y += 22;
+  doc.setFont(undefined, "bold");
+  doc.setTextColor(...RED);
+  doc.setFontSize(10.5);
+  doc.text(ketuaNama || "________________________", 14 + colW / 2, y, { align: "center" });
+  doc.text(bendaharaNama || "________________________", 104 + colW / 2, y, { align: "center" });
+  doc.setFont(undefined, "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...GRAY);
+
+  pdfFooter(doc, entitas.toUpperCase() + " - LAPORAN PERTANGGUNGJAWABAN");
+  doc.save("LPJ_" + (start || "semua") + "_" + (end || "data") + ".pdf");
+}
+
+// ===== PDF: Keuangan =====
+async function exportKeuanganPDF({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
+  const entitas = "Karang Taruna Brigade Muda Soropati";
+  const status = "Berjalan";
+  const allKeu = await api("/keuangan");
+  const keu = (start && end) ? allKeu.filter(r => r.tanggal >= start && r.tanggal <= end) : allKeu;
+  const masukRows = keu.filter(r => r.jenis === "masuk").sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+  const keluarRows = keu.filter(r => r.jenis !== "masuk").sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+  const totalMasuk = masukRows.reduce((a, r) => a + (r.jumlah || 0), 0);
+  const totalKeluar = keluarRows.reduce((a, r) => a + (r.jumlah || 0), 0);
+  const sisa = totalMasuk - totalKeluar;
+  const periodeLabel = (start && end) ? fmtIndoPeriode(start, end) : "Semua data";
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const RED = [192, 0, 0], GOLD = [217, 164, 6], DARK = [23, 23, 23], GRAY = [120, 120, 120], LIGHTGRAY = [243, 244, 246];
+  const pdfEnsureSpace = (yNow, needed, topAfterBreak = 20) => { if (yNow + needed > 272) { doc.addPage(); return topAfterBreak; } return yNow; };
+
+  let logoData = null;
+  try { logoData = await loadImageAsDataURL("https://raw.githubusercontent.com/yaallboy-glitch/kegiatan/refs/heads/main/IMG_6411.png"); } catch {}
+
+  if (logoData) doc.addImage(logoData, "PNG", 14, 12, 20, 20);
+  doc.setTextColor(...DARK);
+  doc.setFont(undefined, "bold");
+  doc.setFontSize(19);
+  doc.text(entitas.toUpperCase(), logoData ? 38 : 14, 21);
+  doc.setTextColor(...GOLD);
+  doc.setFontSize(10.5);
+  doc.text("LAPORAN KEUANGAN", logoData ? 38 : 14, 28);
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(1);
+  doc.line(14, 36, 196, 36);
+
+  doc.setFillColor(253, 246, 227);
+  doc.rect(14, 41, 182, 20, "F");
+  doc.setFillColor(...RED);
+  doc.rect(14, 41, 1.6, 20, "F");
+  doc.setFontSize(9);
+  doc.setFont(undefined, "bold");
+  doc.setTextColor(...RED);
+  doc.text("Entitas", 20, 48);
+  doc.text("Kegiatan", 20, 56);
+  doc.text("Periode", 110, 48);
+  doc.text("Status", 110, 56);
+  doc.setFont(undefined, "normal");
+  doc.setTextColor(...DARK);
+  doc.text(": " + entitas, 38, 48);
+  doc.text(": " + kegiatan, 38, 56);
+  doc.text(": " + periodeLabel, 128, 48);
+  doc.text(": " + status, 128, 56);
+
+  const tableCommon = {
+    styles: { fontSize: 9, cellPadding: 3, textColor: DARK },
+    headStyles: { fillColor: LIGHTGRAY, textColor: DARK, fontStyle: "bold" },
+    columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 26 }, 3: { halign: "right", cellWidth: 34 } },
+    theme: "plain",
+    showHead: "everyPage",
+    margin: { left: 14, right: 14, top: 20, bottom: 22 }
+  };
+
+  let y = 70;
+  y = pdfLpjSectionBar(doc, "I. RINCIAN UANG MASUK (PENERIMAAN)", y, RED);
+  const bodyMasuk = masukRows.map((r, i) => [i + 1, fmtTgl(r.tanggal), r.keterangan, rp(r.jumlah)]);
+  doc.autoTable({ ...tableCommon, startY: y, head: [["NO", "TANGGAL", "SUMBER DANA / KETERANGAN", "JUMLAH (RP)"]], body: bodyMasuk.length ? bodyMasuk : [["-", "-", "Tidak ada data", "-"]] });
+  y = doc.lastAutoTable.finalY;
+  y = pdfEnsureSpace(y, 8);
+  doc.setFillColor(253, 246, 227);
+  doc.rect(14, y, 182, 8, "F");
+  doc.setFont(undefined, "bold");
+  doc.setTextColor(...RED);
+  doc.setFontSize(9.5);
+  doc.text("TOTAL UANG MASUK", 20, y + 5.5);
+  doc.text(rp(totalMasuk), 196, y + 5.5, { align: "right" });
+  y += 16;
+
+  y = pdfEnsureSpace(y, 40);
+  y = pdfLpjSectionBar(doc, "II. RINCIAN UANG KELUAR (PENGELUARAN)", y, RED);
+  const bodyKeluar = keluarRows.map((r, i) => [i + 1, fmtTgl(r.tanggal), r.keterangan, rp(r.jumlah)]);
+  doc.autoTable({ ...tableCommon, startY: y, head: [["NO", "TANGGAL", "RINCIAN PENGELUARAN", "JUMLAH (RP)"]], body: bodyKeluar.length ? bodyKeluar : [["-", "-", "Tidak ada data", "-"]] });
+  y = doc.lastAutoTable.finalY;
+  y = pdfEnsureSpace(y, 8);
+  doc.setFillColor(253, 246, 227);
+  doc.rect(14, y, 182, 8, "F");
+  doc.setFont(undefined, "bold");
+  doc.setTextColor(...RED);
+  doc.text("TOTAL UANG KELUAR", 20, y + 5.5);
+  doc.text(rp(totalKeluar), 196, y + 5.5, { align: "right" });
+  y += 18;
+
+  y = pdfEnsureSpace(y, 22);
+  doc.setFillColor(...RED);
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.8);
+  doc.roundedRect(14, y, 182, 22, 2, 2, "FD");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont(undefined, "bold");
+  doc.setFontSize(9.5);
+  doc.text("TOTAL UANG MASUK: " + rp(totalMasuk), 20, y + 8);
+  doc.text("TOTAL UANG KELUAR: " + rp(totalKeluar), 196, y + 8, { align: "right" });
+  doc.setFontSize(10.5);
+  doc.text("SALDO AKHIR " + entitas.toUpperCase() + ":", 20, y + 17);
+  doc.setFontSize(13);
+  doc.text(rp(sisa), 196, y + 17, { align: "right" });
+  y += 36;
+
+  y = pdfEnsureSpace(y, 32, 30);
+  const colW = 92;
+  doc.setFont(undefined, "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...DARK);
+  doc.text("KETUA / PENANGGUNG JAWAB", 14 + colW / 2, y, { align: "center" });
+  doc.text("BENDAHARA KEUANGAN", 104 + colW / 2, y, { align: "center" });
+  y += 22;
+  doc.setFont(undefined, "bold");
+  doc.setTextColor(...RED);
+  doc.setFontSize(10.5);
+  doc.text(ketuaNama || "________________________", 14 + colW / 2, y, { align: "center" });
+  doc.text(bendaharaNama || "________________________", 104 + colW / 2, y, { align: "center" });
+  doc.setFont(undefined, "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...GRAY);
+
+  pdfFooter(doc, entitas.toUpperCase() + " - LAPORAN KEUANGAN");
+  doc.save("Keuangan_" + (start || "semua") + "_" + (end || "data") + ".pdf");
+}
+
+// ===== PDF: Proposal =====
+async function exportProposalPDF({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
+  const entitas = "Karang Taruna Brigade Muda Soropati";
+  const status = "Berjalan";
+  const sekretarisNama = bendaharaNama;
+  const periodeLabel = (start && end) ? fmtIndoPeriode(start, end) : "Semua data";
+  const allProp = await api("/proposal");
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const RED = [192, 0, 0], GOLD = [217, 164, 6], DARK = [23, 23, 23], GRAY = [120, 120, 120], LIGHTGRAY = [243, 244, 246];
+  const pdfEnsureSpace = (yNow, needed, topAfterBreak = 20) => { if (yNow + needed > 272) { doc.addPage(); return topAfterBreak; } return yNow; };
+
+  let logoData = null;
+  try { logoData = await loadImageAsDataURL("https://raw.githubusercontent.com/yaallboy-glitch/kegiatan/refs/heads/main/IMG_6411.png"); } catch {}
+
+  if (logoData) doc.addImage(logoData, "PNG", 14, 12, 20, 20);
+  doc.setTextColor(...DARK);
+  doc.setFont(undefined, "bold");
+  doc.setFontSize(19);
+  doc.text(entitas.toUpperCase(), logoData ? 38 : 14, 21);
+  doc.setTextColor(...GOLD);
+  doc.setFontSize(10.5);
+  doc.text("DAFTAR PROPOSAL KEGIATAN", logoData ? 38 : 14, 28);
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(1);
+  doc.line(14, 36, 196, 36);
+
+  doc.setFillColor(253, 246, 227);
+  doc.rect(14, 41, 182, 28, "F");
+  doc.setFillColor(...RED);
+  doc.rect(14, 41, 1.6, 28, "F");
+  doc.setFontSize(9);
+  doc.setFont(undefined, "bold");
+  doc.setTextColor(...RED);
+  doc.text("Entitas", 20, 48);
+  doc.text("Jumlah Proposal", 20, 56);
+  doc.text("Kegiatan Terkait", 20, 64);
+  doc.text("Periode", 110, 48);
+  doc.text("Status", 110, 56);
+  doc.setFont(undefined, "normal");
+  doc.setTextColor(...DARK);
+  doc.text(": " + entitas, 45, 48);
+  doc.text(": " + allProp.length + " proposal", 45, 56);
+  doc.text(": " + (kegiatan || "-"), 45, 64);
+  doc.text(": " + periodeLabel, 128, 48);
+  doc.text(": " + status, 128, 56);
+  let yInfoEnd = 74;
+
+  const tableCommon = {
+    styles: { fontSize: 9, cellPadding: 3, textColor: DARK },
+    headStyles: { fillColor: LIGHTGRAY, textColor: DARK, fontStyle: "bold" },
+    columnStyles: { 0: { cellWidth: 10 } },
+    theme: "plain",
+    showHead: "everyPage",
+    margin: { left: 14, right: 14, top: 20, bottom: 22 }
+  };
+
+  let y = yInfoEnd;
+  y = pdfLpjSectionBar(doc, "DAFTAR PROPOSAL", y, RED);
+  const body = allProp.map((r, i) => [i + 1, r.judul, r.status, namaFromUsername(r.created_by), r.updated_by ? namaFromUsername(r.updated_by) : "-"]);
+  doc.autoTable({ ...tableCommon, startY: y, head: [["NO", "JUDUL PROPOSAL", "STATUS", "DIBUAT OLEH", "DIUBAH OLEH"]], body: body.length ? body : [["-", "Tidak ada data", "-", "-", "-"]] });
+  y = doc.lastAutoTable.finalY + 10;
+
+  y = pdfEnsureSpace(y, 32, 30);
+  const colW = 92;
+  doc.setFont(undefined, "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...DARK);
+  doc.text("KETUA / PENANGGUNG JAWAB", 14 + colW / 2, y, { align: "center" });
+  doc.text("SEKRETARIS", 104 + colW / 2, y, { align: "center" });
+  y += 22;
+  doc.setFont(undefined, "bold");
+  doc.setTextColor(...RED);
+  doc.setFontSize(10.5);
+  doc.text(ketuaNama || "________________________", 14 + colW / 2, y, { align: "center" });
+  doc.text(sekretarisNama || "________________________", 104 + colW / 2, y, { align: "center" });
+  doc.setFont(undefined, "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(...GRAY);
+
+  pdfFooter(doc, entitas.toUpperCase() + " - DAFTAR PROPOSAL KEGIATAN");
+  doc.save("Proposal_" + (start || "semua") + "_" + (end || "data") + ".pdf");
+}
+
+// ===== EXCEL/ WORD: gunakan helper yang sudah ada (XC, dll) =====
+const XC = { DARK:'FF171717', RED:'FFC00000', LIGHT:'FFF3F4F6', BORDER:'FFD1D5DB', ZEBRA:'FFFAFAFA', WHITE:'FFFFFFFF', GOLD:'FFD9A406', CREAM:'FFFDF6E3' };
+const RP_FMT = '"Rp" #,##0';
+
+function xMergeStyle(ws, r1, c1, r2, c2, opt = {}) {
+  if (r1 !== r2 || c1 !== c2) ws.mergeCells(r1, c1, r2, c2);
+  for (let r = r1; r <= r2; r++) for (let c = c1; c <= c2; c++) { const cell = ws.getCell(r, c); if (opt.fill) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: opt.fill } }; if (opt.font) cell.font = opt.font; if (opt.align) cell.alignment = opt.align; }
+  const top = ws.getCell(r1, c1); if (opt.value !== undefined) top.value = opt.value; if (opt.numFmt) top.numFmt = opt.numFmt;
+}
+function xTitleBlock(ws, title, subtitle, colCount) {
+  ws.mergeCells(1, 1, 2, colCount); const t = ws.getCell(1, 1); t.value = title; t.font = { size: 20, bold: true, color: { argb: XC.WHITE } }; t.alignment = { horizontal: 'center', vertical: 'middle' }; for (let r = 1; r <= 2; r++) for (let c = 1; c <= colCount; c++) ws.getCell(r, c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XC.DARK } }; ws.getRow(1).height = 26; ws.getRow(2).height = 26;
+  ws.mergeCells(3, 1, 3, colCount); const s = ws.getCell(3, 1); s.value = subtitle; s.font = { size: 10, color: { argb: 'FF666666' } }; s.alignment = { horizontal: 'center' };
+}
+function xReportHeader(ws, entitas, subtitle, colCount) {
+  ws.getRow(1).height = 24; ws.getRow(2).height = 16; const t = ws.getCell(1, 1); ws.mergeCells(1, 1, 1, colCount); t.value = entitas.toUpperCase(); t.font = { size: 17, bold: true, color: { argb: XC.DARK } }; t.alignment = { horizontal: 'left', vertical: 'middle', indent: 2 };
+  const s = ws.getCell(2, 1); ws.mergeCells(2, 1, 2, colCount); s.value = subtitle; s.font = { size: 10.5, bold: true, color: { argb: XC.GOLD } }; s.alignment = { horizontal: 'left', vertical: 'middle', indent: 2 };
+  ws.getRow(3).height = 4; for (let c = 1; c <= colCount; c++) ws.getCell(3, c).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XC.GOLD } };
+}
+function xInfoBox(ws, row, colCount, pairs) {
+  ws.getRow(row).height = 20; for (let c = 1; c <= colCount; c++) { const cell = ws.getCell(row, c); cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XC.CREAM } }; if (c === 1) cell.border = { left: { style: 'thick', color: { argb: XC.RED } } }; }
+  const half = Math.ceil(colCount / 2); if (pairs[0]) { ws.mergeCells(row, 1, row, half); const c1 = ws.getCell(row, 1); c1.value = pairs[0][0] + ": " + pairs[0][1]; c1.font = { bold: true, size: 10, color: { argb: XC.DARK } }; c1.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 }; }
+  if (pairs[1]) { ws.mergeCells(row, half + 1, row, colCount); const c2 = ws.getCell(row, half + 1); c2.value = pairs[1][0] + ": " + pairs[1][1]; c2.font = { bold: true, size: 10, color: { argb: XC.DARK } }; c2.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 }; }
+}
+function xHeaderRow(ws, rowIdx, labels) { labels.forEach((lab, i) => { const c = ws.getCell(rowIdx, i + 1); c.value = lab; c.font = { bold: true, color: { argb: XC.WHITE } }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XC.DARK } }; c.alignment = { horizontal: 'center', vertical: 'middle' }; }); ws.getRow(rowIdx).height = 20; }
+function xZebraBorder(ws, rowIdx, colCount, zebra) { for (let c = 1; c <= colCount; c++) { const cell = ws.getCell(rowIdx, c); cell.border = { top: { style: 'thin', color: { argb: XC.BORDER } }, left: { style: 'thin', color: { argb: XC.BORDER } }, bottom: { style: 'thin', color: { argb: XC.BORDER } }, right: { style: 'thin', color: { argb: XC.BORDER } } }; if (zebra) cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: XC.ZEBRA } }; } }
+function xSaveBlob(blob, filename) { const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); }
+const NEW_LOGO_URL = "https://raw.githubusercontent.com/yaallboy-glitch/kegiatan/refs/heads/main/IMG_6411.png";
+const EXTRA_ROWS = 25;
+async function xEmbedLogo(wb, ws) { try { const dataUrl = await loadImageAsDataURL(NEW_LOGO_URL); const base64 = dataUrl.split(",")[1]; const imgId = wb.addImage({ base64, extension: "png" }); ws.addImage(imgId, { tl: { col: 0.15, row: 0.15 }, ext: { width: 46, height: 46 } }); } catch {} }
+
+function wHeader(logoData, entitas, subtitle) { return `<table cellspacing="0" cellpadding="0" style="width:100%;margin-bottom:6px"><tr><td style="width:70px;vertical-align:middle">${logoData ? `<img src="${logoData}" style="width:58px;height:58px;border-radius:50%;object-fit:cover">` : ""}</td><td style="vertical-align:middle"><div style="font-size:22px;font-weight:bold;color:#171717;letter-spacing:.5px">${entitas.toUpperCase()}</div><div style="font-size:11px;color:#D9A406;font-weight:bold;letter-spacing:.5px;margin-top:2px">${subtitle}</div></td></tr></table><div style="border-bottom:2.5px solid #D9A406;margin-bottom:14px"></div>`; }
+function wInfoBox(pairs) { const rows = []; for (let i = 0; i < pairs.length; i += 2) { const b = pairs[i + 1]; rows.push(`<tr><td style="width:14%;font-weight:bold;color:#C00000;padding:3px 0">${pairs[i][0]}</td><td style="width:36%;padding:3px 0">: ${pairs[i][1]}</td>${b ? `<td style="width:14%;font-weight:bold;color:#C00000;padding:3px 0">${b[0]}</td><td style="width:36%;padding:3px 0">: ${b[1]}</td>` : `<td colspan="2"></td>`}</tr>`); } return `<table cellspacing="0" cellpadding="6" style="width:100%;background:#FDF6E3;border-left:4px solid #C00000;font-size:12px;margin-bottom:16px">${rows.join("")}</table>`; }
+function wTotalBox(items) { const w = Math.floor(100 / items.length); const cells = items.map(it => `<td style="width:${w}%;padding:0 4px"><table cellspacing="0" cellpadding="8" style="width:100%;border-collapse:collapse"><tr><td style="background:#C00000;color:#fff;font-weight:bold;text-align:center;font-size:11px;border-radius:6px 6px 0 0">${it[0]}</td></tr><tr><td style="background:#F3F4F6;font-weight:bold;text-align:center;font-size:16px;color:${it[2] || "#171717"}">${it[1]}</td></tr></table></td>`).join(""); return `<table cellspacing="0" cellpadding="0" style="width:100%;margin:6px 0 18px"><tr>${cells}</tr></table>`; }
+function wSignBlock(leftLabel, leftName, rightLabel, rightName) { return `<table cellspacing="0" cellpadding="0" style="width:100%;margin-top:34px;font-size:11px;text-align:center"><tr><td style="width:50%;font-weight:bold">${leftLabel}</td><td style="width:50%;font-weight:bold">${rightLabel}</td></tr><tr><td style="height:50px"></td><td></td></tr><tr><td style="font-weight:bold;color:#C00000;font-size:12px">${leftName || "________________________"}</td><td style="font-weight:bold;color:#C00000;font-size:12px">${rightName || "________________________"}</td></tr></table>`; }
+function wDocFooter(orgLine) { return `<div style="margin-top:26px;padding-top:10px;border-top:1px solid #E5E7EB;text-align:center;font-size:10px;color:#9CA3AF">${orgLine} &middot; Dicetak: ${new Date().toLocaleString("id-ID")}</div>`; }
+function wZebraRow(cells, idx) { const bg = idx % 2 === 1 ? "#FAFAFA" : "#FFFFFF"; return `<tr style="background:${bg}">` + cells.map(c => `<td style="padding:7px 8px;border:1px solid #E5E7EB">${c}</td>`).join("") + `</tr>`; }
+function wSectionTitle(icon, text) { return `<table cellspacing="0" cellpadding="0" style="width:100%;margin:22px 0 8px 0"><tr><td style="width:5px;background:#C00000"></td><td style="padding-left:10px;font-size:15px;font-weight:bold;color:#171717;letter-spacing:.5px">${icon} ${text.toUpperCase()}</td></tr></table><div style="border-bottom:1.5px solid #171717;margin-bottom:10px"></div>`; }
+
+// ===== EXCEL: Keuangan =====
+async function exportKeuanganExcel({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
+  const entitas = "Karang Taruna Brigade Muda Soropati";
+  const status = "Berjalan";
+  const allKeu = await api("/keuangan");
+  const rows = ((start && end) ? allKeu.filter(r => r.tanggal >= start && r.tanggal <= end) : allKeu).slice().sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+  const periodeLabel = (start && end) ? fmtIndoPeriode(start, end) : "Semua data";
+
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Keuangan");
+  ws.columns = [{ width: 6 }, { width: 14 }, { width: 34 }, { width: 17 }, { width: 17 }, { width: 17 }];
+  const colCount = 6;
+
+  xReportHeader(ws, entitas, "LAPORAN KEUANGAN — " + periodeLabel, colCount);
+  await xEmbedLogo(wb, ws);
+
+  const infoRow = 4;
+  xInfoBox(ws, infoRow, colCount, [["Kegiatan", kegiatan || "-"], ["Status", status]]);
+  const infoRow2 = 5;
+  xInfoBox(ws, infoRow2, colCount, [["Ketua", ketuaNama || "-"], ["Bendahara", bendaharaNama || "-"]]);
+
+  const HDR_ROW = 7;
+  xHeaderRow(ws, HDR_ROW, ["No", "Tanggal", "Keterangan", "Uang Masuk", "Uang Keluar", "Saldo"]);
+  const firstDataRow = HDR_ROW + 1;
+  const totalRows = rows.length + EXTRA_ROWS;
+  const lastDataRow = HDR_ROW + totalRows;
+
+  for (let i = 0; i < totalRows; i++) {
+    const r = rows[i];
+    const rowIdx = firstDataRow + i;
+    const row = ws.getRow(rowIdx);
+    row.getCell(1).value = i + 1;
+    if (r) {
+      row.getCell(2).value = r.tanggal;
+      row.getCell(3).value = r.keterangan;
+      row.getCell(4).value = r.jenis === "masuk" ? r.jumlah : null;
+      row.getCell(5).value = r.jenis === "keluar" ? r.jumlah : null;
+    }
+    row.getCell(6).value = { formula: `SUM($D$${firstDataRow}:D${rowIdx})-SUM($E$${firstDataRow}:E${rowIdx})` };
+    row.getCell(4).numFmt = RP_FMT; row.getCell(5).numFmt = RP_FMT; row.getCell(6).numFmt = RP_FMT;
+    row.getCell(1).alignment = { horizontal: "center" };
+    xZebraBorder(ws, rowIdx, 6, i % 2 === 1);
+  }
+
+  const totalRow = lastDataRow + 2;
+  xMergeStyle(ws, totalRow, 1, totalRow, 2, { value: "TOTAL UANG MASUK", fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "center" } });
+  xMergeStyle(ws, totalRow, 3, totalRow, 4, { value: "TOTAL UANG KELUAR", fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "center" } });
+  xMergeStyle(ws, totalRow, 5, totalRow, 6, { value: "SALDO AKHIR", fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "center" } });
+  const valRow = totalRow + 1;
+  xMergeStyle(ws, valRow, 1, valRow + 1, 2, { value: { formula: `SUM(D${firstDataRow}:D${lastDataRow})` }, fill: XC.LIGHT, font: { bold: true, size: 14 }, align: { horizontal: "center", vertical: "middle" }, numFmt: RP_FMT });
+  xMergeStyle(ws, valRow, 3, valRow + 1, 4, { value: { formula: `SUM(E${firstDataRow}:E${lastDataRow})` }, fill: XC.LIGHT, font: { bold: true, size: 14 }, align: { horizontal: "center", vertical: "middle" }, numFmt: RP_FMT });
+  xMergeStyle(ws, valRow, 5, valRow + 1, 6, { value: { formula: `F${lastDataRow}` }, fill: XC.LIGHT, font: { bold: true, size: 14 }, align: { horizontal: "center", vertical: "middle" }, numFmt: RP_FMT });
+  ws.getRow(valRow).height = 22; ws.getRow(valRow + 1).height = 22;
+
+  const sigRow = valRow + 4;
+  ws.mergeCells(sigRow, 1, sigRow, 3); ws.mergeCells(sigRow, 4, sigRow, 6);
+  ws.getCell(sigRow, 1).value = "KETUA / PENANGGUNG JAWAB";
+  ws.getCell(sigRow, 4).value = "BENDAHARA KEUANGAN";
+  [ws.getCell(sigRow, 1), ws.getCell(sigRow, 4)].forEach(c => { c.font = { bold: true, size: 9 }; c.alignment = { horizontal: "center" }; });
+  const sigNameRow = sigRow + 3;
+  ws.mergeCells(sigNameRow, 1, sigNameRow, 3); ws.mergeCells(sigNameRow, 4, sigNameRow, 6);
+  ws.getCell(sigNameRow, 1).value = ketuaNama || "________________________";
+  ws.getCell(sigNameRow, 4).value = bendaharaNama || "________________________";
+  [ws.getCell(sigNameRow, 1), ws.getCell(sigNameRow, 4)].forEach(c => { c.font = { bold: true, size: 10, color: { argb: XC.RED } }; c.alignment = { horizontal: "center" }; });
+
+  const noteRow = sigNameRow + 3;
+  ws.mergeCells(noteRow, 1, noteRow, 6);
+  ws.getCell(noteRow, 1).value = "Catatan: baris kosong di bawah data sudah berisi rumus Saldo & Total otomatis — tinggal isi Tanggal/Keterangan/Jumlah untuk melanjutkan pencatatan secara manual.";
+  ws.getCell(noteRow, 1).font = { italic: true, size: 9, color: { argb: "FF6B7280" } };
+
+  const buffer = await wb.xlsx.writeBuffer();
+  xSaveBlob(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), "Keuangan_" + (start || "semua") + "_" + (end || "data") + ".xlsx");
+}
+
+// ===== EXCEL: LPJ =====
+async function exportLPJExcel({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
+  const entitas = "Karang Taruna Brigade Muda Soropati";
+  const status = "Selesai";
+  const allKeu = await api("/keuangan");
+  const keu = (start && end) ? allKeu.filter(r => r.tanggal >= start && r.tanggal <= end) : allKeu;
+  const masukRows = keu.filter(r => r.jenis === "masuk").sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+  const keluarRows = keu.filter(r => r.jenis !== "masuk").sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+  const periodeLabel = (start && end) ? fmtIndoPeriode(start, end) : "Semua data";
+
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("LPJ");
+  ws.columns = [{ width: 6 }, { width: 14 }, { width: 34 }, { width: 18 }];
+  const colCount = 4;
+
+  xReportHeader(ws, entitas, "LAPORAN PERTANGGUNGJAWABAN (LPJ) — " + periodeLabel, colCount);
+  await xEmbedLogo(wb, ws);
+
+  const infoRow = 4;
+  xInfoBox(ws, infoRow, colCount, [["Kegiatan", kegiatan || "-"], ["Status", status]]);
+  const infoRow2 = 5;
+  xInfoBox(ws, infoRow2, colCount, [["Ketua", ketuaNama || "-"], ["Bendahara", bendaharaNama || "-"]]);
+
+  function buildSection(title, list, startRow) {
+    let r = startRow;
+    ws.mergeCells(r, 1, r, colCount);
+    const t = ws.getCell(r, 1); t.value = title; t.font = { bold: true, size: 11, color: { argb: XC.WHITE } };
+    t.fill = { type: "pattern", pattern: "solid", fgColor: { argb: XC.RED } };
+    t.alignment = { horizontal: "left", vertical: "middle" }; ws.getRow(r).height = 18;
+    r += 1;
+    const hdrRow = r;
+    xHeaderRow(ws, hdrRow, ["No", "Tanggal", "Keterangan", "Jumlah"]);
+    const firstDataRow = hdrRow + 1;
+    const totalRows = list.length + EXTRA_ROWS;
+    const lastDataRow = hdrRow + totalRows;
+    for (let i = 0; i < totalRows; i++) {
+      const item = list[i];
+      const rowIdx = firstDataRow + i;
+      const row = ws.getRow(rowIdx);
+      row.getCell(1).value = i + 1;
+      if (item) { row.getCell(2).value = item.tanggal; row.getCell(3).value = item.keterangan; row.getCell(4).value = item.jumlah; }
+      row.getCell(4).numFmt = RP_FMT;
+      row.getCell(1).alignment = { horizontal: "center" };
+      xZebraBorder(ws, rowIdx, colCount, i % 2 === 1);
+    }
+    const totalRow = lastDataRow + 1;
+    xMergeStyle(ws, totalRow, 1, totalRow, 3, { value: "TOTAL " + title.toUpperCase(), fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "left", vertical: "middle" } });
+    xMergeStyle(ws, totalRow, 4, totalRow, 4, { value: { formula: `SUM(D${firstDataRow}:D${lastDataRow})` }, fill: XC.LIGHT, font: { bold: true, size: 11 }, align: { horizontal: "center", vertical: "middle" }, numFmt: RP_FMT });
+    return { nextRow: totalRow + 2, totalCellRef: `D${totalRow}` };
+  }
+
+  const secMasuk = buildSection("Rincian Uang Masuk (Penerimaan)", masukRows, 7);
+  const secKeluar = buildSection("Rincian Uang Keluar (Pengeluaran)", keluarRows, secMasuk.nextRow);
+
+  const saldoRow = secKeluar.nextRow;
+  xMergeStyle(ws, saldoRow, 1, saldoRow, 3, { value: "SISA SALDO / DANA " + entitas.toUpperCase(), fill: XC.DARK, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "left", vertical: "middle" } });
+  xMergeStyle(ws, saldoRow, 4, saldoRow, 4, { value: { formula: `${secMasuk.totalCellRef}-${secKeluar.totalCellRef}` }, fill: XC.DARK, font: { bold: true, size: 12, color: { argb: XC.WHITE } }, align: { horizontal: "center", vertical: "middle" }, numFmt: RP_FMT });
+
+  const sigRow = saldoRow + 3;
+  ws.mergeCells(sigRow, 1, sigRow, 2); ws.mergeCells(sigRow, 3, sigRow, 4);
+  ws.getCell(sigRow, 1).value = "KETUA / PENANGGUNG JAWAB";
+  ws.getCell(sigRow, 3).value = "BENDAHARA KEUANGAN";
+  [ws.getCell(sigRow, 1), ws.getCell(sigRow, 3)].forEach(c => { c.font = { bold: true, size: 9 }; c.alignment = { horizontal: "center" }; });
+  const sigNameRow = sigRow + 3;
+  ws.mergeCells(sigNameRow, 1, sigNameRow, 2); ws.mergeCells(sigNameRow, 3, sigNameRow, 4);
+  ws.getCell(sigNameRow, 1).value = ketuaNama || "________________________";
+  ws.getCell(sigNameRow, 3).value = bendaharaNama || "________________________";
+  [ws.getCell(sigNameRow, 1), ws.getCell(sigNameRow, 3)].forEach(c => { c.font = { bold: true, size: 10, color: { argb: XC.RED } }; c.alignment = { horizontal: "center" }; });
+
+  const noteRow = sigNameRow + 3;
+  ws.mergeCells(noteRow, 1, noteRow, 4);
+  ws.getCell(noteRow, 1).value = "Catatan: baris kosong di bawah data sudah berisi rumus Total otomatis — tinggal isi Tanggal/Keterangan/Jumlah untuk melanjutkan pencatatan secara manual.";
+  ws.getCell(noteRow, 1).font = { italic: true, size: 9, color: { argb: "FF6B7280" } };
+
+  const buffer = await wb.xlsx.writeBuffer();
+  xSaveBlob(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), "LPJ_" + (start || "semua") + "_" + (end || "data") + ".xlsx");
+}
+
+// ===== EXCEL: Proposal =====
+async function exportProposalExcel({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
+  const entitas = "Karang Taruna Brigade Muda Soropati";
+  const status = "Berjalan";
+  const sekretarisNama = bendaharaNama;
+  const periodeLabel = (start && end) ? fmtIndoPeriode(start, end) : "Semua data";
+  const allProp = await api("/proposal");
+
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Proposal");
+  ws.columns = [{ width: 6 }, { width: 42 }, { width: 16 }, { width: 20 }, { width: 20 }];
+  const colCount = 5;
+
+  xReportHeader(ws, entitas, "DAFTAR PROPOSAL KEGIATAN — " + periodeLabel, colCount);
+  await xEmbedLogo(wb, ws);
+
+  const infoRow = 4;
+  xInfoBox(ws, infoRow, colCount, [["Kegiatan Terkait", kegiatan || "-"], ["Status", status]]);
+  const infoRow2 = 5;
+  xInfoBox(ws, infoRow2, colCount, [["Jumlah Proposal", allProp.length], ["Ketua", ketuaNama || "-"]]);
+
+  const HDR_ROW = 7;
+  xHeaderRow(ws, HDR_ROW, ["No", "Judul", "Status", "Dibuat Oleh", "Diubah Oleh"]);
+  const firstDataRow = HDR_ROW + 1;
+  const totalRows = allProp.length + EXTRA_ROWS;
+  const lastDataRow = HDR_ROW + totalRows;
+
+  for (let i = 0; i < totalRows; i++) {
+    const r = allProp[i];
+    const rowIdx = firstDataRow + i;
+    const row = ws.getRow(rowIdx);
+    row.getCell(1).value = i + 1;
+    if (r) {
+      row.getCell(2).value = r.judul;
+      row.getCell(3).value = r.status;
+      row.getCell(4).value = namaFromUsername(r.created_by);
+      row.getCell(5).value = r.updated_by ? namaFromUsername(r.updated_by) : "-";
+    }
+    row.getCell(1).alignment = { horizontal: "center" };
+    row.getCell(3).alignment = { horizontal: "center" };
+    xZebraBorder(ws, rowIdx, 5, i % 2 === 1);
+  }
+
+  const totalRow = lastDataRow + 2;
+  xMergeStyle(ws, totalRow, 1, totalRow, 3, { value: "TOTAL PROPOSAL", fill: XC.RED, font: { bold: true, size: 10, color: { argb: XC.WHITE } }, align: { horizontal: "left", vertical: "middle" } });
+  xMergeStyle(ws, totalRow, 4, totalRow, 5, { value: { formula: `COUNTA(B${firstDataRow}:B${lastDataRow})` }, fill: XC.LIGHT, font: { bold: true, size: 13 }, align: { horizontal: "center", vertical: "middle" } });
+
+  const sigRow = totalRow + 3;
+  ws.mergeCells(sigRow, 1, sigRow, 2); ws.mergeCells(sigRow, 3, sigRow, 5);
+  ws.getCell(sigRow, 1).value = "KETUA / PENANGGUNG JAWAB";
+  ws.getCell(sigRow, 3).value = "SEKRETARIS";
+  [ws.getCell(sigRow, 1), ws.getCell(sigRow, 3)].forEach(c => { c.font = { bold: true, size: 9 }; c.alignment = { horizontal: "center" }; });
+  const sigNameRow = sigRow + 3;
+  ws.mergeCells(sigNameRow, 1, sigNameRow, 2); ws.mergeCells(sigNameRow, 3, sigNameRow, 5);
+  ws.getCell(sigNameRow, 1).value = ketuaNama || "________________________";
+  ws.getCell(sigNameRow, 3).value = sekretarisNama || "________________________";
+  [ws.getCell(sigNameRow, 1), ws.getCell(sigNameRow, 3)].forEach(c => { c.font = { bold: true, size: 10, color: { argb: XC.RED } }; c.alignment = { horizontal: "center" }; });
+
+  const noteRow = sigNameRow + 3;
+  ws.mergeCells(noteRow, 1, noteRow, 5);
+  ws.getCell(noteRow, 1).value = "Catatan: baris kosong di bawah data sudah siap format — tinggal isi Judul/Status/Dibuat Oleh untuk melanjutkan pencatatan secara manual. Total akan terhitung otomatis.";
+  ws.getCell(noteRow, 1).font = { italic: true, size: 9, color: { argb: "FF6B7280" } };
+
+  const buffer = await wb.xlsx.writeBuffer();
+  xSaveBlob(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), "Proposal_" + (start || "semua") + "_" + (end || "data") + ".xlsx");
+}
+
+// ===== WORD: Keuangan =====
+async function exportKeuanganWord({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
+  const entitas = "Karang Taruna Brigade Muda Soropati";
+  const status = "Berjalan";
+  const allKeu = await api("/keuangan");
+  const keu = (start && end) ? allKeu.filter(r => r.tanggal >= start && r.tanggal <= end) : allKeu;
+  const masukRows = keu.filter(r => r.jenis === "masuk").sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+  const keluarRows = keu.filter(r => r.jenis !== "masuk").sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+  const totalMasuk = masukRows.reduce((a, r) => a + (r.jumlah || 0), 0);
+  const totalKeluar = keluarRows.reduce((a, r) => a + (r.jumlah || 0), 0);
+  const sisa = totalMasuk - totalKeluar;
+  const periodeLabel = (start && end) ? fmtIndoPeriode(start, end) : "Semua data";
+
+  let logoData = null;
+  try { logoData = await loadImageAsDataURL(NEW_LOGO_URL); } catch {}
+
+  const thStyle = "background:#171717;color:#fff;padding:8px;font-size:12px;text-align:left";
+  const mkRows = (list) => list.length
+    ? list.map((r, i) => wZebraRow([i + 1, fmtTgl(r.tanggal), r.keterangan, rp(r.jumlah)], i)).join("")
+    : wZebraRow(["-", "-", "Tidak ada data", "-"], 0);
+
+  const html = `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head><meta charset="utf-8"><title>Laporan Keuangan</title></head>
+    <body style="font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#171717;max-width:760px;margin:auto">
+      ${wHeader(logoData, entitas, "LAPORAN KEUANGAN")}
+      ${wInfoBox([["Entitas", entitas], ["Periode", periodeLabel], ["Kegiatan", kegiatan || "-"], ["Status", status]])}
+      ${wTotalBox([["TOTAL MASUK", rp(totalMasuk), "#15803D"], ["TOTAL KELUAR", rp(totalKeluar), "#B91C1C"], ["SALDO AKHIR", rp(sisa)]])}
+      ${wSectionTitle("💰", "I. Rincian Uang Masuk (Penerimaan)")}
+      <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:12px">
+        <tr>${["No", "Tanggal", "Keterangan", "Jumlah"].map(h => `<th style="${thStyle}">${h}</th>`).join("")}</tr>
+        ${mkRows(masukRows)}
+      </table>
+      ${wSectionTitle("💸", "II. Rincian Uang Keluar (Pengeluaran)")}
+      <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:12px">
+        <tr>${["No", "Tanggal", "Keterangan", "Jumlah"].map(h => `<th style="${thStyle}">${h}</th>`).join("")}</tr>
+        ${mkRows(keluarRows)}
+      </table>
+      ${wSignBlock("KETUA / PENANGGUNG JAWAB", ketuaNama, "BENDAHARA KEUANGAN", bendaharaNama)}
+      ${wDocFooter(entitas.toUpperCase() + " - LAPORAN KEUANGAN")}
+    </body></html>`;
+
+  xSaveBlob(new Blob(["\ufeff", html], { type: "application/msword" }), "Keuangan_" + (start || "semua") + "_" + (end || "data") + ".doc");
+}
+
+// ===== WORD: LPJ =====
+async function exportLPJWord({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
+  const entitas = "Karang Taruna Brigade Muda Soropati";
+  const status = "Selesai";
+  const allKeu = await api("/keuangan");
+  const keu = (start && end) ? allKeu.filter(r => r.tanggal >= start && r.tanggal <= end) : allKeu;
+  const masukRows = keu.filter(r => r.jenis === "masuk").sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+  const keluarRows = keu.filter(r => r.jenis !== "masuk").sort((a, b) => a.tanggal.localeCompare(b.tanggal));
+  const totalMasuk = masukRows.reduce((a, r) => a + (r.jumlah || 0), 0);
+  const totalKeluar = keluarRows.reduce((a, r) => a + (r.jumlah || 0), 0);
+  const sisa = totalMasuk - totalKeluar;
+  const periodeLabel = (start && end) ? fmtIndoPeriode(start, end) : "Semua data";
+
+  let logoData = null;
+  try { logoData = await loadImageAsDataURL(NEW_LOGO_URL); } catch {}
+
+  const thStyle = "background:#171717;color:#fff;padding:8px;font-size:12px;text-align:left";
+  const mkRows = (list) => list.length
+    ? list.map((r, i) => wZebraRow([i + 1, fmtTgl(r.tanggal), r.keterangan, rp(r.jumlah)], i)).join("")
+    : wZebraRow(["-", "-", "Tidak ada data", "-"], 0);
+
+  const html = `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head><meta charset="utf-8"><title>LPJ</title></head>
+    <body style="font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#171717;max-width:760px;margin:auto">
+      ${wHeader(logoData, entitas, "LAPORAN PERTANGGUNGJAWABAN (LPJ)")}
+      ${wInfoBox([["Entitas", entitas], ["Periode", periodeLabel], ["Kegiatan", kegiatan || "-"], ["Status", status]])}
+      ${wTotalBox([["TOTAL MASUK", rp(totalMasuk), "#15803D"], ["TOTAL KELUAR", rp(totalKeluar), "#B91C1C"], ["SISA SALDO", rp(sisa)]])}
+      ${wSectionTitle("💰", "I. Rincian Uang Masuk (Penerimaan)")}
+      <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:12px">
+        <tr>${["No", "Tanggal", "Keterangan", "Jumlah"].map(h => `<th style="${thStyle}">${h}</th>`).join("")}</tr>
+        ${mkRows(masukRows)}
+      </table>
+      ${wSectionTitle("💸", "II. Rincian Uang Keluar (Pengeluaran)")}
+      <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:12px">
+        <tr>${["No", "Tanggal", "Keterangan", "Jumlah"].map(h => `<th style="${thStyle}">${h}</th>`).join("")}</tr>
+        ${mkRows(keluarRows)}
+      </table>
+      ${wSignBlock("KETUA / PENANGGUNG JAWAB", ketuaNama, "BENDAHARA KEUANGAN", bendaharaNama)}
+      ${wDocFooter(entitas.toUpperCase() + " - LAPORAN PERTANGGUNGJAWABAN")}
+    </body></html>`;
+
+  xSaveBlob(new Blob(["\ufeff", html], { type: "application/msword" }), "LPJ_" + (start || "semua") + "_" + (end || "data") + ".doc");
+}
+
+// ===== WORD: Proposal =====
+async function exportProposalWord({ kegiatan, ketuaNama, bendaharaNama, start, end }) {
+  const entitas = "Karang Taruna Brigade Muda Soropati";
+  const status = "Berjalan";
+  const sekretarisNama = bendaharaNama;
+  const periodeLabel = (start && end) ? fmtIndoPeriode(start, end) : "Semua data";
+  const allProp = await api("/proposal");
+
+  let logoData = null;
+  try { logoData = await loadImageAsDataURL(NEW_LOGO_URL); } catch {}
+
+  const thStyle = "background:#171717;color:#fff;padding:8px;font-size:12px;text-align:left";
+  const rowsHtml = allProp.length
+    ? allProp.map((r, i) => wZebraRow([`<b>${r.judul}</b>`, r.status, namaFromUsername(r.created_by), r.updated_by ? namaFromUsername(r.updated_by) : "-"], i)).join("")
+    : wZebraRow(["Tidak ada data", "-", "-", "-"], 0);
+
+  const html = `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+    <head><meta charset="utf-8"><title>Proposal</title></head>
+    <body style="font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#171717;max-width:760px;margin:auto">
+      ${wHeader(logoData, entitas, "DAFTAR PROPOSAL KEGIATAN")}
+      ${wInfoBox([["Entitas", entitas], ["Periode", periodeLabel], ["Kegiatan", kegiatan || "-"], ["Status", status], ["Jumlah", allProp.length + " proposal"]])}
+      ${wSectionTitle("📋", "Daftar Proposal")}
+      <table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%;font-size:12px">
+        <tr>${["Judul", "Status", "Dibuat Oleh", "Diubah Oleh"].map(h => `<th style="${thStyle}">${h}</th>`).join("")}</tr>
+        ${rowsHtml}
+      </table>
+      ${wSignBlock("KETUA / PENANGGUNG JAWAB", ketuaNama, "SEKRETARIS", sekretarisNama)}
+      ${wDocFooter(entitas.toUpperCase() + " - DAFTAR PROPOSAL KEGIATAN")}
+    </body></html>`;
+
+  xSaveBlob(new Blob(["\ufeff", html], { type: "application/msword" }), "Proposal_" + (start || "semua") + "_" + (end || "data") + ".doc");
+}
+
+// ===== Nama dari username (untuk export Proposal) =====
+let allUsers = [];
+function namaFromUsername(username) { if(!username) return "-"; const u=allUsers.find(a=>a.username===username); return u&&u.nama?u.nama:username; }
+async function loadUsers(){ try{ allUsers = await api("/users"); }catch{} }
+
+// Inisialisasi
+loadUsers();
+</script>
+<script src="chat-widget.js"></script>
+</body>
+</html>
