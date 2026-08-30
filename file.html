@@ -75,7 +75,8 @@ button{font-family:inherit}
 .emptyNote b{display:block;color:var(--text-dim);margin-bottom:4px;font-size:14px}
 .emptyNote p{font-size:12.5px;margin:0}
 
-.menuToggle{display:none;position:fixed;top:16px;left:16px;z-index:70;width:42px;height:42px;border-radius:10px;background:var(--card2);border:1px solid var(--border);color:var(--text);align-items:center;justify-content:center;cursor:pointer}
+.menuToggle{display:none;position:fixed;top:16px;left:16px;z-index:70;width:42px;height:42px;border-radius:10px;background:var(--card2);border:1px solid var(--border);color:var(--text);align-items:center;justify-content:center;cursor:pointer;transition:transform .2s ease, background .2s ease, box-shadow .2s ease}
+.menuToggle:hover{background:var(--card);transform:scale(1.05);box-shadow:0 4px 12px rgba(0,0,0,.3)}
 .sidebarOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:45}
 .sidebarOverlay.open{display:block}
 @media(max-width:1024px){
