@@ -6,9 +6,19 @@
 <title>Karang Taruna | Footage</title>
 <style>
 :root{
-  --bg:#0a0a0b;--bg-soft:#0d0d0f;--card:#161618;--card2:#1b1b1e;--border:#2a2a2e;
-  --gold:#e0ac2b;--gold-soft:#caa23c33;--gold-dark:#8a6d1f;
-  --text:#f4f4f5;--text-dim:#9ca0a8;--text-dim2:#6b6f76;--red:#ef4444;
+  --bg:#0c0c0e;
+  --bg-soft:#0f0f12;
+  --card:#16161a;
+  --card2:#1c1c21;
+  --border:#2a2a30;
+  --gold:#facc15;
+  --gold-soft:#facc1533;
+  --gold-dark:#a16207;
+  --text:#f5f5f7;
+  --text-dim:#a0a0aa;
+  --text-dim2:#6b6b76;
+  --red:#ef4444;
+  --blue:#3b82f6;
 }
 *{box-sizing:border-box}
 body{font-family:'Segoe UI',Arial,sans-serif;margin:0;background:var(--bg);color:var(--text)}
@@ -24,7 +34,7 @@ button{font-family:inherit}
 .navlink{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:9px;color:var(--text-dim);font-size:14px;font-weight:500;cursor:pointer;margin-bottom:4px;border:0;background:transparent;width:100%;text-align:left}
 .navlink svg{flex:0 0 18px;width:18px;height:18px}
 .navlink:hover{background:var(--card2);color:var(--text)}
-.navlink.active{background:linear-gradient(90deg,#e0ac2b,#c9932a);color:#181205;font-weight:700}
+.navlink.active{background:linear-gradient(90deg,#facc15,#eab308);color:#181205;font-weight:700}
 .navSpacer{flex:1}
 .profileBox{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;background:var(--card2);border:1px solid var(--border)}
 .profileBox .avatar{width:34px;height:34px;border-radius:50%;background:var(--gold-soft);color:var(--gold);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:0 0 34px}
@@ -174,6 +184,20 @@ button{font-family:inherit}
 @media(max-width:600px){
   .topProfileBtn{width:38px;height:38px}
   .profileMenu{min-width:200px;top:46px}
+}
+
+/* ===== Micro-animations ===== */
+button, .pillBtn, .footItem .thumb, .dropdownMenu div {
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+button:hover, .pillBtn:hover {
+  transform: translateY(-1px);
+}
+.footItem .thumb:hover {
+  box-shadow: 0 8px 20px rgba(0,0,0,.4);
+}
+.dropdownMenu div:hover {
+  transform: translateX(2px);
 }
 </style>
 </head>
@@ -685,7 +709,6 @@ function renderFootage() {
     </div>
   `).join("");
 
-  // muat thumbnail kecil (bukan file asli) biar ringan, untuk foto & video
   rows.forEach(f => loadThumb(f.id));
 }
 
@@ -696,7 +719,7 @@ async function loadThumb(id) {
   }
   try {
     const r = await fetch(API + "/footage/thumb?id=" + id, { headers: { Authorization: "Bearer " + token } });
-    if (!r.ok) return; // biarkan ikon default kalau thumbnail belum tersedia
+    if (!r.ok) return;
     const blob = await r.blob();
     const url = URL.createObjectURL(blob);
     thumbCache[id] = url;
@@ -743,7 +766,7 @@ async function viewFootage(id, mime) {
     const blob = await r.blob();
     const url = URL.createObjectURL(blob);
     previewObjectUrl = url;
-    if (previewCurrentId !== id) return; // pratinjau sudah ditutup/berganti sebelum selesai memuat
+    if (previewCurrentId !== id) return;
     if ((mime || "").startsWith("video/")) {
       media.innerHTML = `<video src="${url}" controls autoplay playsinline></video>`;
     } else {
@@ -887,7 +910,6 @@ async function confirmMove() {
   }
 }
 
-// ===== MODE PILIH & AKSI MASSAL =====
 function toggleSelectMode() {
   selectMode = !selectMode;
   selectedIds.clear();
@@ -929,7 +951,7 @@ async function bulkDownload() {
   for (const id of ids) {
     const item = allFootage.find(f => f.id === id);
     await downloadFootage(id, item ? item.judul : ("footage-" + id));
-    await new Promise(res => setTimeout(res, 400)); // jeda kecil biar browser tidak memblokir unduhan beruntun
+    await new Promise(res => setTimeout(res, 400));
   }
 }
 
@@ -943,7 +965,6 @@ async function createFolder() {
     showUploadErr(err.message);
   }
 }
-
 
 async function syncFootage() {
   clearUploadErr();
