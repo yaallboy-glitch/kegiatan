@@ -942,7 +942,8 @@ async function start() {
   }
 
   try {
-    await Promise.all([loadKeu(), loadSpj(), loadProp(), loadLog(), loadDashboardFiles(), loadAnggota()]);
+    await loadAnggota();
+    await Promise.all([loadKeu(), loadSpj(), loadProp(), loadLog(), loadDashboardFiles()]);
   } catch (err) {
     showErr("errBox2", err.message || String(err));
   }
@@ -1185,7 +1186,7 @@ async function loadKeu() {
     r.jenis==="masuk" ? masuk+=r.jumlah : keluar+=r.jumlah;
     t.insertRow(-1).innerHTML =
       `<td>${r.tanggal}</td><td>${r.keterangan}</td><td class="${r.jenis}">${r.jenis}</td>
-       <td>${rp(r.jumlah)}</td><td>${r.created_by}</td>
+       <td>${rp(r.jumlah)}</td><td>${namaFromUsername(r.created_by)}</td>
        <td>${canEdit ? `<a onclick="delKeu(${r.id})" style="cursor:pointer">${ICON.trash}</a>` : ""}</td>`;
   });
   keuTotal.innerHTML = `<div class="card">Masuk: <span class="masuk">${rp(masuk)}</span></div>
@@ -1218,7 +1219,7 @@ async function loadSpj() {
       ? `<a onclick="setStatus(${r.id},'disetujui')" style="cursor:pointer;color:#4ade80" title="Setujui">${ICON.check}</a> <a onclick="setStatus(${r.id},'ditolak')" style="cursor:pointer;color:#f87171" title="Tolak">${ICON.x}</a>` : "";
     t.insertRow(-1).innerHTML =
       `<td>${r.no_spj}</td><td>${r.kegiatan}</td><td>${rp(r.nominal)}</td>
-       <td><b>${r.status}</b></td><td>${r.created_by}</td><td>${aksi}</td>`;
+       <td><b>${r.status}</b></td><td>${namaFromUsername(r.created_by)}</td><td>${aksi}</td>`;
   });
 }
 async function addSpj(e) {
@@ -1240,7 +1241,7 @@ async function loadProp() {
   const t = document.getElementById("tProp");
   t.rows.length = 1;
   rows.forEach(r => t.insertRow(-1).innerHTML =
-    `<td><b>${r.judul}</b></td><td>${r.status}</td><td>${r.created_by}</td><td>${r.updated_by||"-"}</td>`);
+    `<td><b>${r.judul}</b></td><td>${r.status}</td><td>${namaFromUsername(r.created_by)}</td><td>${r.updated_by ? namaFromUsername(r.updated_by) : "-"}</td>`);
 }
 async function addProp(e) {
   e.preventDefault();
@@ -1547,6 +1548,13 @@ function setExportFormat(fmt) {
 }
 
 let allAnggota = [];
+
+// Tampilkan nama asli orangnya, bukan username (yang dibuat dari alamat email)
+function namaFromUsername(username) {
+  if (!username) return "-";
+  const u = allAnggota.find(a => a.username === username);
+  return u && u.nama ? u.nama : username;
+}
 
 async function loadAnggota() {
   try {
@@ -2129,7 +2137,7 @@ async function exportProposalPDF({ kegiatan, ketuaNama, bendaharaNama, start, en
 
     let y = yInfoEnd;
     y = pdfLpjSectionBar(doc, "DAFTAR PROPOSAL", y, RED);
-    const body = allProp.map((r, i) => [i + 1, r.judul, r.status, r.created_by, r.updated_by || "-"]);
+    const body = allProp.map((r, i) => [i + 1, r.judul, r.status, namaFromUsername(r.created_by), r.updated_by ? namaFromUsername(r.updated_by) : "-"]);
     doc.autoTable({
       ...tableCommon,
       startY: y,
@@ -2523,8 +2531,8 @@ async function exportProposalExcel({ kegiatan, ketuaNama, bendaharaNama, start, 
     if (r) {
       row.getCell(2).value = r.judul;
       row.getCell(3).value = r.status;
-      row.getCell(4).value = r.created_by;
-      row.getCell(5).value = r.updated_by || "-";
+      row.getCell(4).value = namaFromUsername(r.created_by);
+      row.getCell(5).value = r.updated_by ? namaFromUsername(r.updated_by) : "-";
     }
     row.getCell(1).alignment = { horizontal: "center" };
     row.getCell(3).alignment = { horizontal: "center" };
@@ -2567,7 +2575,7 @@ async function exportProposalWord({ kegiatan, ketuaNama, bendaharaNama, start, e
 
   const thStyle = "background:#171717;color:#fff;padding:8px;font-size:12px;text-align:left";
   const rowsHtml = allProp.length
-    ? allProp.map((r, i) => wZebraRow([`<b>${r.judul}</b>`, r.status, r.created_by, r.updated_by || "-"], i)).join("")
+    ? allProp.map((r, i) => wZebraRow([`<b>${r.judul}</b>`, r.status, namaFromUsername(r.created_by), r.updated_by ? namaFromUsername(r.updated_by) : "-"], i)).join("")
     : wZebraRow(["Tidak ada data", "-", "-", "-"], 0);
 
   const html = `
