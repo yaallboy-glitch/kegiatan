@@ -84,6 +84,14 @@ button:disabled{opacity:.5;cursor:not-allowed}
   .topbar h1{font-size:19px}
   .topbar p{font-size:12.5px}
 }
+
+/* ---------- TRANSISI HALUS ANTAR HALAMAN ---------- */
+body{animation:ktFadeIn .32s ease}
+@keyframes ktFadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+body.kt-leaving{animation:none!important;opacity:0;transition:opacity .16s ease}
+#dash:not([hidden]),#keu:not([hidden]),#spj:not([hidden]),#prop:not([hidden]),#log:not([hidden]){animation:ktPageIn .28s ease}
+.page{animation:ktPageIn .28s ease}
+@keyframes ktPageIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
@@ -131,6 +139,8 @@ button:disabled{opacity:.5;cursor:not-allowed}
     <div class="topbar">
       <div><h1>Export <span>Laporan</span></h1><p>Pilih jenis export & isi detail, lalu unduh.</p></div>
     </div>
+
+    <div id="initErr" class="errBox"></div>
 
     <div id="exportArea">
       <div class="card" style="max-width:520px;margin:0 auto;padding:20px">
@@ -212,10 +222,27 @@ function applyFotoProfil(){
   const topInit=document.getElementById("topAvatarInit"); if(topInit) topInit.textContent=saved?"":initial;
 }
 
+// Ambil data /auth/me dengan percobaan ulang untuk error SEMENTARA. Token
+// TIDAK ikut dihapus untuk error jenis ini — api() sudah memanggil logout()
+// dari dalam saat server benar-benar membalas 401 (token tidak valid).
+async function getMeWithRetry(maxRetries = 2) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await api("/auth/me");
+    } catch (err) {
+      if (attempt === maxRetries) throw err;
+      await new Promise(res => setTimeout(res, 500 * (attempt + 1)));
+    }
+  }
+}
+
 async function initApp() {
   try {
-    me = await api("/auth/me");
-  } catch { return logout(); }
+    me = await getMeWithRetry();
+  } catch (err) {
+    showErr("initErr", (err.message || String(err)) + " Coba muat ulang halaman.");
+    return;
+  }
 
   document.getElementById("profName").textContent = me.nama;
   document.getElementById("profRole").textContent = roleLabel(me.role);
@@ -939,6 +966,7 @@ async function loadUsers(){ try{ allUsers = await api("/users"); }catch{} }
 // Inisialisasi
 loadUsers();
 </script>
+<script src="page-transition.js"></script>
 <script src="chat-widget.js"></script>
 </body>
 </html>
