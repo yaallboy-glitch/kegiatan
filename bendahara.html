@@ -134,7 +134,7 @@ body.kt-leaving{animation:none!important;opacity:0;transition:opacity .16s ease}
     <a class="navlink active" href="bendahara.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/><path d="M6 14h4"/></svg>Bendahara</a>
     <a class="navlink" href="file.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>File</a>
     <a class="navlink" href="footage.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="15" height="12" rx="2"/><path d="M17 10l5-3v10l-5-3"/></svg>Footage</a>
-    <a class="navlink" href="index.html#sosmed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>Sosial Media</a>
+    <button type="button" class="navlink" onclick="openSosmedModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>Sosial Media</button>
     <a class="navlink" href="index.html#pengumuman"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11 13.5v3a2 2 0 0 0 4 0v-2"/></svg>Pengumuman</a>
     <div class="navSpacer"></div>
     <div class="profileBox">
@@ -342,11 +342,20 @@ function namaFromUsername(username){ if(!username) return "-"; const u=allAnggot
 async function loadAnggota(){ try{ allAnggota=await api("/users"); }catch{} }
 
 // ===== KEUANGAN =====
+let lastSaldo = 0;
+let lastSpjCount = null; // null = belum diketahui, jangan tampilkan angka salah dulu
+
+function renderDashboardCards(){
+  const lpjText = lastSpjCount === null ? "..." : lastSpjCount;
+  document.getElementById("cards").innerHTML=`<div class="card"><h3 style="margin:0 0 6px">${ICON.wallet}Saldo</h3>${rp(lastSaldo)}</div><div class="card"><h3 style="margin:0 0 6px">${ICON.fileText}LPJ</h3>${lpjText} dokumen</div>`;
+}
+
 async function loadKeu(){
   const rows=await api("/keuangan"); const t=document.getElementById("tKeu"); t.rows.length=1; let masuk=0,keluar=0;
   rows.forEach(r=>{ r.jenis==="masuk"?masuk+=r.jumlah:keluar+=r.jumlah; t.insertRow(-1).innerHTML=`<td>${r.tanggal}</td><td>${r.keterangan}</td><td class="${r.jenis}">${r.jenis}</td><td>${rp(r.jumlah)}</td><td>${namaFromUsername(r.created_by)}</td><td>${canEdit?`<a onclick="delKeu(${r.id})" style="cursor:pointer">${ICON.trash}</a>`:""}</td>`; });
   document.getElementById("keuTotal").innerHTML=`<div class="card">Masuk: <span class="masuk">${rp(masuk)}</span></div><div class="card">Keluar: <span class="keluar">${rp(keluar)}</span></div><div class="card">Saldo: <b>${rp(masuk-keluar)}</b></div>`;
-  document.getElementById("cards").innerHTML=`<div class="card"><h3 style="margin:0 0 6px">${ICON.wallet}Saldo</h3>${rp(masuk-keluar)}</div><div class="card"><h3 style="margin:0 0 6px">${ICON.fileText}LPJ</h3>${document.getElementById("tSpj").rows.length-1} dokumen</div>`;
+  lastSaldo = masuk-keluar;
+  renderDashboardCards();
 }
 async function addKeu(e){ e.preventDefault(); try{ await api("/keuangan",{method:"POST",body:JSON.stringify({tanggal:kTgl.value,keterangan:kKet.value,jenis:kJenis.value,jumlah:+kJml.value})}); kTgl.value=kKet.value=kJml.value=""; loadKeu(); }catch(err){ showErr("errBox2",err.message); } }
 async function delKeu(id){ if(!confirm("Hapus?"))return; try{ await api("/keuangan?id="+id,{method:"DELETE"}); loadKeu(); }catch(err){ showErr("errBox2",err.message); } }
@@ -355,6 +364,8 @@ async function delKeu(id){ if(!confirm("Hapus?"))return; try{ await api("/keuang
 async function loadSpj(){
   const rows=await api("/spj"); const t=document.getElementById("tSpj"); t.rows.length=1;
   rows.forEach(r=>{ const aksi=isAdminRole(me.role)&&r.status==="pending"?`<a onclick="setStatus(${r.id},'disetujui')" style="cursor:pointer;color:#4ade80" title="Setujui">${ICON.check}</a> <a onclick="setStatus(${r.id},'ditolak')" style="cursor:pointer;color:#f87171" title="Tolak">${ICON.x}</a>`:""; t.insertRow(-1).innerHTML=`<td>${r.no_spj}</td><td>${r.kegiatan}</td><td>${rp(r.nominal)}</td><td><b>${r.status}</b></td><td>${namaFromUsername(r.created_by)}</td><td>${aksi}</td>`; });
+  lastSpjCount = rows.length;
+  renderDashboardCards();
 }
 async function addSpj(e){ e.preventDefault(); try{ await api("/spj",{method:"POST",body:JSON.stringify({no_spj:sNo.value,tanggal:sTgl.value,kegiatan:sKeg.value,rincian:sRin.value,nominal:+sNom.value})}); sNo.value=sTgl.value=sKeg.value=sRin.value=sNom.value=""; loadSpj(); }catch(err){ showErr("errBox2",err.message); } }
 async function setStatus(id,status){ try{ await api("/spj/status",{method:"POST",body:JSON.stringify({id,status})}); loadSpj(); }catch(err){ showErr("errBox2",err.message); } }
@@ -371,5 +382,6 @@ initApp();
 </script>
 <script src="page-transition.js"></script>
 <script src="chat-widget.js"></script>
+<script src="sosmed-widget.js"></script>
 </body>
 </html>
