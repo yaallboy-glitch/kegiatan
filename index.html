@@ -253,6 +253,14 @@ button:hover, .navlink:hover, .pillBtn:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 28px rgba(0,0,0,.3);
 }
+
+/* ---------- TRANSISI HALUS ANTAR HALAMAN ---------- */
+body{animation:ktFadeIn .32s ease}
+@keyframes ktFadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+body.kt-leaving{animation:none!important;opacity:0;transition:opacity .16s ease}
+#dash:not([hidden]),#keu:not([hidden]),#spj:not([hidden]),#prop:not([hidden]),#log:not([hidden]){animation:ktPageIn .28s ease}
+.page{animation:ktPageIn .28s ease}
+@keyframes ktPageIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
@@ -698,11 +706,31 @@ function goToPengumumanFromBell() {
   }).catch(() => {});
 }
 
+// Ambil data /auth/me dengan percobaan ulang untuk error SEMENTARA (jaringan
+// lambat, server lagi sibuk, dsb). Kalau tokennya sendiri yang tidak valid,
+// api() sudah memanggil logout() dari dalam saat status 401 — jadi di sini
+// tidak perlu (dan tidak boleh) ikut menghapus token untuk error jenis lain.
+async function getMeWithRetry(maxRetries = 2) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await api("/auth/me");
+    } catch (err) {
+      if (attempt === maxRetries) throw err;
+      await new Promise(res => setTimeout(res, 500 * (attempt + 1)));
+    }
+  }
+}
+
 async function start() {
   if (!token) return;
   try {
-    me = await api("/auth/me");
-  } catch { return logout(); }
+    me = await getMeWithRetry();
+  } catch (err) {
+    // Jangan logout paksa untuk error sementara (koneksi/server) — token TETAP
+    // disimpan supaya percobaan berikutnya (mis. refresh halaman) bisa berhasil.
+    showErr("errBox", (err.message || String(err)) + " Coba muat ulang halaman.");
+    return;
+  }
   document.getElementById("loginView").style.display="none"; document.getElementById("appView").style.display="flex";
   document.getElementById("namaMe").textContent = me.nama;
   document.getElementById("profName").textContent = me.nama;
@@ -878,6 +906,7 @@ async function deletePengumuman(id) { if (!confirm("Hapus pengumuman ini?")) ret
 
 start();
 </script>
+<script src="page-transition.js"></script>
 <script src="chat-widget.js"></script>
 </body>
 </html>
