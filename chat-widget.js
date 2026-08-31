@@ -77,7 +77,7 @@
     "#ktchat-head button:hover{background:rgba(255,255,255,.15);color:#fff}" +
     "#ktchat-head #ktchat-close{font-size:19px}" +
 
-    "#ktchat-body{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:9px;background:#0f0f14}" +
+    "#ktchat-body{flex:1;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px;display:flex;flex-direction:column;gap:9px;background:#0f0f14}" +
     "#ktchat-body::-webkit-scrollbar{width:6px}#ktchat-body::-webkit-scrollbar-thumb{background:#2a2a30;border-radius:6px}" +
     ".ktchat-msg{max-width:82%;padding:8px 10px;border-radius:11px;font-size:12.8px;line-height:1.4;" +
     "word-break:break-word;position:relative}" +
@@ -288,6 +288,33 @@
   }
   window.addEventListener("orientationchange", function () { setTimeout(syncFullscreenToViewport, 350); });
 
+  // Kunci scroll halaman di belakang (mis. footage.html) selama chat dalam
+  // mode fullscreen — supaya scroll di dalam chat tidak ikut menggeser
+  // halaman belakang, dan tidak ada tap yang bisa "nembus" ke menu/tombol
+  // di belakang chat.
+  var savedScrollY = 0;
+  var bodyScrollLocked = false;
+  function lockBodyScroll() {
+    if (bodyScrollLocked) return;
+    bodyScrollLocked = true;
+    savedScrollY = window.scrollY || window.pageYOffset || 0;
+    document.body.style.position = "fixed";
+    document.body.style.top = (-savedScrollY) + "px";
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
+  }
+  function unlockBodyScroll() {
+    if (!bodyScrollLocked) return;
+    bodyScrollLocked = false;
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.left = "";
+    document.body.style.right = "";
+    document.body.style.width = "";
+    window.scrollTo(0, savedScrollY);
+  }
+
   function openPanel() {
     panelOpen = true;
     panel.classList.add("open");
@@ -306,6 +333,7 @@
     isFullscreen = false;
     panel.style.height = "";
     panel.style.top = "";
+    unlockBodyScroll();
     if (typingPollTimer) { clearInterval(typingPollTimer); typingPollTimer = null; }
     typingEl.classList.add("hidden");
   }
@@ -313,8 +341,10 @@
     isFullscreen = !isFullscreen;
     panel.classList.toggle("fullscreen", isFullscreen);
     if (isFullscreen) {
+      lockBodyScroll();
       syncFullscreenToViewport();
     } else {
+      unlockBodyScroll();
       panel.style.height = "";
       panel.style.top = "";
     }
