@@ -108,6 +108,14 @@ tr:hover td{background:#1d1d20}
 button, .pillBtn, .statCard, .panel, .fileRow {transition:transform .2s ease, box-shadow .2s ease, background .2s ease}
 button:hover, .pillBtn:hover{transform:translateY(-1px)}
 .statCard:hover, .panel:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(0,0,0,.3)}
+
+/* ---------- TRANSISI HALUS ANTAR HALAMAN ---------- */
+body{animation:ktFadeIn .32s ease}
+@keyframes ktFadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+body.kt-leaving{animation:none!important;opacity:0;transition:opacity .16s ease}
+#dash:not([hidden]),#keu:not([hidden]),#spj:not([hidden]),#prop:not([hidden]),#log:not([hidden]){animation:ktPageIn .28s ease}
+.page{animation:ktPageIn .28s ease}
+@keyframes ktPageIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
@@ -155,6 +163,8 @@ button:hover, .pillBtn:hover{transform:translateY(-1px)}
     <div class="topbar">
       <div><h1>Modul <span>Bendahara</span></h1><p>Keuangan, LPJ, proposal, dan log aktivitas.</p></div>
     </div>
+
+    <div id="errBox2" class="errBox"></div>
 
     <nav class="subnav">
       <button onclick="show('dash')" data-tab="dash" class="active">Ringkasan</button>
@@ -283,10 +293,26 @@ function goToProfil(){ sessionStorage.setItem("ktOpenProfil","1"); location.href
 function goToAdminPanel(){ sessionStorage.setItem("ktOpenAdmin","1"); location.href="index.html"; }
 function toggleSidebar(){ document.getElementById("sidebar").classList.toggle("open"); document.getElementById("sidebarOverlay").classList.toggle("open"); }
 
+// Ambil data /auth/me dengan percobaan ulang untuk error SEMENTARA (jaringan
+// lambat, server sibuk, dsb). Token TIDAK ikut dihapus untuk error jenis ini —
+// logout() otomatis hanya terjadi di dalam api() saat server benar-benar
+// membalas 401 (token tidak valid/kedaluwarsa).
+async function getMeWithRetry(maxRetries = 2) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await api("/auth/me");
+    } catch (err) {
+      if (attempt === maxRetries) throw err;
+      await new Promise(res => setTimeout(res, 500 * (attempt + 1)));
+    }
+  }
+}
+
 // ===== INIT (ambil nama+role TERKINI dari server, bukan decode token) =====
 let canEdit = false;
 async function initApp() {
-  try { me = await api("/auth/me"); } catch { return; }
+  try { me = await getMeWithRetry(); }
+  catch (err) { showErr("errBox2", (err.message || String(err)) + " Coba muat ulang halaman."); return; }
 
   document.getElementById("profName").textContent = me.nama;
   document.getElementById("profRole").textContent = roleLabel(me.role);
@@ -343,6 +369,7 @@ async function loadLog(){ const rows=await api("/log"); const t=document.getElem
 // ===== INIT =====
 initApp();
 </script>
+<script src="page-transition.js"></script>
 <script src="chat-widget.js"></script>
 </body>
 </html>
