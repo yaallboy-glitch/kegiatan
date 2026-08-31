@@ -172,11 +172,11 @@ body.kt-leaving{animation:none!important;opacity:0;transform:translateY(-8px) sc
 .delConfirmActions .delConfirmOk{background:#e11d48;border-color:#e11d48;color:#fff}
 .delConfirmActions .delConfirmOk:hover{background:#be123c}
 
-/* ---------- MENU TITIK-TIGA PER BARIS (aksi/hapus) ---------- */
-.rowMenuWrap{position:relative;display:inline-block}
+/* ---------- MENU TITIK-TIGA PER BARIS (PERBAIKAN: POSISI FIXED + Z-INDEX TINGGI) ---------- */
+.rowMenuWrap{position:relative;display:inline-block;z-index:9999}
 .rowMenuBtn{background:transparent;border:0;color:var(--text-dim);cursor:pointer;padding:4px 8px;border-radius:6px;font-size:16px;line-height:1;font-weight:700}
 .rowMenuBtn:hover{background:var(--card2);color:var(--text)}
-.rowMenu{display:none;position:absolute;top:calc(100% + 4px);right:0;background:var(--card);border:1px solid var(--border);border-radius:10px;min-width:132px;box-shadow:0 12px 30px rgba(0,0,0,.45);padding:6px;z-index:80}
+.rowMenu{display:none;position:fixed;background:var(--card);border:1px solid var(--border);border-radius:10px;min-width:132px;box-shadow:0 12px 30px rgba(0,0,0,.45);padding:6px;z-index:10000}
 .rowMenu.open{display:block}
 .rowMenuItem{display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border-radius:7px;border:0;background:transparent;color:var(--red);font-size:12.5px;font-weight:600;cursor:pointer;text-align:left;box-sizing:border-box}
 .rowMenuItem:hover{background:#3a1414}
@@ -490,7 +490,7 @@ async function delKeu(id){
   }catch(err){ showErr("errBox2",err.message); }
 }
 
-// ===== MENU TITIK-TIGA =====
+// ===== MENU TITIK-TIGA (PERBAIKAN POSISI FIXED) =====
 function closeAllRowMenus(except){
   document.querySelectorAll(".rowMenu.open").forEach(m=>{ if(m!==except) m.classList.remove("open"); });
 }
@@ -501,7 +501,18 @@ function toggleRowMenu(e, menuId){
   if(!menu) return;
   const willOpen = !menu.classList.contains("open");
   closeAllRowMenus();
-  if(willOpen) menu.classList.add("open");
+  if(willOpen) {
+    // Hitung posisi tombol relatif ke viewport agar menu selalu muncul di atas
+    const btn = e.currentTarget;
+    const rect = btn.getBoundingClientRect();
+    
+    // Set posisi fixed agar tidak terpotong oleh overflow container (tabel/export)
+    menu.style.position = 'fixed';
+    menu.style.top = (rect.bottom + 4) + 'px';
+    menu.style.right = (window.innerWidth - rect.right) + 'px';
+    
+    menu.classList.add("open");
+  }
 }
 function rowMenuHtml(type, id){
   const menuId = "rm-"+type+"-"+id;
