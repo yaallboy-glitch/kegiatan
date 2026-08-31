@@ -37,7 +37,7 @@
     #sosmedModalOverlay.open .ktSosmedFrame{animation:ktSosmedPopIn .42s cubic-bezier(.34,1.56,.64,1)}
     .ktSosmedFrame{
       position:relative;width:100%;max-width:320px;padding:3px;border-radius:22px;
-      background:linear-gradient(135deg,#f4d675,#e0ac2b 35%,#8a6d1f 70%,#e0ac2b);
+      background:linear-gradient(135deg,#dc2626,#1d4ed8 45%,#f0c94a 100%);
       box-shadow:0 24px 64px rgba(0,0,0,.6), 0 0 0 1px rgba(224,172,43,.25);
     }
     .ktSosmedBox{
