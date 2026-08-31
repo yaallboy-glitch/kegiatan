@@ -173,21 +173,24 @@ tr:hover td{background:#1d1d20}
 .sectionTitle{font-size:16px;font-weight:700;margin:0 0 14px;display:flex;align-items:center;gap:9px}
 .sectionTitle svg{color:var(--gold)}
 
-.menuToggle{display:none;position:fixed;top:16px;left:16px;z-index:70;width:42px;height:42px;border-radius:10px;background:var(--card2);border:1px solid var(--border);color:var(--text);align-items:center;justify-content:center;cursor:pointer;transition:transform .2s ease, background .2s ease, box-shadow .2s ease}
+.mobileBar{display:none;position:sticky;top:0;z-index:70;align-items:center;gap:12px;padding:12px 16px;background:var(--bg-soft);border-bottom:1px solid var(--border)}
+.mobileBar b{font-size:14.5px;letter-spacing:.3px}
+.menuToggle{flex:0 0 auto;width:40px;height:40px;border-radius:10px;background:var(--card2);border:1px solid var(--border);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s ease, background .2s ease, box-shadow .2s ease}
 .menuToggle:hover{background:var(--card);transform:scale(1.05);box-shadow:0 4px 12px rgba(0,0,0,.3)}
 .sidebarOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:45}
 .sidebarOverlay.open{display:block}
 @media(max-width:1024px){
-  .menuToggle{display:flex}
+  .mobileBar{display:flex}
   .sidebar{position:fixed;top:0;left:-270px;height:100vh;transition:left .25s ease;z-index:50}
   .sidebar.open{left:0}
-  .main{padding-top:66px}
+  .main{padding-top:18px}
   .statGrid{grid-template-columns:repeat(2,1fr)}
   .panelGrid{grid-template-columns:1fr}
   .footGrid{grid-template-columns:repeat(2,1fr)}
 }
 @media(max-width:600px){
   .main{padding-left:14px;padding-right:14px;padding-bottom:30px}
+  .mobileBar{padding:10px 14px}
   .topbar h1{font-size:19px}
   .topbar p{font-size:12.5px}
   .topRight{gap:8px}
@@ -322,9 +325,6 @@ body.kt-leaving{animation:none!important;opacity:0;transform:translateY(-8px) sc
 <!-- ================= APP ================= -->
 <div id="appView" style="display:none" class="layout">
 
-  <button class="menuToggle" id="menuToggle" onclick="toggleSidebar()" aria-label="Buka menu">
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-  </button>
   <div class="sidebarOverlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
   <aside class="sidebar" id="sidebar">
@@ -369,6 +369,10 @@ body.kt-leaving{animation:none!important;opacity:0;transform:translateY(-8px) sc
   </aside>
 
   <main class="main">
+    <div class="mobileBar" id="mobileBar">
+      <button class="menuToggle" id="menuToggle" onclick="toggleSidebar()" aria-label="Buka menu"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+      <b>KARANG TARUNA</b>
+    </div>
     <div class="globalTopBar">
       <div class="topProfileWrap" id="topProfileWrap">
         <button class="topProfileBtn" id="topProfileBtn" onclick="toggleProfileMenu(event)" title="Akun">
