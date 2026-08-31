@@ -55,12 +55,12 @@
     "justify-content:center;padding:0 4px;border:2px solid #0c0c0e}" +
 
     "#ktchat-panel{position:fixed;bottom:92px;right:22px;width:330px;max-width:calc(100vw - 32px);height:460px;" +
-    "max-height:calc(100vh - 130px);background:#14141a;border:1px solid var(--ktc-gold);border-radius:18px;" +
+    "max-height:calc(100vh - 130px);max-height:calc(100dvh - 130px);background:#14141a;border:1px solid var(--ktc-gold);border-radius:18px;" +
     "box-shadow:0 24px 60px rgba(0,0,0,.55);display:none;flex-direction:column;overflow:hidden;z-index:250;" +
     "font-family:'Segoe UI',Arial,sans-serif;transition:all .25s cubic-bezier(.4,0,.2,1)}" +
     "#ktchat-panel.open{display:flex;animation:ktchatSlideIn .2s ease}" +
-    "#ktchat-panel.fullscreen{position:fixed;inset:0;bottom:0;right:0;width:100vw;height:100vh;max-width:100vw;" +
-    "max-height:100vh;border-radius:0;border:0;z-index:999}" +
+    "#ktchat-panel.fullscreen{position:fixed;inset:0;bottom:0;right:0;width:100vw;height:100vh;height:100dvh;max-width:100vw;" +
+    "max-height:100vh;max-height:100dvh;border-radius:0;border:0;z-index:999}" +
     "@keyframes ktchatSlideIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}" +
 
     "#ktchat-head{padding:13px 14px;background:linear-gradient(100deg,var(--ktc-red) 0%,var(--ktc-blue) 65%,#0f172a 100%);" +
@@ -105,7 +105,7 @@
 
     "#ktchat-foot{padding:10px;border-top:1px solid #2a2a30;display:flex;gap:8px;background:#1c1c21}" +
     "#ktchat-input{flex:1;resize:none;border-radius:10px;border:1px solid #2a2a30;background:#0f0f12;color:#f5f5f7;" +
-    "padding:9px 10px;font-size:12.8px;font-family:inherit;max-height:70px}" +
+    "padding:9px 10px;font-size:16px;font-family:inherit;max-height:70px}" +
     "#ktchat-input:focus{outline:none;border-color:var(--ktc-gold)}" +
     "#ktchat-send{background:linear-gradient(135deg,var(--ktc-gold2),var(--ktc-gold));border:0;border-radius:10px;" +
     "width:38px;flex:0 0 38px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#1c1300}" +
@@ -271,6 +271,23 @@
   }
 
   // ---------------- BUKA / TUTUP / FULLSCREEN ----------------
+  // Jaga-jaga tambahan untuk browser yang belum penuh dukung 100dvh (Safari
+  // lama / WebView Android tertentu): saat fullscreen aktif, paksa tinggi
+  // panel mengikuti tinggi layar yang BENERAN kelihatan (visualViewport),
+  // supaya kotak ketik tidak pernah ketutup atau kedorong keluar layar
+  // saat keyboard muncul.
+  function syncFullscreenToViewport() {
+    if (!isFullscreen || !window.visualViewport) return;
+    var vv = window.visualViewport;
+    panel.style.height = vv.height + "px";
+    panel.style.top = vv.offsetTop + "px";
+  }
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", syncFullscreenToViewport);
+    window.visualViewport.addEventListener("scroll", syncFullscreenToViewport);
+  }
+  window.addEventListener("orientationchange", function () { setTimeout(syncFullscreenToViewport, 350); });
+
   function openPanel() {
     panelOpen = true;
     panel.classList.add("open");
@@ -287,18 +304,31 @@
     panel.classList.remove("open");
     panel.classList.remove("fullscreen");
     isFullscreen = false;
+    panel.style.height = "";
+    panel.style.top = "";
     if (typingPollTimer) { clearInterval(typingPollTimer); typingPollTimer = null; }
     typingEl.classList.add("hidden");
   }
   function toggleFullscreen() {
     isFullscreen = !isFullscreen;
     panel.classList.toggle("fullscreen", isFullscreen);
+    if (isFullscreen) {
+      syncFullscreenToViewport();
+    } else {
+      panel.style.height = "";
+      panel.style.top = "";
+    }
     if (panelOpen) bodyEl.scrollTop = bodyEl.scrollHeight;
   }
 
   bubble.addEventListener("click", function () { panelOpen ? closePanel() : openPanel(); });
   closeBtn.addEventListener("click", closePanel);
   fullscreenBtn.addEventListener("click", toggleFullscreen);
+  // safety net: begitu keyboard muncul (input difokus) saat fullscreen,
+  // sinkronkan lagi supaya kotak ketik tetap kelihatan
+  inputEl.addEventListener("focus", function () {
+    setTimeout(syncFullscreenToViewport, 300);
+  });
 
   async function sendMessage() {
     var pesan = inputEl.value.trim();
