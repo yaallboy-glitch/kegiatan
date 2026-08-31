@@ -1,8 +1,7 @@
 // ============================================================
 // LIVE CHAT MENGAMBANG — dipakai di semua halaman (Dashboard,
 // Bendahara, File, Footage, Export). Backend-nya (/chat GET,
-// POST, DELETE) sudah ada di Worker; file ini yang sebelumnya
-// hilang, jadi live chat tidak pernah muncul di aplikasi.
+// POST, DELETE, /chat/typing GET/POST) ada di Worker.
 //
 // Mandiri: tidak perlu variabel/fungsi khusus dari halaman yang
 // menyertakannya, cukup <script src="chat-widget.js"></script>
@@ -27,60 +26,98 @@
 
   var API_BASE = getApiBase();
   var POLL_MS = 4000;
+  var TYPING_POLL_MS = 2500;
   var lastId = 0;
   var panelOpen = false;
+  var isFullscreen = false;
   var messages = [];
   var unread = 0;
   var pollTimer = null;
+  var typingPollTimer = null;
+  var typingPingTimer = null;
+  var lastTypingPing = 0;
 
   // ---------------- STYLE ----------------
+  // Tema: Merah - Biru - Emas - Putih (profesional)
   var style = document.createElement("style");
   style.textContent =
-    "#ktchat-bubble{position:fixed;bottom:22px;right:22px;width:56px;height:56px;border-radius:50%;" +
-    "background:linear-gradient(145deg,#facc15,#eab308);color:#181205;border:0;box-shadow:0 10px 30px rgba(0,0,0,.45);" +
-    "cursor:pointer;z-index:250;display:flex;align-items:center;justify-content:center;padding:0}" +
+    ":root{--ktc-red:#b91c1c;--ktc-red2:#dc2626;--ktc-blue:#1e3a8a;--ktc-blue2:#1d4ed8;" +
+    "--ktc-gold:#d4af37;--ktc-gold2:#f0c94a;--ktc-white:#f8fafc}" +
+
+    "#ktchat-bubble{position:fixed;bottom:22px;right:22px;width:58px;height:58px;border-radius:50%;" +
+    "background:linear-gradient(135deg,var(--ktc-red2),var(--ktc-blue));color:#fff;border:2px solid var(--ktc-gold);" +
+    "box-shadow:0 10px 30px rgba(0,0,0,.5);cursor:pointer;z-index:250;display:flex;align-items:center;" +
+    "justify-content:center;padding:0;transition:transform .15s ease}" +
+    "#ktchat-bubble:hover{transform:scale(1.06)}" +
     "#ktchat-bubble svg{width:26px;height:26px}" +
-    "#ktchat-badge{position:absolute;top:-3px;right:-3px;background:#e11d48;color:#fff;font-size:10.5px;font-weight:700;" +
-    "border-radius:999px;min-width:19px;height:19px;display:none;align-items:center;justify-content:center;padding:0 4px;" +
-    "border:2px solid #0c0c0e}" +
-    "#ktchat-panel{position:fixed;bottom:90px;right:22px;width:325px;max-width:calc(100vw - 32px);height:445px;" +
-    "max-height:calc(100vh - 130px);background:#16161a;border:1px solid #2a2a30;border-radius:16px;" +
+    "#ktchat-badge{position:absolute;top:-3px;right:-3px;background:var(--ktc-red2);color:#fff;font-size:10.5px;" +
+    "font-weight:700;border-radius:999px;min-width:19px;height:19px;display:none;align-items:center;" +
+    "justify-content:center;padding:0 4px;border:2px solid #0c0c0e}" +
+
+    "#ktchat-panel{position:fixed;bottom:92px;right:22px;width:330px;max-width:calc(100vw - 32px);height:460px;" +
+    "max-height:calc(100vh - 130px);background:#14141a;border:1px solid var(--ktc-gold);border-radius:18px;" +
     "box-shadow:0 24px 60px rgba(0,0,0,.55);display:none;flex-direction:column;overflow:hidden;z-index:250;" +
-    "font-family:'Segoe UI',Arial,sans-serif}" +
-    "#ktchat-panel.open{display:flex;animation:ktchatSlideIn .18s ease}" +
-    "@keyframes ktchatSlideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}" +
-    "#ktchat-head{padding:12px 14px;background:#1c1c21;border-bottom:1px solid #2a2a30;display:flex;" +
-    "align-items:center;justify-content:space-between;color:#f5f5f7;font-size:13.5px;font-weight:700}" +
+    "font-family:'Segoe UI',Arial,sans-serif;transition:all .25s cubic-bezier(.4,0,.2,1)}" +
+    "#ktchat-panel.open{display:flex;animation:ktchatSlideIn .2s ease}" +
+    "#ktchat-panel.fullscreen{position:fixed;inset:0;bottom:0;right:0;width:100vw;height:100vh;max-width:100vw;" +
+    "max-height:100vh;border-radius:0;border:0;z-index:999}" +
+    "@keyframes ktchatSlideIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}" +
+
+    "#ktchat-head{padding:13px 14px;background:linear-gradient(100deg,var(--ktc-red) 0%,var(--ktc-blue) 65%,#0f172a 100%);" +
+    "border-bottom:2px solid var(--ktc-gold);display:flex;align-items:center;justify-content:space-between;" +
+    "color:var(--ktc-white);font-size:13.5px;font-weight:700}" +
     "#ktchat-head .ktchat-title{display:flex;align-items:center;gap:7px}" +
-    "#ktchat-dotlive{width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 0 rgba(34,197,94,.6);" +
-    "animation:ktchatPulse 1.8s infinite}" +
-    "@keyframes ktchatPulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}70%{box-shadow:0 0 0 6px rgba(34,197,94,0)}" +
-    "100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}" +
-    "#ktchat-head button{background:transparent;border:0;color:#a0a0aa;cursor:pointer;padding:4px;font-size:18px;line-height:1}" +
-    "#ktchat-head button:hover{color:#f5f5f7}" +
-    "#ktchat-body{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:9px}" +
+    "#ktchat-head .ktchat-actions{display:flex;align-items:center;gap:2px}" +
+    "#ktchat-dotlive{width:7px;height:7px;border-radius:50%;background:var(--ktc-gold2);" +
+    "box-shadow:0 0 0 0 rgba(240,201,74,.6);animation:ktchatPulse 1.8s infinite}" +
+    "@keyframes ktchatPulse{0%{box-shadow:0 0 0 0 rgba(240,201,74,.55)}70%{box-shadow:0 0 0 6px rgba(240,201,74,0)}" +
+    "100%{box-shadow:0 0 0 0 rgba(240,201,74,0)}}" +
+    "#ktchat-head button{background:transparent;border:0;color:#e2e8f0;cursor:pointer;padding:5px;font-size:16px;" +
+    "line-height:1;border-radius:7px;display:flex;align-items:center;justify-content:center}" +
+    "#ktchat-head button:hover{background:rgba(255,255,255,.15);color:#fff}" +
+    "#ktchat-head #ktchat-close{font-size:19px}" +
+
+    "#ktchat-body{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:9px;background:#0f0f14}" +
     "#ktchat-body::-webkit-scrollbar{width:6px}#ktchat-body::-webkit-scrollbar-thumb{background:#2a2a30;border-radius:6px}" +
     ".ktchat-msg{max-width:82%;padding:8px 10px;border-radius:11px;font-size:12.8px;line-height:1.4;" +
     "word-break:break-word;position:relative}" +
-    ".ktchat-msg .who{font-size:10.5px;font-weight:700;color:#facc15;margin-bottom:2px;display:block}" +
-    ".ktchat-msg .when{font-size:9.5px;opacity:.65;margin-top:3px;display:block}" +
-    ".ktchat-msg.me{align-self:flex-end;background:linear-gradient(145deg,#facc15,#eab308);color:#181205;" +
-    "border-bottom-right-radius:3px}" +
-    ".ktchat-msg.me .who{color:#5a4400}" +
-    ".ktchat-msg.other{align-self:flex-start;background:#232329;color:#f5f5f7;border-bottom-left-radius:3px}" +
+    ".ktchat-msg .who{font-size:10.5px;font-weight:700;color:var(--ktc-gold2);margin-bottom:2px;display:block}" +
+    ".ktchat-msg .when{font-size:9.5px;opacity:.7;margin-top:3px;display:block}" +
+    ".ktchat-msg.me{align-self:flex-end;background:linear-gradient(135deg,var(--ktc-blue2),var(--ktc-blue));" +
+    "color:#fff;border-bottom-right-radius:3px;border:1px solid rgba(212,175,55,.4)}" +
+    ".ktchat-msg.me .who{color:var(--ktc-gold2)}" +
+    ".ktchat-msg.other{align-self:flex-start;background:#1c1c24;color:#f5f5f7;border-bottom-left-radius:3px;" +
+    "border:1px solid #2a2a30}" +
     ".ktchat-msg .del{position:absolute;top:1px;right:3px;font-size:12px;cursor:pointer;opacity:.55;" +
     "background:transparent;border:0;color:inherit;padding:2px}" +
     ".ktchat-msg .del:hover{opacity:1}" +
     "#ktchat-empty{color:#6b6b76;font-size:12.5px;text-align:center;margin:auto;padding:0 10px}" +
+
+    "#ktchat-typing{padding:2px 14px;min-height:20px;font-size:11px;color:var(--ktc-gold2);display:flex;" +
+    "align-items:center;gap:6px;background:#0f0f14}" +
+    "#ktchat-typing.hidden{display:none}" +
+    ".ktchat-typedots{display:inline-flex;gap:3px}" +
+    ".ktchat-typedots span{width:4px;height:4px;border-radius:50%;background:var(--ktc-gold2);" +
+    "animation:ktchatTypeDot 1.1s infinite ease-in-out}" +
+    ".ktchat-typedots span:nth-child(2){animation-delay:.15s}" +
+    ".ktchat-typedots span:nth-child(3){animation-delay:.3s}" +
+    "@keyframes ktchatTypeDot{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-2px)}}" +
+
     "#ktchat-foot{padding:10px;border-top:1px solid #2a2a30;display:flex;gap:8px;background:#1c1c21}" +
     "#ktchat-input{flex:1;resize:none;border-radius:10px;border:1px solid #2a2a30;background:#0f0f12;color:#f5f5f7;" +
     "padding:9px 10px;font-size:12.8px;font-family:inherit;max-height:70px}" +
-    "#ktchat-input:focus{outline:none;border-color:#facc15}" +
-    "#ktchat-send{background:linear-gradient(145deg,#facc15,#eab308);border:0;border-radius:10px;width:38px;" +
-    "flex:0 0 38px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#181205}" +
+    "#ktchat-input:focus{outline:none;border-color:var(--ktc-gold)}" +
+    "#ktchat-send{background:linear-gradient(135deg,var(--ktc-gold2),var(--ktc-gold));border:0;border-radius:10px;" +
+    "width:38px;flex:0 0 38px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#1c1300}" +
     "#ktchat-send:disabled{opacity:.5;cursor:not-allowed}" +
+
+    "#ktchat-panel.fullscreen #ktchat-body{padding:20px;max-width:760px;margin:0 auto;width:100%}" +
+    "#ktchat-panel.fullscreen #ktchat-foot{max-width:760px;margin:0 auto;width:100%;padding:14px 10px}" +
+    "#ktchat-panel.fullscreen .ktchat-msg{max-width:65%;font-size:13.5px}" +
+
     "@media(max-width:480px){#ktchat-panel{right:12px;left:12px;width:auto;bottom:82px}" +
-    "#ktchat-bubble{right:16px;bottom:16px}}";
+    "#ktchat-bubble{right:16px;bottom:16px}" +
+    "#ktchat-panel.fullscreen #ktchat-body,#ktchat-panel.fullscreen #ktchat-foot{max-width:100%}}";
   document.head.appendChild(style);
 
   // ---------------- MARKUP ----------------
@@ -98,8 +135,14 @@
   panel.id = "ktchat-panel";
   panel.innerHTML =
     '<div id="ktchat-head"><span class="ktchat-title"><span id="ktchat-dotlive"></span>Live Chat</span>' +
-    '<button type="button" id="ktchat-close" aria-label="Tutup">&times;</button></div>' +
+    '<span class="ktchat-actions">' +
+    '<button type="button" id="ktchat-fullscreen" aria-label="Fullscreen" title="Layar penuh">' +
+    '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2">' +
+    '<path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>' +
+    '<button type="button" id="ktchat-close" aria-label="Tutup">&times;</button>' +
+    "</span></div>" +
     '<div id="ktchat-body"><div id="ktchat-empty">Memuat pesan...</div></div>' +
+    '<div id="ktchat-typing" class="hidden"></div>' +
     '<div id="ktchat-foot">' +
     '<textarea id="ktchat-input" rows="1" placeholder="Tulis pesan..." maxlength="1000"></textarea>' +
     '<button type="button" id="ktchat-send" aria-label="Kirim">' +
@@ -115,6 +158,8 @@
   var sendBtn = panel.querySelector("#ktchat-send");
   var badgeEl = bubble.querySelector("#ktchat-badge");
   var closeBtn = panel.querySelector("#ktchat-close");
+  var fullscreenBtn = panel.querySelector("#ktchat-fullscreen");
+  var typingEl = panel.querySelector("#ktchat-typing");
 
   // ---------------- HELPERS ----------------
   function escapeHtml(s) {
@@ -188,28 +233,72 @@
       lastId = messages[messages.length - 1].id;
       if (panelOpen || isInitial) renderMessages();
     } catch (err) {
-      // Diam-diam gagal (mis. offline sebentar) — jangan ganggu halaman utama.
       if (isInitial) {
         bodyEl.innerHTML = '<div id="ktchat-empty">Live chat tidak dapat dimuat.<br>' + escapeHtml(err.message || "") + "</div>";
       }
     }
   }
 
+  // ---------------- INDIKATOR "SEDANG MENGETIK" ----------------
+  function renderTyping(rows) {
+    if (!rows || !rows.length) {
+      typingEl.classList.add("hidden");
+      typingEl.innerHTML = "";
+      return;
+    }
+    var names = rows.map(function (r) { return r.nama || r.username; });
+    var text = names.length === 1
+      ? names[0] + " sedang mengetik"
+      : (names.length === 2 ? names.join(" & ") + " sedang mengetik" : names.length + " orang sedang mengetik");
+    typingEl.innerHTML = text + ' <span class="ktchat-typedots"><span></span><span></span><span></span></span>';
+    typingEl.classList.remove("hidden");
+  }
+
+  async function pollTyping() {
+    if (!panelOpen) return; // hemat request kalau panel lagi ditutup
+    try {
+      var r = await fetch(API_BASE + "/chat/typing", { headers: authHeaders() });
+      if (!r.ok) return;
+      renderTyping(await r.json());
+    } catch (e) {}
+  }
+
+  function pingTyping() {
+    var now = Date.now();
+    if (now - lastTypingPing < 1800) return; // throttle, jangan spam request
+    lastTypingPing = now;
+    fetch(API_BASE + "/chat/typing", { method: "POST", headers: authHeaders(true), body: "{}" }).catch(function () {});
+  }
+
+  // ---------------- BUKA / TUTUP / FULLSCREEN ----------------
   function openPanel() {
     panelOpen = true;
     panel.classList.add("open");
     unread = 0;
     updateBadge();
     renderMessages();
+    if (typingPollTimer) clearInterval(typingPollTimer);
+    typingPollTimer = setInterval(pollTyping, TYPING_POLL_MS);
+    pollTyping();
     setTimeout(function () { inputEl.focus(); }, 50);
   }
   function closePanel() {
     panelOpen = false;
     panel.classList.remove("open");
+    panel.classList.remove("fullscreen");
+    isFullscreen = false;
+    if (typingPollTimer) { clearInterval(typingPollTimer); typingPollTimer = null; }
+    typingEl.classList.add("hidden");
+  }
+  function toggleFullscreen() {
+    isFullscreen = !isFullscreen;
+    panel.classList.toggle("fullscreen", isFullscreen);
+    if (panelOpen) bodyEl.scrollTop = bodyEl.scrollHeight;
   }
 
   bubble.addEventListener("click", function () { panelOpen ? closePanel() : openPanel(); });
   closeBtn.addEventListener("click", closePanel);
+  fullscreenBtn.addEventListener("click", toggleFullscreen);
 
   async function sendMessage() {
     var pesan = inputEl.value.trim();
@@ -238,6 +327,7 @@
       sendMessage();
     }
   });
+  inputEl.addEventListener("input", pingTyping);
 
   bodyEl.addEventListener("click", async function (e) {
     var btn = e.target.closest ? e.target.closest("[data-del]") : null;
@@ -258,5 +348,8 @@
   // ---------------- MULAI ----------------
   pollChat(true);
   pollTimer = setInterval(function () { pollChat(false); }, POLL_MS);
-  window.addEventListener("beforeunload", function () { clearInterval(pollTimer); });
+  window.addEventListener("beforeunload", function () {
+    clearInterval(pollTimer);
+    if (typingPollTimer) clearInterval(typingPollTimer);
+  });
 })();
