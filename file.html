@@ -77,6 +77,7 @@ button{font-family:inherit}
 .emptyNote p{font-size:12.5px;margin:0}
 
 .mobileBar{display:none;position:sticky;top:0;z-index:70;align-items:center;gap:12px;padding:12px 16px;background:var(--bg-soft);border-bottom:1px solid var(--border)}
+.mobileBar.hideForSidebar{visibility:hidden}
 .mobileBar b{font-size:14.5px;letter-spacing:.3px}
 .menuToggle{flex:0 0 auto;width:40px;height:40px;border-radius:10px;background:var(--card2);border:1px solid var(--border);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s ease, background .2s ease, box-shadow .2s ease}
 .menuToggle:hover{background:var(--card);transform:scale(1.05);box-shadow:0 4px 12px rgba(0,0,0,.3)}
@@ -363,6 +364,8 @@ function goToAdminPanel() { sessionStorage.setItem("ktOpenAdmin", "1"); location
 function toggleSidebar() {
   document.getElementById("sidebar").classList.toggle("open");
   document.getElementById("sidebarOverlay").classList.toggle("open");
+  const mb = document.getElementById("mobileBar");
+  if (mb) mb.classList.toggle("hideForSidebar");
 }
 
 function showUploadErr(msg) {
