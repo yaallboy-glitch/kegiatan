@@ -232,10 +232,6 @@ let token = localStorage.getItem("token") || "";
 if (!token) { location.href = "index.html"; }
 
 let me = {};
-try {
-  const payload = atob(token).split("|");
-  me = { username: payload[0], nama: payload[1], role: payload[2] };
-} catch { location.href = "index.html"; }
 
 // ===== IKON =====
 const ICON = {
@@ -287,19 +283,29 @@ function goToProfil(){ sessionStorage.setItem("ktOpenProfil","1"); location.href
 function goToAdminPanel(){ sessionStorage.setItem("ktOpenAdmin","1"); location.href="index.html"; }
 function toggleSidebar(){ document.getElementById("sidebar").classList.toggle("open"); document.getElementById("sidebarOverlay").classList.toggle("open"); }
 
-// ===== INIT =====
-document.getElementById("profName").textContent = me.nama;
-document.getElementById("profRole").textContent = roleLabel(me.role);
-document.getElementById("avatarInit").textContent = (me.nama||"?").trim().charAt(0).toUpperCase();
-document.getElementById("pmName").textContent = me.nama;
-document.getElementById("pmRole").textContent = roleLabel(me.role);
-document.getElementById("pmAdminBtn").style.display = isAdminRole(me.role) ? "" : "none";
-applyFotoProfil();
+// ===== INIT (ambil nama+role TERKINI dari server, bukan decode token) =====
+let canEdit = false;
+async function initApp() {
+  try { me = await api("/auth/me"); } catch { return; }
 
-// ===== ROLE VISIBILITY =====
-const canEdit = myEdit().bendahara;
-document.querySelectorAll(".bendaharaEdit").forEach(el => { el.style.display = canEdit ? "" : "none"; });
-if (!canEdit) document.getElementById("bendaharaViewHint").style.display = "block";
+  document.getElementById("profName").textContent = me.nama;
+  document.getElementById("profRole").textContent = roleLabel(me.role);
+  document.getElementById("avatarInit").textContent = (me.nama||"?").trim().charAt(0).toUpperCase();
+  document.getElementById("pmName").textContent = me.nama;
+  document.getElementById("pmRole").textContent = roleLabel(me.role);
+  document.getElementById("pmAdminBtn").style.display = isAdminRole(me.role) ? "" : "none";
+  applyFotoProfil();
+
+  canEdit = myEdit().bendahara;
+  document.querySelectorAll(".bendaharaEdit").forEach(el => { el.style.display = canEdit ? "" : "none"; });
+  if (!canEdit) document.getElementById("bendaharaViewHint").style.display = "block";
+
+  loadAnggota();
+  loadKeu();
+  loadSpj();
+  loadProp();
+  loadLog();
+}
 
 // ===== NAVIGASI TAB =====
 function show(id){ ["dash","keu","spj","prop","log"].forEach(x=>document.getElementById(x).hidden=(x!==id)); document.querySelectorAll(".subnav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===id)); }
@@ -335,11 +341,7 @@ async function addProp(e){ e.preventDefault(); try{ await api("/proposal",{metho
 async function loadLog(){ const rows=await api("/log"); const t=document.getElementById("tLog"); t.rows.length=1; rows.forEach(r=>t.insertRow(-1).innerHTML=`<td>${r.waktu}</td><td><b>${r.username}</b></td><td>${r.aktivitas}</td>`); }
 
 // ===== INIT =====
-loadAnggota();
-loadKeu();
-loadSpj();
-loadProp();
-loadLog();
+initApp();
 </script>
 <script src="chat-widget.js"></script>
 </body>
