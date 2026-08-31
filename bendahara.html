@@ -514,17 +514,12 @@ function toggleRowMenu(e, menuId){
     menu.style.position = 'fixed';
     menu.style.top = (rect.bottom + 4) + 'px';
 
-    // Pakai "left" (bukan "right") dan dijepit (clamp) supaya menu selalu
-    // penuh terlihat di layar, tidak kepotong walau tombolnya dekat tepi kanan
-    // (mis. setelah scroll tabel ke kanan di HP).
-    const menuWidth = menu.offsetWidth || 150;
-    const margin = 8;
-    let left = rect.right - menuWidth;
-    if (left < margin) left = margin;
-    if (left + menuWidth > window.innerWidth - margin) left = window.innerWidth - menuWidth - margin;
-
-    menu.style.left = left + 'px';
-    menu.style.right = 'auto';
+    // Sama seperti sebelumnya (rata kanan ke tombol), cuma dijaga supaya
+    // nilainya tidak pernah minus (itu yang bikin menu kepotong di Keuangan).
+    let rightPx = window.innerWidth - rect.right;
+    if (rightPx < 8) rightPx = 8;
+    menu.style.right = rightPx + 'px';
+    menu.style.left = 'auto';
 
     menu.classList.add("open");
   }
