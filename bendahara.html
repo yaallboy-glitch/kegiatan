@@ -132,6 +132,16 @@ body.kt-leaving{animation:none!important;opacity:0;transform:translateY(-8px) sc
 .delConfirmActions button:hover{transform:translateY(-1px)}
 .delConfirmActions .delConfirmOk{background:#e11d48;border-color:#e11d48;color:#fff}
 .delConfirmActions .delConfirmOk:hover{background:#be123c}
+
+/* ---------- MENU TITIK-TIGA PER BARIS (aksi/hapus) ---------- */
+.rowMenuWrap{position:relative;display:inline-block}
+.rowMenuBtn{background:transparent;border:0;color:var(--text-dim);cursor:pointer;padding:4px 8px;border-radius:6px;font-size:16px;line-height:1;font-weight:700}
+.rowMenuBtn:hover{background:var(--card2);color:var(--text)}
+.rowMenu{display:none;position:absolute;top:calc(100% + 4px);right:0;background:var(--card);border:1px solid var(--border);border-radius:10px;min-width:132px;box-shadow:0 12px 30px rgba(0,0,0,.45);padding:6px;z-index:80}
+.rowMenu.open{display:block}
+.rowMenuItem{display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border-radius:7px;border:0;background:transparent;color:var(--red);font-size:12.5px;font-weight:600;cursor:pointer;text-align:left;box-sizing:border-box}
+.rowMenuItem:hover{background:#3a1414}
+.rowMenuItem svg{flex:0 0 14px;width:14px;height:14px}
 </style>
 </head>
 <body>
@@ -369,12 +379,15 @@ function renderDashboardCards(){
 let allKeu = []; // cache data keuangan yang sedang ditampilkan
 
 async function loadKeu(){
-  allKeu = await api("/keuangan");
+  const rows = await api("/keuangan");
+  // Saring baris yang barusan dihapus user ini, jaga-jaga server masih
+  // membalas data lama karena jeda replikasi.
+  allKeu = rows.filter(r => !deletedKeuIds.has(r.id));
   renderKeuTable();
 }
 function renderKeuTable(){
   const t=document.getElementById("tKeu"); t.rows.length=1; let masuk=0,keluar=0;
-  allKeu.forEach(r=>{ r.jenis==="masuk"?masuk+=r.jumlah:keluar+=r.jumlah; t.insertRow(-1).innerHTML=`<td>${r.tanggal}</td><td>${r.keterangan}</td><td class="${r.jenis}">${r.jenis}</td><td>${rp(r.jumlah)}</td><td>${namaFromUsername(r.created_by)}</td><td>${canEdit?`<a onclick="delKeu(${r.id})" style="cursor:pointer">${ICON.trash}</a>`:""}</td>`; });
+  allKeu.forEach(r=>{ r.jenis==="masuk"?masuk+=r.jumlah:keluar+=r.jumlah; t.insertRow(-1).innerHTML=`<td>${r.tanggal}</td><td>${r.keterangan}</td><td class="${r.jenis}">${r.jenis}</td><td>${rp(r.jumlah)}</td><td>${namaFromUsername(r.created_by)}</td><td>${canEdit?rowMenuHtml('keu',r.id):""}</td>`; });
   document.getElementById("keuTotal").innerHTML=`<div class="card">Masuk: <span class="masuk">${rp(masuk)}</span></div><div class="card">Keluar: <span class="keluar">${rp(keluar)}</span></div><div class="card">Saldo: <b>${rp(masuk-keluar)}</b></div>`;
   lastSaldo = masuk-keluar;
   renderDashboardCards();
@@ -409,32 +422,83 @@ function confirmHapus(message, title) {
   });
 }
 
+// ID yang baru saja dihapus user di sesi ini. Dipakai untuk menyaring hasil
+// GET yang datang belakangan (mis. dari loadKeu() diam-diam di bawah), supaya
+// baris yang sudah dihapus TIDAK bisa "muncul lagi"/"nambah lagi" gara-gara
+// server masih sempat membalas data lama (jeda replikasi database).
+const deletedKeuIds = new Set();
+
 async function delKeu(id){
   if(!(await confirmHapus("Data keuangan ini akan dihapus secara permanen dan tidak bisa dikembalikan.", "Hapus data keuangan ini?")))return;
   try{
     await api("/keuangan?id="+id,{method:"DELETE"});
+    deletedKeuIds.add(id);
     // Hapus dari tampilan SEKARANG JUGA (jangan tunggu fetch ulang ke server).
-    // GET /keuangan sesaat setelah DELETE kadang masih membaca data lama karena
-    // jeda replikasi database, jadi baris yang sudah dihapus tetap muncul kalau
-    // kita hanya mengandalkan loadKeu() untuk merender ulang tabel.
     allKeu = allKeu.filter(r => r.id !== id);
     renderKeuTable();
     // Tetap sinkronkan ulang di belakang layar (diam-diam) untuk menangkap
-    // perubahan lain dari user lain; kalau gagal, tampilan yang sudah benar
-    // di atas tidak terganggu.
+    // perubahan lain dari user lain. loadKeu() sendiri sudah menyaring
+    // deletedKeuIds, jadi walau server sempat membalas data basi yang masih
+    // memuat baris ini, baris itu tidak akan dirender ulang.
     loadKeu().catch(()=>{});
   }catch(err){ showErr("errBox2",err.message); }
 }
 
+// ===== MENU TITIK-TIGA (pilih & hapus per baris) =====
+function closeAllRowMenus(except){
+  document.querySelectorAll(".rowMenu.open").forEach(m=>{ if(m!==except) m.classList.remove("open"); });
+}
+document.addEventListener("click", function(e){ if(!e.target.closest(".rowMenuWrap")) closeAllRowMenus(); });
+function toggleRowMenu(e, menuId){
+  e.stopPropagation();
+  const menu = document.getElementById(menuId);
+  if(!menu) return;
+  const willOpen = !menu.classList.contains("open");
+  closeAllRowMenus();
+  if(willOpen) menu.classList.add("open");
+}
+function rowMenuHtml(type, id){
+  const menuId = "rm-"+type+"-"+id;
+  const action = type==="keu" ? "delKeu" : "delSpj";
+  return `<div class="rowMenuWrap">
+    <button type="button" class="rowMenuBtn" onclick="toggleRowMenu(event,'${menuId}')" title="Opsi">&#8942;</button>
+    <div class="rowMenu" id="${menuId}">
+      <button type="button" class="rowMenuItem" onclick="closeAllRowMenus();${action}(${id})">${ICON.trash}Hapus</button>
+    </div>
+  </div>`;
+}
+
 // ===== LPJ =====
+let allSpj = []; // cache data LPJ yang sedang ditampilkan
+const deletedSpjIds = new Set(); // sama seperti deletedKeuIds, cegah baris hapus "muncul lagi"
+
 async function loadSpj(){
-  const rows=await api("/spj"); const t=document.getElementById("tSpj"); t.rows.length=1;
-  rows.forEach(r=>{ const aksi=isAdminRole(me.role)&&r.status==="pending"?`<a onclick="setStatus(${r.id},'disetujui')" style="cursor:pointer;color:#4ade80" title="Setujui">${ICON.check}</a> <a onclick="setStatus(${r.id},'ditolak')" style="cursor:pointer;color:#f87171" title="Tolak">${ICON.x}</a>`:""; t.insertRow(-1).innerHTML=`<td>${r.no_spj}</td><td>${r.kegiatan}</td><td>${rp(r.nominal)}</td><td><b>${r.status}</b></td><td>${namaFromUsername(r.created_by)}</td><td>${aksi}</td>`; });
-  lastSpjCount = rows.length;
+  const rows = await api("/spj");
+  allSpj = rows.filter(r => !deletedSpjIds.has(r.id));
+  renderSpjTable();
+}
+function renderSpjTable(){
+  const t=document.getElementById("tSpj"); t.rows.length=1;
+  allSpj.forEach(r=>{
+    const approve = isAdminRole(me.role)&&r.status==="pending"?`<a onclick="setStatus(${r.id},'disetujui')" style="cursor:pointer;color:#4ade80" title="Setujui">${ICON.check}</a> <a onclick="setStatus(${r.id},'ditolak')" style="cursor:pointer;color:#f87171" title="Tolak">${ICON.x}</a>`:"";
+    const menu = canEdit ? rowMenuHtml('spj', r.id) : "";
+    t.insertRow(-1).innerHTML=`<td>${r.no_spj}</td><td>${r.kegiatan}</td><td>${rp(r.nominal)}</td><td><b>${r.status}</b></td><td>${namaFromUsername(r.created_by)}</td><td><div style="display:flex;align-items:center;gap:8px">${approve}${menu}</div></td>`;
+  });
+  lastSpjCount = allSpj.length;
   renderDashboardCards();
 }
 async function addSpj(e){ e.preventDefault(); try{ await api("/spj",{method:"POST",body:JSON.stringify({no_spj:sNo.value,tanggal:sTgl.value,kegiatan:sKeg.value,rincian:sRin.value,nominal:+sNom.value})}); sNo.value=sTgl.value=sKeg.value=sRin.value=sNom.value=""; loadSpj(); }catch(err){ showErr("errBox2",err.message); } }
 async function setStatus(id,status){ try{ await api("/spj/status",{method:"POST",body:JSON.stringify({id,status})}); loadSpj(); }catch(err){ showErr("errBox2",err.message); } }
+async function delSpj(id){
+  if(!(await confirmHapus("Data LPJ ini akan dihapus secara permanen dan tidak bisa dikembalikan.", "Hapus data LPJ ini?")))return;
+  try{
+    await api("/spj?id="+id,{method:"DELETE"});
+    deletedSpjIds.add(id);
+    allSpj = allSpj.filter(r => r.id !== id);
+    renderSpjTable();
+    loadSpj().catch(()=>{});
+  }catch(err){ showErr("errBox2",err.message); }
+}
 
 // ===== PROPOSAL =====
 async function loadProp(){ const rows=await api("/proposal"); const t=document.getElementById("tProp"); t.rows.length=1; rows.forEach(r=>t.insertRow(-1).innerHTML=`<td><b>${r.judul}</b></td><td>${r.status}</td><td>${namaFromUsername(r.created_by)}</td><td>${r.updated_by?namaFromUsername(r.updated_by):"-"}</td>`); }
