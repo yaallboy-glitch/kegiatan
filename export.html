@@ -169,10 +169,6 @@ const ROLE_LABEL_MAP = { admin:"Admin", bendahara:"Bendahara", pdd:"PDD", ketua:
 function roleLabel(role) { return ROLE_LABEL_MAP[role] || "Anggota"; }
 
 let me = {};
-try {
-  const payload = atob(token).split("|");
-  me = { username: payload[0], nama: payload[1], role: payload[2] };
-} catch { location.href = "index.html"; }
 
 // ===== FUNGSI API (PENTING) =====
 async function api(path, opt={}) {
@@ -208,21 +204,28 @@ function goToAdminPanel(){ sessionStorage.setItem("ktOpenAdmin","1"); location.h
 function logout(){ localStorage.removeItem("token"); location.href="index.html"; }
 function toggleSidebar(){ document.getElementById("sidebar").classList.toggle("open"); document.getElementById("sidebarOverlay").classList.toggle("open"); }
 
-// ===== PROFILE DATA =====
-document.getElementById("profName").textContent = me.nama;
-document.getElementById("profRole").textContent = roleLabel(me.role);
-document.getElementById("avatarInit").textContent = (me.nama||"?").trim().charAt(0).toUpperCase();
-document.getElementById("pmName").textContent = me.nama;
-document.getElementById("pmRole").textContent = roleLabel(me.role);
-document.getElementById("pmAdminBtn").style.display = (me.role === "admin" || me.role === "ketua") ? "" : "none";
-
+// ===== PROFILE DATA (ambil nama+role TERKINI dari server, bukan decode token) =====
 function fotoKey(){ return "ktFotoProfil_"+ (me.username||"guest"); }
 function applyFotoProfil(){
   const saved=localStorage.getItem(fotoKey()); const initial=(me.nama||"?").trim().charAt(0).toUpperCase();
   [document.getElementById("topProfileBtn"),document.getElementById("pmAvatarInit"),document.getElementById("avatarInit")].forEach(el=>{ if(!el)return; if(saved){el.style.backgroundImage=`url('${saved}')`;el.textContent="";}else{el.style.backgroundImage="";el.textContent=initial;} });
   const topInit=document.getElementById("topAvatarInit"); if(topInit) topInit.textContent=saved?"":initial;
 }
-applyFotoProfil();
+
+async function initApp() {
+  try {
+    me = await api("/auth/me");
+  } catch { return logout(); }
+
+  document.getElementById("profName").textContent = me.nama;
+  document.getElementById("profRole").textContent = roleLabel(me.role);
+  document.getElementById("avatarInit").textContent = (me.nama||"?").trim().charAt(0).toUpperCase();
+  document.getElementById("pmName").textContent = me.nama;
+  document.getElementById("pmRole").textContent = roleLabel(me.role);
+  document.getElementById("pmAdminBtn").style.display = (me.role === "admin" || me.role === "ketua") ? "" : "none";
+  applyFotoProfil();
+}
+initApp();
 const fotoProfilInput=document.getElementById("fotoProfilInput");
 if(fotoProfilInput){ fotoProfilInput.addEventListener("change",function(e){ const file=e.target.files[0]; if(!file)return; const reader=new FileReader(); reader.onload=function(ev){ const img=new Image(); img.onload=function(){ const size=240; const canvas=document.createElement("canvas"); canvas.width=size; canvas.height=size; const ctx=canvas.getContext("2d"); const scale=Math.max(size/img.width,size/img.height); const w=img.width*scale,h=img.height*scale; ctx.drawImage(img,(size-w)/2,(size-h)/2,w,h); try{ localStorage.setItem(fotoKey(),canvas.toDataURL("image/jpeg",0.85)); applyFotoProfil(); }catch(err){alert("Gagal menyimpan foto");} }; img.src=ev.target.result; }; reader.readAsDataURL(file); e.target.value=""; }); }
 
