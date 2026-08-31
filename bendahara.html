@@ -117,6 +117,21 @@ body.kt-leaving{animation:none!important;opacity:0;transform:translateY(-8px) sc
 #dash:not([hidden]),#keu:not([hidden]),#spj:not([hidden]),#prop:not([hidden]),#log:not([hidden]){animation:ktPageIn .4s cubic-bezier(.16,1,.3,1)}
 .page{animation:ktPageIn .4s cubic-bezier(.16,1,.3,1)}
 @keyframes ktPageIn{from{opacity:0;transform:translateY(10px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+/* ---------- POPUP KONFIRMASI HAPUS ---------- */
+.delConfirmOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:200;align-items:center;justify-content:center;padding:16px}
+.delConfirmOverlay.open{display:flex;animation:dcFade .15s ease}
+@keyframes dcFade{from{opacity:0}to{opacity:1}}
+.delConfirmBox{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px;width:320px;max-width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.5);animation:dcPop .22s cubic-bezier(.22,.9,.3,1.18)}
+@keyframes dcPop{from{opacity:0;transform:scale(.94) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.delConfirmIconWrap{width:46px;height:46px;border-radius:50%;background:rgba(225,29,72,.14);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;color:#e11d48}
+.delConfirmBox h3{margin:0 0 8px;font-size:15.5px}
+.delConfirmBox p{margin:0 0 18px;font-size:13px;color:var(--text-dim);line-height:1.5}
+.delConfirmActions{display:flex;gap:8px;justify-content:center}
+.delConfirmActions button{flex:1;padding:10px 14px;border-radius:9px;font-size:13.5px;font-weight:700;cursor:pointer;border:1px solid var(--border);background:var(--card2);color:var(--text)}
+.delConfirmActions button:hover{transform:translateY(-1px)}
+.delConfirmActions .delConfirmOk{background:#e11d48;border-color:#e11d48;color:#fff}
+.delConfirmActions .delConfirmOk:hover{background:#be123c}
 </style>
 </head>
 <body>
@@ -359,7 +374,36 @@ async function loadKeu(){
   renderDashboardCards();
 }
 async function addKeu(e){ e.preventDefault(); try{ await api("/keuangan",{method:"POST",body:JSON.stringify({tanggal:kTgl.value,keterangan:kKet.value,jenis:kJenis.value,jumlah:+kJml.value})}); kTgl.value=kKet.value=kJml.value=""; loadKeu(); }catch(err){ showErr("errBox2",err.message); } }
-async function delKeu(id){ if(!confirm("Hapus?"))return; try{ await api("/keuangan?id="+id,{method:"DELETE"}); loadKeu(); }catch(err){ showErr("errBox2",err.message); } }
+// Popup konfirmasi hapus custom (menggantikan confirm() bawaan browser).
+// Mengembalikan Promise<boolean>: true kalau user menekan "Hapus".
+function confirmHapus(message, title) {
+  return new Promise(resolve => {
+    const overlay = document.getElementById("delConfirmOverlay");
+    document.getElementById("delConfirmTitle").textContent = title || "Hapus item ini?";
+    document.getElementById("delConfirmMsg").textContent = message || "Tindakan ini tidak bisa dibatalkan.";
+    overlay.classList.add("open");
+    const btnOk = document.getElementById("delConfirmOk");
+    const btnCancel = document.getElementById("delConfirmCancel");
+    function cleanup(result) {
+      overlay.classList.remove("open");
+      btnOk.removeEventListener("click", onOk);
+      btnCancel.removeEventListener("click", onCancel);
+      overlay.removeEventListener("click", onOverlay);
+      document.removeEventListener("keydown", onKey);
+      resolve(result);
+    }
+    function onOk() { cleanup(true); }
+    function onCancel() { cleanup(false); }
+    function onOverlay(e) { if (e.target === overlay) cleanup(false); }
+    function onKey(e) { if (e.key === "Escape") cleanup(false); }
+    btnOk.addEventListener("click", onOk);
+    btnCancel.addEventListener("click", onCancel);
+    overlay.addEventListener("click", onOverlay);
+    document.addEventListener("keydown", onKey);
+  });
+}
+
+async function delKeu(id){ if(!(await confirmHapus("Data keuangan ini akan dihapus secara permanen dan tidak bisa dikembalikan.", "Hapus data keuangan ini?")))return; try{ await api("/keuangan?id="+id,{method:"DELETE"}); loadKeu(); }catch(err){ showErr("errBox2",err.message); } }
 
 // ===== LPJ =====
 async function loadSpj(){
@@ -381,6 +425,19 @@ async function loadLog(){ const rows=await api("/log"); const t=document.getElem
 // ===== INIT =====
 initApp();
 </script>
+<div class="delConfirmOverlay" id="delConfirmOverlay">
+  <div class="delConfirmBox">
+    <div class="delConfirmIconWrap">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+    </div>
+    <h3 id="delConfirmTitle">Hapus item ini?</h3>
+    <p id="delConfirmMsg">Tindakan ini tidak bisa dibatalkan.</p>
+    <div class="delConfirmActions">
+      <button type="button" id="delConfirmCancel">Batal</button>
+      <button type="button" class="delConfirmOk" id="delConfirmOk">Hapus</button>
+    </div>
+  </div>
+</div>
 <script src="page-transition.js"></script>
 <script src="chat-widget.js"></script>
 <script src="sosmed-widget.js"></script>
