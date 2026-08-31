@@ -135,6 +135,14 @@ button:hover, .pillBtn:hover {
   background: rgba(255,255,255,.03);
   transform: translateX(2px);
 }
+
+/* ---------- TRANSISI HALUS ANTAR HALAMAN ---------- */
+body{animation:ktFadeIn .32s ease}
+@keyframes ktFadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+body.kt-leaving{animation:none!important;opacity:0;transition:opacity .16s ease}
+#dash:not([hidden]),#keu:not([hidden]),#spj:not([hidden]),#prop:not([hidden]),#log:not([hidden]){animation:ktPageIn .28s ease}
+.page{animation:ktPageIn .28s ease}
+@keyframes ktPageIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
@@ -156,7 +164,7 @@ button:hover, .pillBtn:hover {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>
       Dashboard
     </a>
-    <a class="navlink" href="index.html#bendahara">
+    <a class="navlink" href="bendahara.html">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/><path d="M6 14h4"/></svg>
       Bendahara
     </a>
@@ -490,11 +498,28 @@ async function deleteFile(id) {
   }
 }
 
+// Ambil data /auth/me dengan percobaan ulang untuk error SEMENTARA. Token
+// TIDAK ikut dihapus untuk error jenis ini — apiGet() sudah memanggil logout()
+// dari dalam saat server benar-benar membalas 401 (token tidak valid).
+async function getMeWithRetry(maxRetries = 2) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await apiGet("/auth/me");
+    } catch (err) {
+      if (attempt === maxRetries) throw err;
+      await new Promise(res => setTimeout(res, 500 * (attempt + 1)));
+    }
+  }
+}
+
 // ===== INIT (ambil nama+role TERKINI dari server, bukan decode token) =====
 async function initApp() {
   try {
-    me = await apiGet("/auth/me");
-  } catch { return logout(); }
+    me = await getMeWithRetry();
+  } catch (err) {
+    showUploadErr((err.message || String(err)) + " Coba muat ulang halaman.");
+    return;
+  }
 
   document.getElementById("profName").textContent = me.nama;
   document.getElementById("profRole").textContent = roleLabel(me.role);
@@ -509,6 +534,7 @@ async function initApp() {
 }
 initApp();
 </script>
+<script src="page-transition.js"></script>
 <script src="chat-widget.js"></script>
 </body>
 </html>
