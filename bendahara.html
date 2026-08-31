@@ -87,6 +87,12 @@ tr:hover td{background:#1d1d20}
 
 .errBox{display:none;background:#3a1414;color:#fca5a5;border:1px solid #5c1f1f;padding:11px 12px;border-radius:8px;margin:10px 0;font-size:13px;white-space:pre-wrap;word-break:break-word}
 
+/* Tambahan CSS untuk baris yang ditandai */
+tr.marked td {
+  background: rgba(250, 204, 21, 0.08) !important;
+  border-left: 3px solid var(--gold);
+}
+
 @media(max-width:1024px){
   .menuToggle{display:flex}
   .sidebar{position:fixed;top:0;left:-270px;height:100vh;transition:left .25s ease;z-index:50}
@@ -213,6 +219,7 @@ body.kt-leaving{animation:none!important;opacity:0;transform:translateY(-8px) sc
         <button class="mainBtn">Simpan</button>
       </form>
       <div id="keuTotal"></div>
+      <div style="margin-bottom:10px"><button class="mainBtn" onclick="hapusTerpilih('keu')">Hapus Terpilih</button></div>
       <div class="wrapTable"><table id="tKeu"><tr><th>Tanggal</th><th>Ket</th><th>Jenis</th><th>Jumlah</th><th>Oleh</th><th></th></tr></table></div>
       <div class="lpjPrintCard">
         <div class="sectionTitle" style="margin-top:26px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Export Laporan Keuangan</div>
@@ -231,6 +238,7 @@ body.kt-leaving{animation:none!important;opacity:0;transform:translateY(-8px) sc
         <input type="number" id="sNom" placeholder="Nominal" required>
         <button class="mainBtn">Simpan</button>
       </form>
+      <div style="margin-bottom:10px"><button class="mainBtn" onclick="hapusTerpilih('spj')">Hapus Terpilih</button></div>
       <div class="wrapTable"><table id="tSpj"><tr><th>No</th><th>Kegiatan</th><th>Nominal</th><th>Status</th><th>Oleh</th><th>Aksi</th></tr></table></div>
       <div class="lpjPrintCard">
         <div class="sectionTitle" style="margin-top:26px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Export LPJ</div>
@@ -319,10 +327,7 @@ function goToProfil(){ sessionStorage.setItem("ktOpenProfil","1"); location.href
 function goToAdminPanel(){ sessionStorage.setItem("ktOpenAdmin","1"); location.href="index.html"; }
 function toggleSidebar(){ document.getElementById("sidebar").classList.toggle("open"); document.getElementById("sidebarOverlay").classList.toggle("open"); }
 
-// Ambil data /auth/me dengan percobaan ulang untuk error SEMENTARA (jaringan
-// lambat, server sibuk, dsb). Token TIDAK ikut dihapus untuk error jenis ini —
-// logout() otomatis hanya terjadi di dalam api() saat server benar-benar
-// membalas 401 (token tidak valid/kedaluwarsa).
+// Ambil data /auth/me dengan percobaan ulang untuk error SEMENTARA
 async function getMeWithRetry(maxRetries = 2) {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -334,7 +339,7 @@ async function getMeWithRetry(maxRetries = 2) {
   }
 }
 
-// ===== INIT (ambil nama+role TERKINI dari server, bukan decode token) =====
+// ===== INIT =====
 let canEdit = false;
 async function initApp() {
   try { me = await getMeWithRetry(); }
@@ -362,39 +367,55 @@ async function initApp() {
 // ===== NAVIGASI TAB =====
 function show(id){ ["dash","keu","spj","prop","log"].forEach(x=>document.getElementById(x).hidden=(x!==id)); document.querySelectorAll(".subnav button").forEach(b=>b.classList.toggle("active",b.dataset.tab===id)); }
 
-// ===== DATA ANGGOTA (untuk nama) =====
+// ===== DATA ANGGOTA =====
 let allAnggota = [];
 function namaFromUsername(username){ if(!username) return "-"; const u=allAnggota.find(a=>a.username===username); return u&&u.nama?u.nama:username; }
 async function loadAnggota(){ try{ allAnggota=await api("/users"); }catch{} }
 
+// ===== FITUR TANDAI =====
+const markedKeu = new Set();
+const markedSpj = new Set();
+
+function toggleMark(type, id) {
+  const set = type === 'keu' ? markedKeu : markedSpj;
+  if (set.has(String(id))) {
+    set.delete(String(id));
+  } else {
+    set.add(String(id));
+  }
+  if (type === 'keu') renderKeuTable();
+  else renderSpjTable();
+}
+
 // ===== KEUANGAN =====
 let lastSaldo = 0;
-let lastSpjCount = null; // null = belum diketahui, jangan tampilkan angka salah dulu
+let lastSpjCount = null;
+let allKeu = []; // cache data keuangan yang sedang ditampilkan
+const deletedKeuIds = new Set();
 
 function renderDashboardCards(){
   const lpjText = lastSpjCount === null ? "..." : lastSpjCount;
   document.getElementById("cards").innerHTML=`<div class="card"><h3 style="margin:0 0 6px">${ICON.wallet}Saldo</h3>${rp(lastSaldo)}</div><div class="card"><h3 style="margin:0 0 6px">${ICON.fileText}LPJ</h3>${lpjText} dokumen</div>`;
 }
 
-let allKeu = []; // cache data keuangan yang sedang ditampilkan
-
 async function loadKeu(){
   const rows = await api("/keuangan");
-  // Saring baris yang barusan dihapus user ini, jaga-jaga server masih
-  // membalas data lama karena jeda replikasi.
-  allKeu = rows.filter(r => !deletedKeuIds.has(r.id));
+  allKeu = rows.filter(r => !deletedKeuIds.has(String(r.id)));
   renderKeuTable();
 }
 function renderKeuTable(){
   const t=document.getElementById("tKeu"); t.rows.length=1; let masuk=0,keluar=0;
-  allKeu.forEach(r=>{ r.jenis==="masuk"?masuk+=r.jumlah:keluar+=r.jumlah; t.insertRow(-1).innerHTML=`<td>${r.tanggal}</td><td>${r.keterangan}</td><td class="${r.jenis}">${r.jenis}</td><td>${rp(r.jumlah)}</td><td>${namaFromUsername(r.created_by)}</td><td>${canEdit?rowMenuHtml('keu',r.id):""}</td>`; });
+  allKeu.forEach(r=>{ r.jenis==="masuk"?masuk+=r.jumlah:keluar+=r.jumlah;
+    const row = t.insertRow(-1);
+    if (markedKeu.has(String(r.id))) row.classList.add('marked');
+    row.innerHTML=`<td>${r.tanggal}</td><td>${r.keterangan}</td><td class="${r.jenis}">${r.jenis}</td><td>${rp(r.jumlah)}</td><td>${namaFromUsername(r.created_by)}</td><td>${canEdit?rowMenuHtml('keu',r.id):""}</td>`;
+  });
   document.getElementById("keuTotal").innerHTML=`<div class="card">Masuk: <span class="masuk">${rp(masuk)}</span></div><div class="card">Keluar: <span class="keluar">${rp(keluar)}</span></div><div class="card">Saldo: <b>${rp(masuk-keluar)}</b></div>`;
   lastSaldo = masuk-keluar;
   renderDashboardCards();
 }
 async function addKeu(e){ e.preventDefault(); try{ await api("/keuangan",{method:"POST",body:JSON.stringify({tanggal:kTgl.value,keterangan:kKet.value,jenis:kJenis.value,jumlah:+kJml.value})}); kTgl.value=kKet.value=kJml.value=""; loadKeu(); }catch(err){ showErr("errBox2",err.message); } }
-// Popup konfirmasi hapus custom (menggantikan confirm() bawaan browser).
-// Mengembalikan Promise<boolean>: true kalau user menekan "Hapus".
+
 function confirmHapus(message, title) {
   return new Promise(resolve => {
     const overlay = document.getElementById("delConfirmOverlay");
@@ -422,29 +443,18 @@ function confirmHapus(message, title) {
   });
 }
 
-// ID yang baru saja dihapus user di sesi ini. Dipakai untuk menyaring hasil
-// GET yang datang belakangan (mis. dari loadKeu() diam-diam di bawah), supaya
-// baris yang sudah dihapus TIDAK bisa "muncul lagi"/"nambah lagi" gara-gara
-// server masih sempat membalas data lama (jeda replikasi database).
-const deletedKeuIds = new Set();
-
 async function delKeu(id){
   if(!(await confirmHapus("Data keuangan ini akan dihapus secara permanen dan tidak bisa dikembalikan.", "Hapus data keuangan ini?")))return;
   try{
     await api("/keuangan?id="+id,{method:"DELETE"});
-    deletedKeuIds.add(id);
-    // Hapus dari tampilan SEKARANG JUGA (jangan tunggu fetch ulang ke server).
-    allKeu = allKeu.filter(r => r.id !== id);
+    deletedKeuIds.add(String(id));
+    allKeu = allKeu.filter(r => String(r.id) !== String(id));
     renderKeuTable();
-    // Tetap sinkronkan ulang di belakang layar (diam-diam) untuk menangkap
-    // perubahan lain dari user lain. loadKeu() sendiri sudah menyaring
-    // deletedKeuIds, jadi walau server sempat membalas data basi yang masih
-    // memuat baris ini, baris itu tidak akan dirender ulang.
     loadKeu().catch(()=>{});
   }catch(err){ showErr("errBox2",err.message); }
 }
 
-// ===== MENU TITIK-TIGA (pilih & hapus per baris) =====
+// ===== MENU TITIK-TIGA =====
 function closeAllRowMenus(except){
   document.querySelectorAll(".rowMenu.open").forEach(m=>{ if(m!==except) m.classList.remove("open"); });
 }
@@ -460,21 +470,37 @@ function toggleRowMenu(e, menuId){
 function rowMenuHtml(type, id){
   const menuId = "rm-"+type+"-"+id;
   const action = type==="keu" ? "delKeu" : "delSpj";
+  const markAction = type==="keu" ? "toggleMark('keu',"+id+")" : "toggleMark('spj',"+id+")";
   return `<div class="rowMenuWrap">
     <button type="button" class="rowMenuBtn" onclick="toggleRowMenu(event,'${menuId}')" title="Opsi">&#8942;</button>
     <div class="rowMenu" id="${menuId}">
+      <button type="button" class="rowMenuItem" style="color:var(--gold)" onclick="closeAllRowMenus();${markAction}">${ICON.check}Tandai</button>
       <button type="button" class="rowMenuItem" onclick="closeAllRowMenus();${action}(${id})">${ICON.trash}Hapus</button>
     </div>
   </div>`;
 }
 
+// ===== HAPUS TERPILIH =====
+async function hapusTerpilih(type) {
+  const set = type === 'keu' ? markedKeu : markedSpj;
+  if (set.size === 0) return alert('Tidak ada baris yang ditandai.');
+  if (!await confirmHapus(`Hapus ${set.size} baris terpilih?`, 'Hapus massal')) return;
+
+  for (const id of Array.from(set)) {
+    if (type === 'keu') await delKeu(id);
+    else await delSpj(id);
+  }
+  set.clear();
+  if (type === 'keu') renderKeuTable(); else renderSpjTable();
+}
+
 // ===== LPJ =====
-let allSpj = []; // cache data LPJ yang sedang ditampilkan
-const deletedSpjIds = new Set(); // sama seperti deletedKeuIds, cegah baris hapus "muncul lagi"
+let allSpj = [];
+const deletedSpjIds = new Set();
 
 async function loadSpj(){
   const rows = await api("/spj");
-  allSpj = rows.filter(r => !deletedSpjIds.has(r.id));
+  allSpj = rows.filter(r => !deletedSpjIds.has(String(r.id)));
   renderSpjTable();
 }
 function renderSpjTable(){
@@ -482,22 +508,50 @@ function renderSpjTable(){
   allSpj.forEach(r=>{
     const approve = isAdminRole(me.role)&&r.status==="pending"?`<a onclick="setStatus(${r.id},'disetujui')" style="cursor:pointer;color:#4ade80" title="Setujui">${ICON.check}</a> <a onclick="setStatus(${r.id},'ditolak')" style="cursor:pointer;color:#f87171" title="Tolak">${ICON.x}</a>`:"";
     const menu = canEdit ? rowMenuHtml('spj', r.id) : "";
-    t.insertRow(-1).innerHTML=`<td>${r.no_spj}</td><td>${r.kegiatan}</td><td>${rp(r.nominal)}</td><td><b>${r.status}</b></td><td>${namaFromUsername(r.created_by)}</td><td><div style="display:flex;align-items:center;gap:8px">${approve}${menu}</div></td>`;
+    const row = t.insertRow(-1);
+    if (markedSpj.has(String(r.id))) row.classList.add('marked');
+    row.innerHTML=`<td>${r.no_spj}</td><td>${r.kegiatan}</td><td>${rp(r.nominal)}</td><td><b>${r.status}</b></td><td>${namaFromUsername(r.created_by)}</td><td><div style="display:flex;align-items:center;gap:8px">${approve}${menu}</div></td>`;
   });
   lastSpjCount = allSpj.length;
   renderDashboardCards();
 }
 async function addSpj(e){ e.preventDefault(); try{ await api("/spj",{method:"POST",body:JSON.stringify({no_spj:sNo.value,tanggal:sTgl.value,kegiatan:sKeg.value,rincian:sRin.value,nominal:+sNom.value})}); sNo.value=sTgl.value=sKeg.value=sRin.value=sNom.value=""; loadSpj(); }catch(err){ showErr("errBox2",err.message); } }
 async function setStatus(id,status){ try{ await api("/spj/status",{method:"POST",body:JSON.stringify({id,status})}); loadSpj(); }catch(err){ showErr("errBox2",err.message); } }
+
 async function delSpj(id){
   if(!(await confirmHapus("Data LPJ ini akan dihapus secara permanen dan tidak bisa dikembalikan.", "Hapus data LPJ ini?")))return;
-  try{
-    await api("/spj?id="+id,{method:"DELETE"});
-    deletedSpjIds.add(id);
-    allSpj = allSpj.filter(r => r.id !== id);
-    renderSpjTable();
-    loadSpj().catch(()=>{});
-  }catch(err){ showErr("errBox2",err.message); }
+
+  // Coba beberapa metode penghapusan yang mungkin didukung server
+  const deleteMethods = [
+    { url: `/spj?id=${id}`, method: 'DELETE' },
+    { url: `/spj/${id}`, method: 'DELETE' },
+    { url: '/spj/delete', method: 'POST', body: { id } }
+  ];
+
+  let success = false;
+  let lastError = null;
+  for (const method of deleteMethods) {
+    try {
+      await api(method.url, {
+        method: method.method,
+        body: method.body ? JSON.stringify(method.body) : undefined
+      });
+      success = true;
+      break;
+    } catch (e) {
+      lastError = e;
+    }
+  }
+
+  if (!success) {
+    showErr("errBox2", lastError?.message || "Gagal menghapus LPJ");
+    return;
+  }
+
+  deletedSpjIds.add(String(id));
+  allSpj = allSpj.filter(r => String(r.id) !== String(id));
+  renderSpjTable();
+  loadSpj().catch(()=>{});
 }
 
 // ===== PROPOSAL =====
