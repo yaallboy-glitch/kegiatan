@@ -700,7 +700,9 @@ function goToPengumumanFromBell() {
 
 async function start() {
   if (!token) return;
-  try { const payload = atob(token).split("|"); me = { username:payload[0], nama:payload[1], role:payload[2] }; } catch { return logout(); }
+  try {
+    me = await api("/auth/me");
+  } catch { return logout(); }
   document.getElementById("loginView").style.display="none"; document.getElementById("appView").style.display="flex";
   document.getElementById("namaMe").textContent = me.nama;
   document.getElementById("profName").textContent = me.nama;
