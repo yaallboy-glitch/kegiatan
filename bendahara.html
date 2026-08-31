@@ -79,6 +79,7 @@ tr:hover td{background:#1d1d20}
 .sectionTitle svg{color:var(--gold)}
 
 .mobileBar{display:none;position:sticky;top:0;z-index:70;align-items:center;gap:12px;padding:12px 16px;background:var(--bg-soft);border-bottom:1px solid var(--border)}
+.mobileBar.hideForSidebar{visibility:hidden}
 .mobileBar b{font-size:14.5px;letter-spacing:.3px}
 .menuToggle{flex:0 0 auto;width:40px;height:40px;border-radius:10px;background:var(--card2);border:1px solid var(--border);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s ease, background .2s ease, box-shadow .2s ease}
 .menuToggle:hover{background:var(--card);transform:scale(1.05);box-shadow:0 4px 12px rgba(0,0,0,.3)}
@@ -362,7 +363,7 @@ const fotoProfilInput=document.getElementById("fotoProfilInput");
 if(fotoProfilInput){ fotoProfilInput.addEventListener("change",function(e){ const file=e.target.files[0]; if(!file)return; const reader=new FileReader(); reader.onload=function(ev){ const img=new Image(); img.onload=function(){ const size=240; const canvas=document.createElement("canvas"); canvas.width=size; canvas.height=size; const ctx=canvas.getContext("2d"); const scale=Math.max(size/img.width,size/img.height); const w=img.width*scale,h=img.height*scale; ctx.drawImage(img,(size-w)/2,(size-h)/2,w,h); try{ localStorage.setItem(fotoKey(),canvas.toDataURL("image/jpeg",0.85)); applyFotoProfil(); }catch(err){alert("Gagal menyimpan foto");} }; img.src=ev.target.result; }; reader.readAsDataURL(file); e.target.value=""; }); }
 function goToProfil(){ sessionStorage.setItem("ktOpenProfil","1"); location.href="index.html"; }
 function goToAdminPanel(){ sessionStorage.setItem("ktOpenAdmin","1"); location.href="index.html"; }
-function toggleSidebar(){ document.getElementById("sidebar").classList.toggle("open"); document.getElementById("sidebarOverlay").classList.toggle("open"); }
+function toggleSidebar(){ document.getElementById("sidebar").classList.toggle("open"); document.getElementById("sidebarOverlay").classList.toggle("open"); const mb=document.getElementById("mobileBar"); if(mb) mb.classList.toggle("hideForSidebar"); }
 
 // Ambil data /auth/me dengan percobaan ulang untuk error SEMENTARA
 async function getMeWithRetry(maxRetries = 2) {
@@ -508,12 +509,23 @@ function toggleRowMenu(e, menuId){
     // Hitung posisi tombol relatif ke viewport agar menu selalu muncul di atas
     const btn = e.currentTarget;
     const rect = btn.getBoundingClientRect();
-    
+
     // Set posisi fixed agar tidak terpotong oleh overflow container (tabel/export)
     menu.style.position = 'fixed';
     menu.style.top = (rect.bottom + 4) + 'px';
-    menu.style.right = (window.innerWidth - rect.right) + 'px';
-    
+
+    // Pakai "left" (bukan "right") dan dijepit (clamp) supaya menu selalu
+    // penuh terlihat di layar, tidak kepotong walau tombolnya dekat tepi kanan
+    // (mis. setelah scroll tabel ke kanan di HP).
+    const menuWidth = menu.offsetWidth || 150;
+    const margin = 8;
+    let left = rect.right - menuWidth;
+    if (left < margin) left = margin;
+    if (left + menuWidth > window.innerWidth - margin) left = window.innerWidth - menuWidth - margin;
+
+    menu.style.left = left + 'px';
+    menu.style.right = 'auto';
+
     menu.classList.add("open");
   }
 }
