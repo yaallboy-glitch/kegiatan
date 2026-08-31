@@ -366,9 +366,15 @@ function renderDashboardCards(){
   document.getElementById("cards").innerHTML=`<div class="card"><h3 style="margin:0 0 6px">${ICON.wallet}Saldo</h3>${rp(lastSaldo)}</div><div class="card"><h3 style="margin:0 0 6px">${ICON.fileText}LPJ</h3>${lpjText} dokumen</div>`;
 }
 
+let allKeu = []; // cache data keuangan yang sedang ditampilkan
+
 async function loadKeu(){
-  const rows=await api("/keuangan"); const t=document.getElementById("tKeu"); t.rows.length=1; let masuk=0,keluar=0;
-  rows.forEach(r=>{ r.jenis==="masuk"?masuk+=r.jumlah:keluar+=r.jumlah; t.insertRow(-1).innerHTML=`<td>${r.tanggal}</td><td>${r.keterangan}</td><td class="${r.jenis}">${r.jenis}</td><td>${rp(r.jumlah)}</td><td>${namaFromUsername(r.created_by)}</td><td>${canEdit?`<a onclick="delKeu(${r.id})" style="cursor:pointer">${ICON.trash}</a>`:""}</td>`; });
+  allKeu = await api("/keuangan");
+  renderKeuTable();
+}
+function renderKeuTable(){
+  const t=document.getElementById("tKeu"); t.rows.length=1; let masuk=0,keluar=0;
+  allKeu.forEach(r=>{ r.jenis==="masuk"?masuk+=r.jumlah:keluar+=r.jumlah; t.insertRow(-1).innerHTML=`<td>${r.tanggal}</td><td>${r.keterangan}</td><td class="${r.jenis}">${r.jenis}</td><td>${rp(r.jumlah)}</td><td>${namaFromUsername(r.created_by)}</td><td>${canEdit?`<a onclick="delKeu(${r.id})" style="cursor:pointer">${ICON.trash}</a>`:""}</td>`; });
   document.getElementById("keuTotal").innerHTML=`<div class="card">Masuk: <span class="masuk">${rp(masuk)}</span></div><div class="card">Keluar: <span class="keluar">${rp(keluar)}</span></div><div class="card">Saldo: <b>${rp(masuk-keluar)}</b></div>`;
   lastSaldo = masuk-keluar;
   renderDashboardCards();
@@ -403,7 +409,22 @@ function confirmHapus(message, title) {
   });
 }
 
-async function delKeu(id){ if(!(await confirmHapus("Data keuangan ini akan dihapus secara permanen dan tidak bisa dikembalikan.", "Hapus data keuangan ini?")))return; try{ await api("/keuangan?id="+id,{method:"DELETE"}); loadKeu(); }catch(err){ showErr("errBox2",err.message); } }
+async function delKeu(id){
+  if(!(await confirmHapus("Data keuangan ini akan dihapus secara permanen dan tidak bisa dikembalikan.", "Hapus data keuangan ini?")))return;
+  try{
+    await api("/keuangan?id="+id,{method:"DELETE"});
+    // Hapus dari tampilan SEKARANG JUGA (jangan tunggu fetch ulang ke server).
+    // GET /keuangan sesaat setelah DELETE kadang masih membaca data lama karena
+    // jeda replikasi database, jadi baris yang sudah dihapus tetap muncul kalau
+    // kita hanya mengandalkan loadKeu() untuk merender ulang tabel.
+    allKeu = allKeu.filter(r => r.id !== id);
+    renderKeuTable();
+    // Tetap sinkronkan ulang di belakang layar (diam-diam) untuk menangkap
+    // perubahan lain dari user lain; kalau gagal, tampilan yang sudah benar
+    // di atas tidak terganggu.
+    loadKeu().catch(()=>{});
+  }catch(err){ showErr("errBox2",err.message); }
+}
 
 // ===== LPJ =====
 async function loadSpj(){
