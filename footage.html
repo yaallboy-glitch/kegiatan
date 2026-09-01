@@ -382,7 +382,9 @@ body.kt-leaving{animation:none!important;opacity:0;transform:translateY(-8px) sc
       </select>
       <input type="text" id="uploadJudul" placeholder="Judul (mis: Bakti Sosial)" style="max-width:200px;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:9px 12px;font-size:13px">
       <input type="file" id="footInput" accept="image/*,video/*" multiple style="display:none" onchange="handleFilesSelected(event)">
+      <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none" onchange="handleFolderSelected(event)">
       <button class="pillBtn" id="uploadBtn" onclick="document.getElementById('footInput').click()">+ Unggah</button>
+      <button class="pillBtn" id="uploadFolderBtn" onclick="document.getElementById('folderInput').click()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:5px"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/><path d="M12 11v4"/><path d="M10 13h4"/></svg>+ Unggah Folder</button>
       <button class="pillBtn" id="syncBtn" onclick="syncFootage()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:5px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>Sync Drive</button>
       <button class="pillBtn" id="selectModeBtn" onclick="toggleSelectMode()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:5px"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12l3 3 5-6"/></svg>Pilih</button>
     </div>
@@ -894,6 +896,83 @@ function handleFilesSelected(e) {
   openUploadPanel();
   renderUploadPanel();
   pumpUploadQueue();
+}
+
+// Upload folder beserta isinya: user pilih satu folder lewat file picker
+// (browser otomatis membaca semua file di dalamnya, termasuk subfolder).
+// Karena struktur folder footage di aplikasi ini hanya satu tingkat (flat),
+// semua file dikelompokkan berdasarkan NAMA FOLDER TERATAS yang dipilih —
+// subfolder di dalamnya tetap diikutkan isinya, tapi digabung rata ke folder
+// yang sama (nama subfolder disimpan sebagai bagian dari judul file supaya
+// tetap bisa dikenali).
+async function handleFolderSelected(e) {
+  const files = Array.from(e.target.files || []);
+  e.target.value = "";
+  if (!files.length) return;
+  clearUploadErr();
+
+  const mediaFiles = files.filter(f =>
+    /^image\//.test(f.type) || /^video\//.test(f.type) ||
+    /\.(jpe?g|png|gif|webp|heic|heif|bmp|mp4|mov|mkv|avi|webm|3gp)$/i.test(f.name)
+  );
+  if (!mediaFiles.length) {
+    showUploadErr("Tidak ada file foto/video yang ditemukan di folder tersebut.");
+    return;
+  }
+
+  // Kelompokkan per-nama folder teratas dari path relatif
+  // (mis. "LiburanBali/Hari1/foto.jpg" -> grup "LiburanBali").
+  const groups = new Map();
+  mediaFiles.forEach(f => {
+    const rel = f.webkitRelativePath || f.name;
+    const top = rel.includes("/") ? rel.split("/")[0] : "";
+    const key = top || "(tanpa folder)";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(f);
+  });
+
+  const btn = document.getElementById("uploadFolderBtn");
+  const oldText = btn.innerHTML;
+  btn.textContent = "Menyiapkan folder..."; btn.disabled = true;
+  try {
+    for (const [folderName, groupFiles] of groups) {
+      let folderId = null;
+      if (folderName && folderName !== "(tanpa folder)") {
+        const existing = allFolders.find(x => x.nama.toLowerCase() === folderName.toLowerCase());
+        if (existing) {
+          folderId = existing.id;
+        } else {
+          const created = await apiPost("/footage/folders", { nama: folderName });
+          folderId = created.id;
+          allFolders.push({ id: folderId, nama: folderName });
+        }
+      }
+      groupFiles.forEach(file => {
+        uploadQueueSeq++;
+        const rel = file.webkitRelativePath || file.name;
+        const relInsideFolder = rel.includes("/") ? rel.split("/").slice(1).join(" / ") : rel;
+        uploadQueue.push({
+          id: "up" + uploadQueueSeq + "_" + Date.now(),
+          file,
+          judul: relInsideFolder || file.name,
+          folderId,
+          status: "pending",
+          uploadedBytes: 0,
+          totalBytes: file.size,
+          uploadId: null,
+          errorMsg: "",
+        });
+      });
+    }
+    await loadFolders();
+    openUploadPanel();
+    renderUploadPanel();
+    pumpUploadQueue();
+  } catch (err) {
+    showUploadErr(err.message);
+  } finally {
+    btn.innerHTML = oldText; btn.disabled = false;
+  }
 }
 
 function openUploadPanel() {
