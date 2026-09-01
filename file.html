@@ -197,10 +197,10 @@ body.kt-leaving{animation:none!important;opacity:0;transform:translateY(-8px) sc
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11 13.5v3a2 2 0 0 0 4 0v-2"/></svg>
   Pengumuman
 </a>
-<a class="navlink" href="index.html#sosmed">
+<button type="button" class="navlink" onclick="openSosmedModal()">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
   Sosial Media
-</a>
+</button>
     <div class="navSpacer"></div>
     <div class="profileBox">
       <div class="avatar" id="avatarInit">A</div>
@@ -600,6 +600,7 @@ initApp();
   </div>
 </div>
 <script src="page-transition.js"></script>
+<script src="sosmed-widget.js"></script>
 <script src="chat-widget.js"></script>
 </body>
 </html>

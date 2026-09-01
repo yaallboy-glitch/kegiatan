@@ -6,11 +6,23 @@
    <button onclick="openSosmedModal()">Sosial Media</button>
    ============================================================ */
 (function () {
+  // Kalau sidebar drawer (mobile) sedang terbuka, tutup dulu biar rapi
+  // sebelum popup sosmed muncul di atasnya.
+  function closeSidebarDrawerIfOpen() {
+    var sidebar = document.getElementById("sidebar");
+    if (!sidebar || !sidebar.classList.contains("open")) return;
+    sidebar.classList.remove("open");
+    var overlay = document.getElementById("sidebarOverlay");
+    if (overlay) overlay.classList.remove("open");
+    var mobileBar = document.getElementById("mobileBar");
+    if (mobileBar) mobileBar.classList.remove("hideForSidebar");
+  }
+
   // Kalau halaman ini sudah punya modal sosmed sendiri (misal index.html versi
   // lama), jangan bikin duplikat — cukup pastikan fungsi open/close tersedia.
   if (document.getElementById("sosmedModalOverlay")) {
     if (typeof window.openSosmedModal !== "function") {
-      window.openSosmedModal = function () { document.getElementById("sosmedModalOverlay").classList.add("open"); };
+      window.openSosmedModal = function () { closeSidebarDrawerIfOpen(); document.getElementById("sosmedModalOverlay").classList.add("open"); };
     }
     if (typeof window.closeSosmedModal !== "function") {
       window.closeSosmedModal = function () { document.getElementById("sosmedModalOverlay").classList.remove("open"); };
@@ -91,6 +103,6 @@
   `;
   document.body.appendChild(overlay);
 
-  window.openSosmedModal = function () { overlay.classList.add("open"); };
+  window.openSosmedModal = function () { closeSidebarDrawerIfOpen(); overlay.classList.add("open"); };
   window.closeSosmedModal = function () { overlay.classList.remove("open"); };
 })();
