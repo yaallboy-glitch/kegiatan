@@ -311,6 +311,7 @@ body.kt-leaving{animation:none!important;opacity:0;transform:translateY(-8px) sc
     <div id="log" hidden>
       <div class="sectionTitle"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Log Aktivitas</div>
       <div class="wrapTable"><table id="tLog"><tr><th>Waktu</th><th>Username</th><th>Aktivitas</th></tr></table></div>
+      <button id="loadMoreLog" class="mainBtn" style="margin-top:10px" onclick="loadLogMore()">Muat Lebih Banyak</button>
     </div>
   </main>
 </div>
@@ -677,7 +678,29 @@ async function delProp(id){
 }
 
 // ===== LOG =====
-async function loadLog(){ const rows=await api("/log"); const t=document.getElementById("tLog"); while(t.rows.length>1) t.deleteRow(1); rows.forEach(r=>t.insertRow(-1).innerHTML=`<td>${r.waktu}</td><td><b>${r.username}</b></td><td>${r.aktivitas}</td>`); }
+// ===== LOG =====
+let logOffset = 0;
+let logLimit = 50;
+
+async function loadLog(append = false) {
+  const t = document.getElementById("tLog");
+  if (!append) {
+    logOffset = 0;
+    while(t.rows.length > 1) t.deleteRow(1);
+  }
+  const rows = await api(`/log?limit=${logLimit}&offset=${logOffset}`);
+  rows.forEach(r => t.insertRow(-1).innerHTML = `<td>${r.waktu}</td><td><b>${r.username}</b></td><td>${r.aktivitas}</td>`);
+  logOffset += rows.length;
+  const btn = document.getElementById("loadMoreLog");
+  if (btn) {
+    if (rows.length < logLimit) btn.style.display = "none";
+    else btn.style.display = "inline-block";
+  }
+}
+
+async function loadLogMore() {
+  await loadLog(true);
+}
 
 // ===== INIT =====
 initApp();
