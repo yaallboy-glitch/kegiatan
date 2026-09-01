@@ -336,7 +336,7 @@ const ICON = {
 // ===== ROLE =====
 const ROLE_LABEL_MAP = { admin:"Admin", bendahara:"Bendahara", pdd:"PDD", ketua:"Ketua", anggota:"Anggota" };
 function roleLabel(role) { return ROLE_LABEL_MAP[role] || "Anggota"; }
-const ROLE_EDIT = { admin:{bendahara:true}, bendahara:{bendahara:true}, pdd:{bendahara:false}, ketua:{bendahara:true}, anggota:{bendahara:true} };
+const ROLE_EDIT = { admin:{bendahara:true}, bendahara:{bendahara:true}, pdd:{bendahara:false}, ketua:{bendahara:true}, anggota:{bendahara:false} };
 function myEdit() { return ROLE_EDIT[me.role] || ROLE_EDIT.anggota; }
 function isAdminRole(role) { return role === "admin" || role === "ketua"; }
 
