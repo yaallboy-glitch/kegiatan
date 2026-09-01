@@ -825,8 +825,8 @@ async function loadDashboardFiles() {
 }
 
 // ===== NAVIGATION =====
-function toggleSidebar() { document.getElementById("sidebar").classList.toggle("open"); document.getElementById("sidebarOverlay").classList.toggle("open"); const mb=document.getElementById("mobileBar"); if(mb) mb.classList.toggle("hideForSidebar"); }
-function closeSidebarIfMobile() { if (window.innerWidth <= 1024) { document.getElementById("sidebar").classList.remove("open"); document.getElementById("sidebarOverlay").classList.remove("open"); } }
+function toggleSidebar() { const sidebar=document.getElementById("sidebar"); const willOpen=!sidebar.classList.contains("open"); sidebar.classList.toggle("open",willOpen); document.getElementById("sidebarOverlay").classList.toggle("open",willOpen); const mb=document.getElementById("mobileBar"); if(mb) mb.classList.toggle("hideForSidebar",willOpen); }
+function closeSidebarIfMobile() { if (window.innerWidth <= 1024) { document.getElementById("sidebar").classList.remove("open"); document.getElementById("sidebarOverlay").classList.remove("open"); const mb=document.getElementById("mobileBar"); if(mb) mb.classList.remove("hideForSidebar"); } }
 function showPage(pageId, btn) {
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
   document.getElementById(pageId).classList.add("active");
@@ -899,7 +899,7 @@ async function saveAnggota(username, btn) {
 function closeAnggotaModal() { document.getElementById("anggotaModalOverlay").classList.remove("open"); }
 
 // ===== SOSMED =====
-function openSosmedModal() { document.getElementById("sosmedModalOverlay").classList.add("open"); }
+function openSosmedModal() { closeSidebarIfMobile(); document.getElementById("sosmedModalOverlay").classList.add("open"); }
 function closeSosmedModal() { document.getElementById("sosmedModalOverlay").classList.remove("open"); }
 
 // ===== PENGUMUMAN =====
