@@ -232,6 +232,40 @@ body.kt-leaving{animation:none!important;opacity:0;transform:translateY(-8px) sc
 .delConfirmActions button:hover{transform:translateY(-1px)}
 .delConfirmActions .delConfirmOk{background:#e11d48;border-color:#e11d48;color:#fff}
 .delConfirmActions .delConfirmOk:hover{background:#be123c}
+
+/* ---------- PANEL ANTRIAN UPLOAD (mengambang, kiri-bawah) ---------- */
+#uploadPanel{position:fixed;left:22px;bottom:22px;width:340px;max-width:calc(100vw - 32px);
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  box-shadow:0 20px 50px rgba(0,0,0,.5);z-index:150;display:none;flex-direction:column;overflow:hidden}
+#uploadPanel.open{display:flex;animation:upPanelIn .22s cubic-bezier(.22,.9,.3,1.15)}
+@keyframes upPanelIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+#uploadPanel.minimized #uploadPanelBody{display:none}
+#uploadPanelHead{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;
+  border-bottom:1px solid var(--border);background:var(--card2)}
+#uploadPanel.minimized #uploadPanelHead{border-bottom:0}
+#uploadPanelHead b{font-size:13px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#uploadPanelHead .upPct{font-size:12px;color:var(--gold);font-weight:700}
+#uploadPanelHead button{background:transparent;border:0;color:var(--text-dim);cursor:pointer;padding:4px;display:flex}
+#uploadPanelHead button:hover{color:var(--text)}
+#uploadOverallBar{height:4px;background:var(--border);position:relative;overflow:hidden}
+#uploadOverallBar i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,var(--gold2),var(--gold));
+  width:0%;transition:width .25s ease;display:block}
+#uploadPanelBody{max-height:320px;overflow-y:auto;padding:6px 8px}
+.upItem{padding:9px 8px;border-bottom:1px solid var(--border)}
+.upItem:last-child{border-bottom:0}
+.upItemTop{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.upItemName{flex:1;min-width:0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.upItemPct{font-size:11px;color:var(--text-dim);flex:0 0 auto}
+.upItemBar{height:5px;border-radius:3px;background:var(--bg-soft);overflow:hidden}
+.upItemBar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--gold2),var(--gold));transition:width .2s ease}
+.upItem.done .upItemBar i{background:linear-gradient(90deg,#22c55e,#16a34a)}
+.upItem.done .upItemPct{color:#22c55e}
+.upItem.error .upItemBar i{background:#e11d48;width:100%!important}
+.upItem.error .upItemPct{color:#e11d48;cursor:pointer;text-decoration:underline}
+.upItem.pending .upItemBar i{background:var(--border);width:100%!important}
+#uploadPanelFoot{padding:8px 10px;border-top:1px solid var(--border);display:flex;justify-content:flex-end}
+#uploadPanelFoot button{background:transparent;border:0;color:var(--text-dim2);font-size:11.5px;cursor:pointer}
+#uploadPanelFoot button:hover{color:var(--text)}
 </style>
 </head>
 <body>
@@ -347,7 +381,7 @@ body.kt-leaving{animation:none!important;opacity:0;transform:translateY(-8px) sc
         <option value="">(Tanpa folder)</option>
       </select>
       <input type="text" id="uploadJudul" placeholder="Judul (mis: Bakti Sosial)" style="max-width:200px;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:9px 12px;font-size:13px">
-      <input type="file" id="footInput" accept="image/*,video/*" style="display:none" onchange="doUploadFootage()">
+      <input type="file" id="footInput" accept="image/*,video/*" multiple style="display:none" onchange="handleFilesSelected(event)">
       <button class="pillBtn" id="uploadBtn" onclick="document.getElementById('footInput').click()">+ Unggah</button>
       <button class="pillBtn" id="syncBtn" onclick="syncFootage()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:5px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>Sync Drive</button>
       <button class="pillBtn" id="selectModeBtn" onclick="toggleSelectMode()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:5px"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12l3 3 5-6"/></svg>Pilih</button>
@@ -822,29 +856,183 @@ function closePreview() {
 }
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closePreview(); });
 
-async function doUploadFootage() {
+// ===================================================================
+// ANTRIAN UPLOAD (multi-file, dikirim bertahap/chunked ke server supaya
+// tidak kena limit ukuran + bisa dilanjutkan kalau koneksi putus, dan
+// progress % akurat karena dipantau per-potongan lewat XHR).
+// ===================================================================
+const UPLOAD_CONCURRENCY = 3;               // maksimal file diunggah bersamaan
+const UPLOAD_CHUNK_SIZE_FE = 8 * 1024 * 1024; // 8MB — HARUS sama dengan UPLOAD_CHUNK_SIZE di worker.js
+
+let uploadQueue = [];       // { id, file, judul, folderId, status, uploadedBytes, totalBytes, uploadId, errorMsg }
+let uploadActiveCount = 0;
+let uploadQueueSeq = 0;
+
+function handleFilesSelected(e) {
+  const files = Array.from(e.target.files || []);
+  if (!files.length) return;
   clearUploadErr();
-  const input = document.getElementById("footInput");
-  const file = input.files[0];
-  if (!file) return;
-  const judul = document.getElementById("uploadJudul").value || file.name;
-  const folderId = document.getElementById("uploadFolder").value;
-  const btn = document.getElementById("uploadBtn");
-  btn.textContent = "Mengunggah..."; btn.disabled = true;
-  try {
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("judul", judul);
-    if (folderId) fd.append("folder_id", folderId);
-    await apiUpload("/footage", fd);
-    input.value = "";
-    document.getElementById("uploadJudul").value = "";
-    await loadFootage();
-  } catch (err) {
-    showUploadErr(err.message);
-  } finally {
-    btn.textContent = "+ Unggah"; btn.disabled = false;
+  const judulBase = document.getElementById("uploadJudul").value.trim();
+  const folderId = document.getElementById("uploadFolder").value || null;
+
+  files.forEach((file) => {
+    uploadQueueSeq++;
+    const judul = (files.length === 1 && judulBase) ? judulBase : file.name;
+    uploadQueue.push({
+      id: "up" + uploadQueueSeq + "_" + Date.now(),
+      file, judul, folderId,
+      status: "pending", // pending | uploading | done | error
+      uploadedBytes: 0,
+      totalBytes: file.size,
+      uploadId: null,
+      errorMsg: "",
+    });
+  });
+
+  e.target.value = "";
+  document.getElementById("uploadJudul").value = "";
+  openUploadPanel();
+  renderUploadPanel();
+  pumpUploadQueue();
+}
+
+function openUploadPanel() {
+  const panel = document.getElementById("uploadPanel");
+  panel.classList.add("open");
+  panel.classList.remove("minimized");
+}
+function closeUploadPanel() {
+  const anyActive = uploadQueue.some(it => it.status === "uploading" || it.status === "pending");
+  if (anyActive && !confirm("Masih ada file yang sedang/menunggu diunggah.\nUpload akan tetap lanjut di latar belakang selama halaman ini tidak ditutup — tutup panel ini saja?")) return;
+  document.getElementById("uploadPanel").classList.remove("open");
+}
+function toggleUploadPanelMinimize() {
+  document.getElementById("uploadPanel").classList.toggle("minimized");
+}
+
+// Jalankan antrian dengan concurrency terbatas (tidak semua file sekaligus,
+// supaya tidak membebani koneksi & tetap stabil untuk ratusan file).
+function pumpUploadQueue() {
+  while (uploadActiveCount < UPLOAD_CONCURRENCY) {
+    const next = uploadQueue.find(it => it.status === "pending");
+    if (!next) break;
+    next.status = "uploading";
+    uploadActiveCount++;
+    runUploadItem(next).finally(() => {
+      uploadActiveCount--;
+      pumpUploadQueue();
+    });
   }
+  renderUploadPanel();
+}
+
+async function runUploadItem(item) {
+  try {
+    let chunkSize = UPLOAD_CHUNK_SIZE_FE;
+    if (!item.uploadId) {
+      const startRes = await apiPost("/footage/upload/start", {
+        filename: item.file.name,
+        mime_type: item.file.type || "application/octet-stream",
+        size: item.file.size,
+        judul: item.judul,
+        folder_id: item.folderId,
+      });
+      item.uploadId = startRes.upload_id;
+      if (startRes.chunk_size) chunkSize = startRes.chunk_size;
+    }
+
+    let offset = item.uploadedBytes || 0;
+    const total = item.totalBytes;
+    while (offset < total) {
+      const end = Math.min(offset + chunkSize, total) - 1;
+      const chunk = item.file.slice(offset, end + 1);
+      const result = await uploadChunkXhr(item, chunk, offset, end, total);
+      offset = end + 1;
+      item.uploadedBytes = offset;
+      renderUploadPanel();
+      if (result.done) break;
+    }
+
+    item.status = "done";
+    item.uploadedBytes = total;
+    loadFootage(); // langsung tampilkan file yang baru selesai di grid
+  } catch (err) {
+    item.status = "error";
+    item.errorMsg = err.message || String(err);
+  }
+  renderUploadPanel();
+}
+
+// Kirim satu potongan pakai XHR (bukan fetch) supaya dapat event progress
+// upload yang akurat, bahkan di tengah satu potongan (bukan cuma per-potongan).
+function uploadChunkXhr(item, chunkBlob, start, end, total) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", API + "/footage/upload/chunk?upload_id=" + encodeURIComponent(item.uploadId));
+    xhr.setRequestHeader("Authorization", "Bearer " + token);
+    xhr.setRequestHeader("Content-Range", `bytes ${start}-${end}/${total}`);
+    xhr.upload.onprogress = (ev) => {
+      if (!ev.lengthComputable) return;
+      item.uploadedBytes = start + ev.loaded;
+      renderUploadPanel();
+    };
+    xhr.onload = () => {
+      if (xhr.status === 401) { logout(); reject(new Error("Sesi habis, silakan login lagi.")); return; }
+      let data = {};
+      try { data = JSON.parse(xhr.responseText || "{}"); } catch {}
+      if (xhr.status >= 200 && xhr.status < 300) resolve({ done: !!data.done });
+      else reject(new Error(data.error || ("Gagal mengunggah potongan (status " + xhr.status + ")")));
+    };
+    xhr.onerror = () => reject(new Error("Koneksi terputus saat mengunggah potongan ini."));
+    xhr.send(chunkBlob);
+  });
+}
+
+function retryFailedUploads() {
+  uploadQueue.forEach(it => {
+    if (it.status === "error") { it.status = "pending"; it.errorMsg = ""; }
+  });
+  pumpUploadQueue();
+}
+function retryOneUpload(itemId) {
+  const it = uploadQueue.find(x => x.id === itemId);
+  if (!it || it.status !== "error") return;
+  it.status = "pending"; it.errorMsg = "";
+  pumpUploadQueue();
+}
+
+function renderUploadPanel() {
+  if (!uploadQueue.length) return;
+  const totalBytes = uploadQueue.reduce((a, b) => a + b.totalBytes, 0);
+  const uploadedBytes = uploadQueue.reduce((a, b) => a + (b.status === "done" ? b.totalBytes : b.uploadedBytes), 0);
+  const pct = totalBytes > 0 ? Math.round((uploadedBytes / totalBytes) * 100) : 0;
+  const doneCount = uploadQueue.filter(it => it.status === "done").length;
+  const errorCount = uploadQueue.filter(it => it.status === "error").length;
+  const allSettled = uploadQueue.every(it => it.status === "done" || it.status === "error");
+
+  document.getElementById("uploadPanelTitle").textContent = allSettled
+    ? `Selesai ${doneCount}/${uploadQueue.length} file` + (errorCount ? ` — ${errorCount} gagal` : "")
+    : `Mengunggah ${doneCount}/${uploadQueue.length} file`;
+  document.getElementById("uploadPanelPct").textContent = pct + "%";
+  document.getElementById("uploadOverallBarFill").style.width = pct + "%";
+  document.getElementById("uploadRetryAllBtn").style.display = (allSettled && errorCount > 0) ? "" : "none";
+
+  const body = document.getElementById("uploadPanelBody");
+  body.innerHTML = uploadQueue.map(it => {
+    const p = it.totalBytes > 0 ? Math.round(((it.status === "done" ? it.totalBytes : it.uploadedBytes) / it.totalBytes) * 100) : 0;
+    let rightLabel;
+    if (it.status === "done") rightLabel = "Selesai";
+    else if (it.status === "error") rightLabel = "Gagal, klik ulang";
+    else if (it.status === "pending") rightLabel = "Menunggu";
+    else rightLabel = p + "%";
+    return `<div class="upItem ${it.status}">
+      <div class="upItemTop">
+        <span class="upItemName" title="${escapeAttr(it.file.name)}">${escapeHtml(it.file.name)}</span>
+        <span class="upItemPct"${it.status === "error" ? ` onclick="retryOneUpload('${it.id}')" style="cursor:pointer"` : ""}>${rightLabel}</span>
+      </div>
+      <div class="upItemBar"><i style="width:${it.status === "error" ? 100 : p}%"></i></div>
+    </div>`;
+  }).join("");
 }
 
 // Popup konfirmasi hapus custom (menggantikan confirm() bawaan browser).
@@ -1105,6 +1293,22 @@ initApp();
       <button type="button" class="pillBtn" id="delConfirmCancel">Batal</button>
       <button type="button" class="delConfirmOk" id="delConfirmOk">Hapus</button>
     </div>
+  </div>
+</div>
+
+<!-- ================= PANEL ANTRIAN UPLOAD (mengambang, kiri-bawah) ================= -->
+<div id="uploadPanel">
+  <div id="uploadPanelHead" onclick="toggleUploadPanelMinimize()">
+    <b id="uploadPanelTitle">Mengunggah 0 file</b>
+    <span class="upPct" id="uploadPanelPct">0%</span>
+    <button type="button" onclick="event.stopPropagation(); closeUploadPanel()" title="Tutup" aria-label="Tutup">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div id="uploadOverallBar"><i id="uploadOverallBarFill"></i></div>
+  <div id="uploadPanelBody"></div>
+  <div id="uploadPanelFoot">
+    <button type="button" onclick="retryFailedUploads()" id="uploadRetryAllBtn" style="display:none">Ulangi yang gagal</button>
   </div>
 </div>
 <script src="page-transition.js"></script>
