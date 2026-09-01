@@ -664,12 +664,12 @@ async function submitNamaAsli() {
 
 function logout() { localStorage.removeItem("token"); location.reload(); }
 
-const ROLE_EDIT = { admin:{bendahara:true,footage:true,file:true}, bendahara:{bendahara:true,footage:false,file:false}, pdd:{bendahara:false,footage:true,file:true}, ketua:{bendahara:true,footage:true,file:true}, anggota:{bendahara:true,footage:true,file:true} };
+const ROLE_EDIT = { admin:{bendahara:true,footage:true,file:true}, bendahara:{bendahara:true,footage:false,file:false}, pdd:{bendahara:false,footage:true,file:true}, ketua:{bendahara:true,footage:true,file:true}, anggota:{bendahara:true,footage:true,file:true}, sekertaris:{bendahara:false,footage:false,file:false}, anggota_pj:{bendahara:false,footage:false,file:false} };
 function myEdit() { return ROLE_EDIT[me.role] || ROLE_EDIT.anggota; }
 function isAdminRole(role) { return role === "admin" || role === "ketua"; }
 function isNonAnggotaRole(role) { return role && role !== "anggota"; }
 function roleLabel(role) { return ROLE_LABEL_MAP[role] || "Anggota"; }
-const ROLE_LABEL_MAP = { admin:"Admin", bendahara:"Bendahara", pdd:"PDD", ketua:"Ketua", anggota:"Anggota" };
+const ROLE_LABEL_MAP = { admin:"Admin", bendahara:"Bendahara", pdd:"PDD", ketua:"Ketua", anggota:"Anggota", sekertaris:"Sekertaris", anggota_pj:"Anggota PJ" };
 
 function applyRoleVisibility() {
   const canEditBendahara = myEdit().bendahara;
@@ -859,7 +859,7 @@ function switchAnggotaTab(tab) { anggotaActiveTab = tab; renderAnggotaTabButtons
 function renderAnggotaSemua() {
   const box = document.getElementById("anggotaModalList"); const isAdmin = isAdminRole(me.role);
   if (allAnggota.length === 0) { box.innerHTML = `<p style="color:var(--text-dim2);font-size:13px;margin:0">Belum ada anggota terdaftar.</p>`; return; }
-  const ROLE_ORDER = { ketua: 0, admin: 1, bendahara: 2, pdd: 3, anggota: 4 };
+  const ROLE_ORDER = { ketua: 0, admin: 1, bendahara: 2, sekertaris: 3, pdd: 4, anggota_pj: 5, anggota: 6 };
   const sortedAnggota = [...allAnggota].sort((a, b) => { const ra = ROLE_ORDER[a.role] ?? 9, rb = ROLE_ORDER[b.role] ?? 9; if (ra !== rb) return ra - rb; return (a.nama || "").localeCompare(b.nama || ""); });
   box.innerHTML = sortedAnggota.map(u => `
     <div style="display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--border);flex-wrap:wrap">
@@ -867,13 +867,20 @@ function renderAnggotaSemua() {
       <div style="flex:1;min-width:140px"><b style="display:block;font-size:13.5px">${u.nama}</b><small style="color:var(--text-dim2);font-size:11px">@${u.username}${u.google_email ? " &bull; " + u.google_email : ""}</small></div>
       ${!isAdmin ? `<small style="color:var(--text-dim2);font-size:11.5px">${roleLabel(u.role)}</small>` : `
         <div class="anggotaEditRow" data-username="${u.username}" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;width:100%;margin-top:6px">
-          <select class="agRole" style="flex:1;min-width:100px;padding:7px 8px;background:var(--bg-soft);border:1px solid var(--border);color:var(--text);border-radius:7px;font-size:12.5px"><option value="anggota" ${u.role==="anggota"?"selected":""}>Anggota</option><option value="bendahara" ${u.role==="bendahara"?"selected":""}>Bendahara</option><option value="pdd" ${u.role==="pdd"?"selected":""}>PDD</option><option value="ketua" ${u.role==="ketua"?"selected":""}>Ketua</option><option value="admin" ${u.role==="admin"?"selected":""}>Admin</option></select>
+          <select class="agRole" style="flex:1;min-width:100px;padding:7px 8px;background:var(--bg-soft);border:1px solid var(--border);color:var(--text);border-radius:7px;font-size:12.5px"><option value="anggota" ${u.role==="anggota"?"selected":""}>Anggota</option><option value="bendahara" ${u.role==="bendahara"?"selected":""}>Bendahara</option><option value="pdd" ${u.role==="pdd"?"selected":""}>PDD</option><option value="sekertaris" ${u.role==="sekertaris"?"selected":""}>Sekertaris</option><option value="anggota_pj" ${u.role==="anggota_pj"?"selected":""}>Anggota PJ</option><option value="ketua" ${u.role==="ketua"?"selected":""}>Ketua</option><option value="admin" ${u.role==="admin"?"selected":""}>Admin</option></select>
           <input class="agEmail" placeholder="Gmail (opsional)" value="${u.google_email || ""}" style="flex:2;min-width:150px;padding:7px 8px;background:var(--bg-soft);border:1px solid var(--border);color:var(--text);border-radius:7px;font-size:12.5px">
           <button type="button" onclick="saveAnggota('${u.username}', this)" style="padding:7px 12px;background:var(--gold);color:#181205;border:0;border-radius:7px;font-weight:700;font-size:12px;cursor:pointer">Simpan</button>
         </div>
         <small class="agMsg" style="width:100%;font-size:11px;color:var(--text-dim2);display:none"></small>`}
     </div>`).join("");
 }
+const GIFT_ROLES = [
+  { role: "sekertaris", label: "Sekertaris", icon: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h6"/></svg>` },
+  { role: "bendahara", label: "Bendahara", icon: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M3 21h18"/><path d="M4 10h16"/><path d="M5 6l7-4 7 4"/><path d="M4 21V10"/><path d="M20 21V10"/><path d="M8 14v3"/><path d="M12 14v3"/><path d="M16 14v3"/></svg>` },
+  { role: "ketua", label: "Ketua", icon: `<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="vertical-align:-2px;margin-right:4px"><path d="M2 20h20l-1.6-9.2-5 3.8-3.4-6.8-3.4 6.8-5-3.8L2 20z"/></svg>` },
+  { role: "pdd", label: "PDD", icon: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>` },
+  { role: "anggota_pj", label: "Anggota PJ", icon: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M16 11l2 2 4-4"/></svg>` },
+];
 function renderAnggotaGift() {
   const box = document.getElementById("anggotaModalList"); const validated = allAnggota.filter(u => u.google_email);
   if (validated.length === 0) { box.innerHTML = `<p style="color:var(--text-dim2);font-size:13px;margin:0">Belum ada anggota dengan email Google yang tertaut. Tautkan dulu email di tab "Semua Anggota".</p>`; return; }
