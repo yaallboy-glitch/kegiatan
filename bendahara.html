@@ -35,6 +35,10 @@ button{font-family:inherit}
 
 .main{flex:1;min-width:0;padding:26px 30px 40px}
 .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:16px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--border);position:relative}
+.bell{width:38px;height:38px;border-radius:50%;background:var(--card2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;flex:0 0 auto;text-decoration:none;color:var(--text)}
+.bell .dot{position:absolute;top:8px;right:9px;width:7px;height:7px;border-radius:50%;background:var(--gold)}
+.bell .dot.dotKetua{width:9px;height:9px;top:7px;right:8px;background:linear-gradient(135deg,var(--gold2,#f0c94a),var(--gold));box-shadow:0 0 0 0 rgba(212,175,55,.6);animation:dotKetuaPulse 1.6s infinite}
+@keyframes dotKetuaPulse{0%{box-shadow:0 0 0 0 rgba(212,175,55,.55)}70%{box-shadow:0 0 0 7px rgba(212,175,55,0)}100%{box-shadow:0 0 0 0 rgba(212,175,55,0)}}
 .topbar::after{content:"";position:absolute;left:0;bottom:-1px;width:64px;height:3px;background:linear-gradient(90deg,var(--red),var(--blue),var(--gold));border-radius:3px}
 .topbar h1{font-size:22px;margin:0}
 .topbar h1 span{color:var(--gold)}
@@ -231,6 +235,10 @@ body.kt-leaving{animation:none!important;opacity:0;transform:translateY(-8px) sc
 
     <div class="topbar">
       <div><h1>Modul <span>Bendahara</span></h1><p>Keuangan, LPJ, proposal, dan log aktivitas.</p></div>
+      <a class="bell" id="pengumumanBell" href="index.html#pengumuman" title="Pengumuman">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11 13.5v3a2 2 0 0 0 4 0v-2"/></svg>
+        <span class="dot" id="pengumumanDot" style="display:none"></span>
+      </a>
     </div>
 
     <div id="errBox2" class="errBox"></div>
@@ -689,6 +697,26 @@ initApp();
 </div>
 <script src="page-transition.js"></script>
 <script src="chat-widget.js"></script>
-<script src="sosmed-widget.js"></script>
+<script src="sosmed-widget.js">
+// Cek pengumuman belum dibaca (dipanggil sekali saat halaman siap)
+async function checkPengumumanBellSecondary() {
+  try {
+    const r = await fetch(API + "/pengumuman", { headers: { Authorization: "Bearer " + token } });
+    if (!r.ok) return;
+    const rows = await r.json();
+    if (!rows || !rows.length) return;
+    const latest = [...rows].sort((a, b) => new Date(b.dibuat_at || 0) - new Date(a.dibuat_at || 0))[0];
+    const lastSeenId = localStorage.getItem("lastSeenPengumumanId");
+    if (String(latest.id) === String(lastSeenId)) return;
+    const dot = document.getElementById("pengumumanDot");
+    if (dot) {
+      dot.style.display = "block";
+      dot.classList.toggle("dotKetua", latest.dibuat_oleh_role === "ketua");
+    }
+  } catch {}
+}
+checkPengumumanBellSecondary();
+
+</script>
 </body>
 </html>
