@@ -446,8 +446,9 @@ body.kt-leaving{animation:none!important;opacity:0;transform:translateY(-8px) sc
           <p>Kelola kegiatan dan data Karang Taruna dengan mudah.</p>
         </div>
         <div class="topRight">
-          <!-- Tombol Bersihkan Log (hanya Admin/Ketua) -->
-          <button id="btnCleanup" class="pillBtn" style="display:none;border-color:var(--red);color:var(--red)" onclick="cleanupLogs()">Bersihkan Log</button>
+          <!-- Tombol Bersihkan Log & Chat (hanya Admin/Ketua) -->
+          <button id="btnCleanupLog" class="pillBtn" style="display:none;border-color:var(--red);color:var(--red)" onclick="cleanupLogs()">Bersihkan Log</button>
+          <button id="btnCleanupChat" class="pillBtn" style="display:none;border-color:var(--red);color:var(--red)" onclick="cleanupChat()">Bersihkan Chat</button>
           
           <div class="bell" id="pengumumanBell" onclick="goToPengumumanFromBell()" title="Pengumuman" style="display:none">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11 13.5v3a2 2 0 0 0 4 0v-2"/></svg>
@@ -684,17 +685,30 @@ function applyRoleVisibility() {
   const bell = document.getElementById("pengumumanBell");
   if (bell) { bell.style.display = "flex"; checkPengumumanBell(); }
   
-  // Tambahkan baris ini untuk menampilkan tombol hapus log (khusus Admin/Ketua)
-  const btnCleanup = document.getElementById("btnCleanup");
-  if (btnCleanup) btnCleanup.style.display = isAdminRole(me.role) ? "" : "none";
+  // Tampilkan tombol bersihkan log & chat (khusus Admin/Ketua)
+  const btnCleanupLog = document.getElementById("btnCleanupLog");
+  if (btnCleanupLog) btnCleanupLog.style.display = isAdminRole(me.role) ? "" : "none";
+  const btnCleanupChat = document.getElementById("btnCleanupChat");
+  if (btnCleanupChat) btnCleanupChat.style.display = isAdminRole(me.role) ? "" : "none";
 }
 
 // Fungsi bersihkan log (hanya dipanggil oleh Admin/Ketua)
 async function cleanupLogs() {
-  if (!confirm('Yakin ingin menghapus log & chat lama? Tindakan ini tidak bisa dibatalkan.')) return;
+  if (!confirm('Yakin ingin menghapus semua log aktivitas? Tindakan ini tidak bisa dibatalkan.')) return;
   try {
-    const res = await api('/cleanup', { method: 'POST' });
-    alert(res.message || 'Pembersihan berhasil');
+    const res = await api('/log/clear', { method: 'POST' });
+    alert(res.message || 'Log berhasil dibersihkan');
+  } catch (err) {
+    alert('Gagal: ' + err.message);
+  }
+}
+
+// Fungsi bersihkan chat (hanya dipanggil oleh Admin/Ketua)
+async function cleanupChat() {
+  if (!confirm('Yakin ingin menghapus semua pesan chat? Tindakan ini tidak bisa dibatalkan.')) return;
+  try {
+    const res = await api('/chat/clear', { method: 'POST' });
+    alert(res.message || 'Chat berhasil dibersihkan');
   } catch (err) {
     alert('Gagal: ' + err.message);
   }
