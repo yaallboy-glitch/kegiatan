@@ -488,6 +488,8 @@ const ROLE_LABEL_MAP = { admin:"Admin", bendahara:"Bendahara", pdd:"PDD", ketua:
 function roleLabel(role) { return ROLE_LABEL_MAP[role] || "Anggota"; }
 
 let me = {};
+const ROLE_EDIT = { admin:{bendahara:true,footage:true,file:true}, bendahara:{bendahara:true,footage:false,file:false}, pdd:{bendahara:false,footage:true,file:true}, ketua:{bendahara:true,footage:true,file:true}, anggota:{bendahara:false,footage:false,file:false}, sekertaris:{bendahara:false,footage:false,file:false}, anggota_pj:{bendahara:false,footage:false,file:false} };
+let canEditFootage = false;
 function logout() { localStorage.removeItem("token"); location.href = "index.html"; }
 
 // ===== TOP-RIGHT PROFILE MENU =====
@@ -747,7 +749,7 @@ function setFolderTab(val) {
 }
 
 function escapeHtml(s) { return (s || "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
-function escapeAttr(s) { return (s || "").replace(/'/g, "\\'"); }
+function escapeAttr(s) { return (s == null ? "" : String(s)).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
 
 function renderFootage() {
   const q = (document.getElementById("footSearch").value || "").toLowerCase();
@@ -765,7 +767,7 @@ function renderFootage() {
   }
   grid.innerHTML = rows.map(f => `
     <div class="footItem">
-      <div class="thumb" id="thumb-${f.id}" onclick="${selectMode ? `toggleSelectFromThumb(${f.id})` : `viewFootage(${f.id},'${f.mime_type}')`}" style="cursor:pointer;background-size:cover;background-position:center">
+      <div class="thumb" id="thumb-${f.id}" onclick="${selectMode ? `toggleSelectFromThumb(${f.id})` : `viewFootage(${f.id}, ${JSON.stringify(f.mime_type)})`}" style="cursor:pointer;background-size:cover;background-position:center">
         ${selectMode ? `<input type="checkbox" class="selectCheck" id="chk-${f.id}" onclick="event.stopPropagation();toggleSelectItem(${f.id},this.checked)" ${selectedIds.has(f.id) ? "checked" : ""}>` : ""}
         ${f.starred ? `<span class="starBadge" style="color:#e0ac2b">${ICON.starFill}</span>` : ""}
         <span class="typeIcon" id="typeicon-${f.id}">${f.tipe === "video"
@@ -774,7 +776,7 @@ function renderFootage() {
       </div>
       <b title="${escapeAttr(f.judul)}">${escapeHtml(f.judul)}</b><small>${fmtDate(f.uploaded_at)}</small>
       ${selectMode ? "" : `
-      <div class="itemMenuWrap">
+      <div class="itemMenuWrap" style="${canEditFootage ? "" : "display:none"}">
         <button class="dotsBtn" onclick="toggleItemMenu(event,${f.id})">⋮</button>
         <div class="dropdownMenu" id="menu-${f.id}">
           <div onclick="toggleStar(${f.id})">${f.starred ? ICON.starFill.replace('width="13" height="13"','width="13" height="13" style="vertical-align:-2px;margin-right:5px"') + "Batal tandai" : ICON.starOutline + "Tandai"}</div>
@@ -1361,6 +1363,9 @@ async function initApp() {
   document.getElementById("pmRole").textContent = roleLabel(me.role);
   document.getElementById("pmAdminBtn").style.display = (me.role === "admin" || me.role === "ketua") ? "" : "none";
   applyFotoProfil();
+
+  canEditFootage = !!(ROLE_EDIT[me.role] && ROLE_EDIT[me.role].footage);
+  ["uploadBtn", "selectModeBtn"].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = canEditFootage ? "" : "none"; });
 
   loadFolders();
   loadFootage();

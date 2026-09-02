@@ -37,6 +37,12 @@
   var typingPingTimer = null;
   var lastTypingPing = 0;
 
+  // Render ulang begitu data `me` tersedia (halaman memuat `me` secara
+  // asinkron) supaya pesan "Anda" & tombol hapus langsung benar.
+  var meReadyTimer = setInterval(function () {
+    if (getMe().username) { clearInterval(meReadyTimer); renderMessages(); }
+  }, 300);
+
   // ---------------- STYLE ----------------
   // Tema: Merah - Biru - Emas - Putih (profesional)
   var style = document.createElement("style");

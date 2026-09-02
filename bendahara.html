@@ -445,6 +445,7 @@ function toggleMark(type, id) {
 // ===== KEUANGAN =====
 let lastSaldo = 0;
 let lastSpjCount = null;
+function escapeHtml(s) { return (s == null ? "" : String(s)).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
 let allKeu = []; // cache data keuangan yang sedang ditampilkan
 const deletedKeuIds = new Set();
 
@@ -463,7 +464,7 @@ function renderKeuTable(){
   allKeu.forEach(r=>{ r.jenis==="masuk"?masuk+=r.jumlah:keluar+=r.jumlah;
     const row = t.insertRow(-1);
     if (markedKeu.has(String(r.id))) row.classList.add('marked');
-    row.innerHTML=`<td>${r.tanggal}</td><td>${r.keterangan}</td><td class="${r.jenis}">${r.jenis}</td><td>${rp(r.jumlah)}</td><td>${namaFromUsername(r.created_by)}</td><td>${canEdit?rowMenuHtml('keu',r.id):""}</td>`;
+    row.innerHTML=`<td>${r.tanggal}</td><td>${escapeHtml(r.keterangan)}</td><td class="${r.jenis}">${r.jenis}</td><td>${rp(r.jumlah)}</td><td>${escapeHtml(namaFromUsername(r.created_by))}</td><td>${canEdit?rowMenuHtml('keu',r.id):""}</td>`;
   });
   document.getElementById("keuTotal").innerHTML=`<div class="card">Masuk: <span class="masuk">${rp(masuk)}</span></div><div class="card">Keluar: <span class="keluar">${rp(keluar)}</span></div><div class="card">Saldo: <b>${rp(masuk-keluar)}</b></div>`;
   lastSaldo = masuk-keluar;
@@ -583,7 +584,7 @@ function renderSpjTable(){
     const menu = canEdit ? rowMenuHtml('spj', r.id) : "";
     const row = t.insertRow(-1);
     if (markedSpj.has(String(r.id))) row.classList.add('marked');
-    row.innerHTML=`<td>${r.no_spj}</td><td>${r.kegiatan}</td><td>${rp(r.nominal)}</td><td><b>${r.status}</b></td><td>${namaFromUsername(r.created_by)}</td><td><div style="display:flex;align-items:center;gap:8px">${approve}${menu}</div></td>`;
+    row.innerHTML=`<td>${escapeHtml(r.no_spj)}</td><td>${escapeHtml(r.kegiatan)}</td><td>${rp(r.nominal)}</td><td><b>${r.status}</b></td><td>${escapeHtml(namaFromUsername(r.created_by))}</td><td><div style="display:flex;align-items:center;gap:8px">${approve}${menu}</div></td>`;
   });
   lastSpjCount = allSpj.length;
   renderDashboardCards();
@@ -594,30 +595,10 @@ async function setStatus(id,status){ try{ await api("/spj/status",{method:"POST"
 async function delSpj(id){
   if(!(await confirmHapus("Data LPJ ini akan dihapus secara permanen dan tidak bisa dikembalikan.", "Hapus data LPJ ini?")))return;
 
-  // Coba beberapa metode penghapusan yang mungkin didukung server
-  const deleteMethods = [
-    { url: `/spj?id=${id}`, method: 'DELETE' },
-    { url: `/spj/${id}`, method: 'DELETE' },
-    { url: '/spj/delete', method: 'POST', body: { id } }
-  ];
-
-  let success = false;
-  let lastError = null;
-  for (const method of deleteMethods) {
-    try {
-      await api(method.url, {
-        method: method.method,
-        body: method.body ? JSON.stringify(method.body) : undefined
-      });
-      success = true;
-      break;
-    } catch (e) {
-      lastError = e;
-    }
-  }
-
-  if (!success) {
-    showErr("errBox2", lastError?.message || "Gagal menghapus LPJ");
+  try {
+    await api(`/spj?id=${id}`, { method: 'DELETE' });
+  } catch (e) {
+    showErr("errBox2", e?.message || "Gagal menghapus LPJ");
     return;
   }
 
@@ -642,7 +623,7 @@ function renderPropTable(){
     const menu = canEdit ? rowMenuHtml('prop', r.id) : "";
     const row = t.insertRow(-1);
     if (markedProp.has(String(r.id))) row.classList.add('marked');
-    row.innerHTML = `<td><b>${r.judul}</b></td><td>${r.status}</td><td>${namaFromUsername(r.created_by)}</td><td>${r.updated_by?namaFromUsername(r.updated_by):"-"}</td><td>${menu}</td>`;
+    row.innerHTML = `<td><b>${escapeHtml(r.judul)}</b></td><td>${r.status}</td><td>${escapeHtml(namaFromUsername(r.created_by))}</td><td>${r.updated_by?escapeHtml(namaFromUsername(r.updated_by)):"-"}</td><td>${menu}</td>`;
   });
 }
 async function addProp(e){ e.preventDefault(); try{ await api("/proposal",{method:"POST",body:JSON.stringify({judul:pJudul.value,isi:pIsi.value})}); pJudul.value=pIsi.value=""; loadProp(); }catch(err){ showErr("errBox2",err.message); } }
@@ -650,30 +631,10 @@ async function addProp(e){ e.preventDefault(); try{ await api("/proposal",{metho
 async function delProp(id){
   if(!(await confirmHapus("Proposal ini akan dihapus secara permanen dan tidak bisa dikembalikan.", "Hapus proposal ini?")))return;
 
-  // Coba beberapa metode penghapusan yang mungkin didukung server
-  const deleteMethods = [
-    { url: `/proposal?id=${id}`, method: 'DELETE' },
-    { url: `/proposal/${id}`, method: 'DELETE' },
-    { url: '/proposal/delete', method: 'POST', body: { id } }
-  ];
-
-  let success = false;
-  let lastError = null;
-  for (const method of deleteMethods) {
-    try {
-      await api(method.url, {
-        method: method.method,
-        body: method.body ? JSON.stringify(method.body) : undefined
-      });
-      success = true;
-      break;
-    } catch (e) {
-      lastError = e;
-    }
-  }
-
-  if (!success) {
-    showErr("errBox2", lastError?.message || "Gagal menghapus proposal");
+  try {
+    await api(`/proposal?id=${id}`, { method: 'DELETE' });
+  } catch (e) {
+    showErr("errBox2", e?.message || "Gagal menghapus proposal");
     return;
   }
 
@@ -683,7 +644,6 @@ async function delProp(id){
   loadProp().catch(()=>{});
 }
 
-// ===== LOG =====
 // ===== LOG =====
 let logOffset = 0;
 let logLimit = 50;
@@ -695,7 +655,7 @@ async function loadLog(append = false) {
     while(t.rows.length > 1) t.deleteRow(1);
   }
   const rows = await api(`/log?limit=${logLimit}&offset=${logOffset}`);
-  rows.forEach(r => t.insertRow(-1).innerHTML = `<td>${r.waktu}</td><td><b>${r.username}</b></td><td>${r.aktivitas}</td>`);
+  rows.forEach(r => t.insertRow(-1).innerHTML = `<td>${r.waktu}</td><td><b>${escapeHtml(r.username)}</b></td><td>${escapeHtml(r.aktivitas)}</td>`);
   logOffset += rows.length;
   const btn = document.getElementById("loadMoreLog");
   if (btn) {

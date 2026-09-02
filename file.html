@@ -312,6 +312,9 @@ const ROLE_LABEL_MAP = { admin:"Admin", bendahara:"Bendahara", pdd:"PDD", ketua:
 function roleLabel(role) { return ROLE_LABEL_MAP[role] || "Anggota"; }
 
 let me = {};
+function escapeHtml(s) { return (s == null ? "" : String(s)).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+const ROLE_EDIT = { admin:{bendahara:true,footage:true,file:true}, bendahara:{bendahara:true,footage:false,file:false}, pdd:{bendahara:false,footage:true,file:true}, ketua:{bendahara:true,footage:true,file:true}, anggota:{bendahara:false,footage:false,file:false}, sekertaris:{bendahara:false,footage:false,file:false}, anggota_pj:{bendahara:false,footage:false,file:false} };
+let canEditFile = false;
 function logout() { localStorage.removeItem("token"); location.href = "index.html"; }
 
 // ===== TOP-RIGHT PROFILE MENU =====
@@ -477,11 +480,11 @@ function renderFiles() {
     const [cls, label] = iconFor(f.mime_type, f.filename);
     return `<div class="fileRow">
       <div class="fIcon ${cls}">${label}</div>
-      <div class="fMeta"><b>${f.filename}</b><small>${f.kategori || "Umum"}</small></div>
+      <div class="fMeta"><b>${escapeHtml(f.filename)}</b><small>${escapeHtml(f.kategori || "Umum")}</small></div>
       <div class="fRight">
         ${fmtSize(f.size)} &middot; ${fmtDate(f.uploaded_at)}
-        <span class="dlBtn" onclick="downloadFile(${f.id},'${f.filename.replace(/'/g, "\\'")}')" title="Unduh">${ICON.download}</span>
-        <span class="dlBtn" onclick="deleteFile(${f.id})" title="Hapus" style="color:#ef4444">${ICON.trash}</span>
+        <span class="dlBtn" onclick="downloadFile(${f.id}, ${JSON.stringify(f.filename)})" title="Unduh">${ICON.download}</span>
+        ${canEditFile ? `<span class="dlBtn" onclick="deleteFile(${f.id})" title="Hapus" style="color:#ef4444">${ICON.trash}</span>` : ""}
       </div>
     </div>`;
   }).join("");
@@ -595,6 +598,10 @@ async function initApp() {
   document.getElementById("pmRole").textContent = roleLabel(me.role);
   document.getElementById("pmAdminBtn").style.display = (me.role === "admin" || me.role === "ketua") ? "" : "none";
   applyFotoProfil();
+
+  canEditFile = !!(ROLE_EDIT[me.role] && ROLE_EDIT[me.role].file);
+  const upBtn = document.getElementById("uploadBtn"); if (upBtn) upBtn.style.display = canEditFile ? "" : "none";
+  const syncBtn = document.getElementById("syncBtn"); if (syncBtn) syncBtn.style.display = canEditFile ? "" : "none";
 
   loadFiles();
 }
