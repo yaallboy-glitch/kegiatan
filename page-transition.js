@@ -10,7 +10,7 @@
 //   <script src="page-transition.js"></script>
 // ============================================================
 (function () {
-  var SLIDE_MS = 220; // disamakan dengan durasi transisi keluar (.22s) di CSS
+  var SLIDE_MS = 320; // disamakan dengan durasi transisi keluar (.32s) di CSS
 
   document.addEventListener("click", function (e) {
     // Cari elemen <a> terdekat dari yang diklik (misal ikonnya di dalam <a>)

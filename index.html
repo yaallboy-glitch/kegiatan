@@ -264,9 +264,9 @@ button:hover, .navlink:hover, .pillBtn:hover {
 
 /* ---------- TRANSISI MARQUEE ANTAR HALAMAN (geser, bukan fade) ---------- */
 body{overflow-x:hidden}
-body{animation:ktSlideIn .45s cubic-bezier(.16,1,.3,1)}
-@keyframes ktSlideIn{from{transform:translateX(7%)}to{transform:translateX(0)}}
-body.kt-leaving{animation:none!important;transform:translateX(-7%);transition:transform .22s cubic-bezier(.4,0,1,1)}
+body{animation:ktSlideIn .5s cubic-bezier(.65,0,.35,1)}
+@keyframes ktSlideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+body.kt-leaving{animation:none!important;transform:translateX(-100%);transition:transform .32s cubic-bezier(.65,0,.35,1)}
 #dash:not([hidden]),#keu:not([hidden]),#spj:not([hidden]),#prop:not([hidden]),#log:not([hidden]){animation:ktPageIn .4s cubic-bezier(.16,1,.3,1)}
 .page{animation:ktPageIn .4s cubic-bezier(.16,1,.3,1)}
 @keyframes ktPageIn{from{transform:translateX(6%)}to{transform:translateX(0)}}
