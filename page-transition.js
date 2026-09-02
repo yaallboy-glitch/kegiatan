@@ -1,15 +1,16 @@
 // ============================================================
-// TRANSISI HALUS ANTAR HALAMAN (Dashboard <-> Bendahara <-> File
-// <-> Footage <-> Export). Setiap halaman sudah fade-in otomatis
-// lewat CSS (@keyframes ktFadeIn di masing-masing file). Script
-// kecil ini menambahkan fade-OUT singkat sebelum benar-benar
-// pindah halaman, supaya perpindahannya tidak "kedip" mendadak.
+// TRANSISI MARQUEE ANTAR HALAMAN (Dashboard <-> Bendahara <-> File
+// <-> Footage <-> Export). Setiap halaman sudah slide-in otomatis
+// lewat CSS (@keyframes ktSlideIn di masing-masing file). Script
+// kecil ini menambahkan slide-OUT ke kiri singkat sebelum benar-benar
+// pindah halaman, supaya perpindahannya terasa seperti satu gerakan
+// menerus (mirip marquee), bukan kedip mendadak.
 //
 // Cukup di-include sekali di setiap halaman:
 //   <script src="page-transition.js"></script>
 // ============================================================
 (function () {
-  var FADE_MS = 220; // disamakan dengan durasi transisi keluar (.22s) di CSS
+  var SLIDE_MS = 220; // disamakan dengan durasi transisi keluar (.22s) di CSS
 
   document.addEventListener("click", function (e) {
     // Cari elemen <a> terdekat dari yang diklik (misal ikonnya di dalam <a>)
@@ -34,6 +35,6 @@
     document.body.classList.add("kt-leaving");
     setTimeout(function () {
       location.href = href;
-    }, FADE_MS);
+    }, SLIDE_MS);
   });
 })();
