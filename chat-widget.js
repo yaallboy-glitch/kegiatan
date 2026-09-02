@@ -218,20 +218,25 @@
   async function pollChat(isInitial) {
     try {
       var rows = await fetchChat(isInitial ? null : lastId);
-      if (!rows || !rows.length) { if (isInitial) renderMessages(); return; }
       if (isInitial) {
-        messages = rows;
-      } else {
-        messages = messages.concat(rows);
-        if (messages.length > 200) messages = messages.slice(-200);
-        var myUsername = getMe().username;
-        if (!panelOpen) {
-          unread += rows.filter(function (m) { return m.username !== myUsername; }).length;
-          updateBadge();
-        }
+        // Snapshot penuh: selalu timpa state lama, termasuk kalau hasilnya kosong
+        // (mis. chat baru saja dibersihkan Admin/Ketua) supaya pesan lama tidak
+        // "nyangkut" di memori browser.
+        messages = rows || [];
+        if (messages.length) lastId = messages[messages.length - 1].id;
+        renderMessages();
+        return;
+      }
+      if (!rows || !rows.length) return;
+      messages = messages.concat(rows);
+      if (messages.length > 200) messages = messages.slice(-200);
+      var myUsername = getMe().username;
+      if (!panelOpen) {
+        unread += rows.filter(function (m) { return m.username !== myUsername; }).length;
+        updateBadge();
       }
       lastId = messages[messages.length - 1].id;
-      if (panelOpen || isInitial) renderMessages();
+      if (panelOpen) renderMessages();
     } catch (err) {
       if (isInitial) {
         bodyEl.innerHTML = '<div id="ktchat-empty">Live chat tidak dapat dimuat.<br>' + escapeHtml(err.message || "") + "</div>";
@@ -320,7 +325,7 @@
     panel.classList.add("open");
     unread = 0;
     updateBadge();
-    renderMessages();
+    pollChat(true); // sinkronkan ulang penuh setiap dibuka (menangkap perubahan dari luar, mis. dibersihkan Admin/Ketua)
     if (typingPollTimer) clearInterval(typingPollTimer);
     typingPollTimer = setInterval(pollTyping, TYPING_POLL_MS);
     pollTyping();
