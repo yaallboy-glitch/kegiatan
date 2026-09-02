@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>html{background:#0c0c0e}</style>
 <style>
 :root{
   --bg:#0c0c0e;--bg-soft:#0f0f12;--card:#16161a;--card2:#1c1c21;--border:#2a2a30;
@@ -86,13 +87,14 @@ button:disabled{opacity:.5;cursor:not-allowed}
   .topbar p{font-size:12.5px}
 }
 
-/* ---------- TRANSISI HALUS ANTAR HALAMAN (profesional & smooth) ---------- */
-body{animation:ktFadeIn .5s cubic-bezier(.16,1,.3,1)}
-@keyframes ktFadeIn{from{opacity:0;transform:translateY(14px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
-body.kt-leaving{animation:none!important;opacity:0;transform:translateY(-8px) scale(.99);transition:opacity .22s cubic-bezier(.4,0,1,1),transform .22s cubic-bezier(.4,0,1,1)}
+/* ---------- TRANSISI MARQUEE ANTAR HALAMAN (geser, bukan fade) ---------- */
+body{overflow-x:hidden}
+body{animation:ktSlideIn .45s cubic-bezier(.16,1,.3,1)}
+@keyframes ktSlideIn{from{transform:translateX(7%)}to{transform:translateX(0)}}
+body.kt-leaving{animation:none!important;transform:translateX(-7%);transition:transform .22s cubic-bezier(.4,0,1,1)}
 #dash:not([hidden]),#keu:not([hidden]),#spj:not([hidden]),#prop:not([hidden]),#log:not([hidden]){animation:ktPageIn .4s cubic-bezier(.16,1,.3,1)}
 .page{animation:ktPageIn .4s cubic-bezier(.16,1,.3,1)}
-@keyframes ktPageIn{from{opacity:0;transform:translateY(10px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes ktPageIn{from{transform:translateX(6%)}to{transform:translateX(0)}}
 </style>
 </head>
 <body>
@@ -111,7 +113,7 @@ body.kt-leaving{animation:none!important;opacity:0;transform:translateY(-8px) sc
     <a class="navlink" href="bendahara.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/><path d="M6 14h4"/></svg>Bendahara</a>
     <a class="navlink" href="file.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg>File</a>
     <a class="navlink" href="footage.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="15" height="12" rx="2"/><path d="M17 10l5-3v10l-5-3"/></svg>Footage</a>
-    <a class="navlink" href="index.html#sosmed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>Sosial Media</a>
+    <button type="button" class="navlink" onclick="openSosmedModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>Sosial Media</button>
     <a class="navlink" href="index.html#pengumuman"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11 13.5v3a2 2 0 0 0 4 0v-2"/></svg>Pengumuman</a>
     <div class="navSpacer"></div>
     <div class="profileBox">
@@ -969,5 +971,6 @@ loadUsers();
 </script>
 <script src="page-transition.js"></script>
 <script src="chat-widget.js"></script>
+<script src="sosmed-widget.js"></script>
 </body>
 </html>
