@@ -314,7 +314,7 @@ body.kt-leaving main.main{animation:none!important;opacity:0;transition:opacity 
   </div>
 </div>
 
-<!-- ================= POPUP WAJIB: ISI NAMA ASLI (setelah daftar via Google) ================= -->
+<!-- ================= POPUP WAJIB: ISI NAMA ASLI ================= -->
 <div id="namaPopupOverlay" class="modalOverlay">
   <div class="modalBox" style="max-width:380px">
     <div class="modalHead">
@@ -467,10 +467,10 @@ body.kt-leaving main.main{animation:none!important;opacity:0;transition:opacity 
           <div class="big" id="statTotalAnggota">-</div>
           <p>Tap untuk lihat daftar nama</p>
         </div>
-        <div class="statCard">
+        <div class="statCard" onclick="openEventModal()" style="cursor:pointer">
           <div class="ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="17" cy="16" r="1.4" fill="currentColor" stroke="none"/></svg></div>
           <h3>Event Saat Ini</h3>
-          <p>Sedang berlangsung</p>
+          <p id="eventCountText">Sedang berlangsung</p>
         </div>
         <div class="statCard">
           <div class="ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></div>
@@ -579,6 +579,48 @@ body.kt-leaving main.main{animation:none!important;opacity:0;transition:opacity 
       </a>
     </div>
     <p style="font-size:11.5px;color:var(--text-dim2);margin:4px 0 0">Tap logo untuk membuka di tab baru</p>
+  </div>
+</div>
+
+<!-- Modal Event -->
+<div id="eventModalOverlay" class="modalOverlay" onclick="if(event.target===this) closeEventModal()">
+  <div class="modalBox" style="max-width:800px;width:100%">
+    <div class="modalHead">
+      <b><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-3px;margin-right:6px"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Manajemen Event</b>
+      <button class="modalClose" onclick="closeEventModal()">&times;</button>
+    </div>
+
+    <!-- Tombol Tambah Event (untuk semua role) -->
+    <div style="margin-bottom:12px">
+      <button class="mainBtn" style="width:100%" onclick="openAddEventForm()">+ Tambah Event</button>
+    </div>
+
+    <!-- Form Tambah/Edit Event (tersembunyi default) -->
+    <div id="eventFormWrap" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+      <h4 id="eventFormTitle" style="margin:0 0 12px">Tambah Event</h4>
+      <input id="evNama" placeholder="Nama Event" required>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label style="font-size:12px;color:var(--text-dim)">Tanggal Mulai</label><input type="date" id="evTglMulai" required></div>
+        <div><label style="font-size:12px;color:var(--text-dim)">Tanggal Selesai</label><input type="date" id="evTglSelesai" required></div>
+      </div>
+      <textarea id="evDeskripsi" placeholder="Deskripsi (opsional)" rows="2"></textarea>
+      <input type="number" id="evBiaya" placeholder="Total Biaya (Rp)" min="0">
+      <div style="margin:10px 0">
+        <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px">Kebutuhan Alat</label>
+        <div id="evAlatList"></div>
+        <button type="button" class="pillBtn" style="margin-top:6px" onclick="addAlatRow()">+ Tambah Alat</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="mainBtn" style="flex:1" onclick="saveEvent()">Simpan</button>
+        <button class="pillBtn" style="flex:1" onclick="cancelEventForm()">Batal</button>
+      </div>
+      <div id="eventFormErr" class="errBox" style="margin-top:8px"></div>
+    </div>
+
+    <!-- Daftar Event -->
+    <div id="eventListWrap" style="max-height:60vh;overflow-y:auto">
+      <p style="color:var(--text-dim2);font-size:13px;margin:0">Memuat data...</p>
+    </div>
   </div>
 </div>
 
@@ -980,6 +1022,193 @@ function renderPengumuman(rows) { const listBox = document.getElementById("pengu
 function fmtTanggalPengumuman(iso) { try { return new Date(iso).toLocaleString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); } catch { return iso; } }
 async function addPengumuman(e) { e.preventDefault(); const judul = document.getElementById("pgJudul").value.trim(); const isi = document.getElementById("pgIsi").value.trim(); if (!judul || !isi) return; const form = document.getElementById("pengumumanForm"); const btn = form.querySelector("button.mainBtn"); const oldHtml = btn.innerHTML; btn.disabled = true; btn.textContent = "Menerbitkan..."; try { await api("/pengumuman", { method: "POST", body: JSON.stringify({ judul, isi }) }); document.getElementById("pgJudul").value = ""; document.getElementById("pgIsi").value = ""; await loadPengumuman(); } catch (err) { showErr("pengumumanErr", (err.message || String(err)) + " (Pastikan endpoint /pengumuman sudah tersedia di API.)"); } finally { btn.disabled = false; btn.innerHTML = oldHtml; } }
 async function deletePengumuman(id) { if (!confirm("Hapus pengumuman ini?")) return; try { await api("/pengumuman?id=" + id, { method: "DELETE" }); await loadPengumuman(); } catch (err) { showErr("pengumumanErr", err.message || String(err)); } }
+
+// ===== EVENT (Manajemen Event) =====
+let allEvents = [];
+let editingEventId = null;
+const isNonAnggota = () => me.role !== "anggota";
+
+function openEventModal() {
+  loadEvents();
+  document.getElementById("eventModalOverlay").classList.add("open");
+}
+
+function closeEventModal() {
+  document.getElementById("eventModalOverlay").classList.remove("open");
+}
+
+async function loadEvents() {
+  const listWrap = document.getElementById("eventListWrap");
+  listWrap.innerHTML = "<p style='color:var(--text-dim2);font-size:13px'>Memuat data...</p>";
+  try {
+    allEvents = await api("/event");
+    renderEventList();
+  } catch (err) {
+    listWrap.innerHTML = `<p style='color:#f87171;font-size:13px'>${err.message}</p>`;
+  }
+}
+
+function renderEventList() {
+  const listWrap = document.getElementById("eventListWrap");
+  if (!allEvents.length) {
+    listWrap.innerHTML = `<p style="color:var(--text-dim2);font-size:13px">Belum ada event.</p>`;
+    return;
+  }
+  // update jumlah event di dashboard
+  const countText = document.getElementById("eventCountText");
+  if (countText) {
+    const activeCount = allEvents.filter(e => e.status === "berjalan").length;
+    countText.textContent = activeCount ? `${activeCount} berjalan` : `${allEvents.length} total`;
+  }
+
+  const canManage = isNonAnggota(); // selain anggota boleh hapus & checklist
+
+  let html = `<table style="width:100%">
+    <thead><tr><th>Nama</th><th>Tanggal</th><th>Alat</th><th>Biaya</th><th>Status</th><th>Aksi</th></tr></thead><tbody>`;
+  allEvents.forEach(ev => {
+    const alatList = ev.kebutuhan_alat || [];
+    const alatHtml = alatList.length ? alatList.map((a, i) => `
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+        <input type="checkbox" ${a.tersedia ? "checked" : ""} ${canManage ? "" : "disabled"} onchange="updateChecklist(${ev.id}, ${i}, this.checked)">
+        <span style="font-size:12px">${a.nama} (${a.jumlah})</span>
+      </div>`).join("") : "<span style='font-size:12px;color:var(--text-dim2)'>-</span>";
+    
+    const statusSelect = canManage ? `
+      <select onchange="updateStatus(${ev.id}, this.value)" style="background:var(--bg-soft);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:4px 8px;font-size:12px">
+        <option value="draft" ${ev.status === "draft" ? "selected" : ""}>Draft</option>
+        <option value="berjalan" ${ev.status === "berjalan" ? "selected" : ""}>Berjalan</option>
+        <option value="selesai" ${ev.status === "selesai" ? "selected" : ""}>Selesai</option>
+      </select>` : `<b>${ev.status}</b>`;
+
+    html += `<tr>
+      <td style="font-size:13px"><b>${ev.nama}</b></td>
+      <td style="font-size:12px">${ev.tanggal_mulai} - ${ev.tanggal_selesai}</td>
+      <td>${alatHtml}</td>
+      <td style="font-size:12px">${ev.total_biaya ? "Rp " + Number(ev.total_biaya).toLocaleString("id-ID") : "-"}</td>
+      <td>${statusSelect}</td>
+      <td>
+        <button class="pillBtn" style="margin-right:4px" onclick="editEvent(${ev.id})">Edit</button>
+        ${canManage ? `<button class="pillBtn" style="border-color:var(--red);color:var(--red)" onclick="deleteEvent(${ev.id})">Hapus</button>` : ""}
+      </td>
+    </tr>`;
+  });
+  html += "</tbody></table>";
+  listWrap.innerHTML = html;
+}
+
+function openAddEventForm() {
+  editingEventId = null;
+  document.getElementById("eventFormTitle").textContent = "Tambah Event";
+  document.getElementById("evNama").value = "";
+  document.getElementById("evTglMulai").value = "";
+  document.getElementById("evTglSelesai").value = "";
+  document.getElementById("evDeskripsi").value = "";
+  document.getElementById("evBiaya").value = "";
+  document.getElementById("evAlatList").innerHTML = "";
+  document.getElementById("eventFormWrap").style.display = "block";
+  document.getElementById("eventFormErr").style.display = "none";
+}
+
+function editEvent(id) {
+  const ev = allEvents.find(e => e.id === id);
+  if (!ev) return;
+  editingEventId = id;
+  document.getElementById("eventFormTitle").textContent = "Edit Event";
+  document.getElementById("evNama").value = ev.nama;
+  document.getElementById("evTglMulai").value = ev.tanggal_mulai;
+  document.getElementById("evTglSelesai").value = ev.tanggal_selesai;
+  document.getElementById("evDeskripsi").value = ev.deskripsi || "";
+  document.getElementById("evBiaya").value = ev.total_biaya || "";
+  // render alat
+  const alatWrap = document.getElementById("evAlatList");
+  alatWrap.innerHTML = "";
+  (ev.kebutuhan_alat || []).forEach((a, i) => addAlatRow(a.nama, a.jumlah, a.tersedia));
+  document.getElementById("eventFormWrap").style.display = "block";
+  document.getElementById("eventFormErr").style.display = "none";
+}
+
+function addAlatRow(nama = "", jumlah = 1, tersedia = false) {
+  const wrap = document.getElementById("evAlatList");
+  const row = document.createElement("div");
+  row.style.display = "flex";
+  row.style.gap = "6px";
+  row.style.marginBottom = "6px";
+  row.innerHTML = `
+    <input class="evAlatNama" placeholder="Nama alat" value="${nama}" style="flex:2;min-width:100px">
+    <input class="evAlatJumlah" type="number" placeholder="Jumlah" value="${jumlah}" min="1" style="flex:1;width:70px">
+    <label style="display:flex;align-items:center;gap:4px;font-size:12px"><input class="evAlatTersedia" type="checkbox" ${tersedia ? "checked" : ""}> Tersedia</label>
+    <button type="button" class="pillBtn" style="flex:0;padding:4px 8px;color:var(--red);border-color:var(--red)" onclick="this.parentElement.remove()">×</button>
+  `;
+  wrap.appendChild(row);
+}
+
+function cancelEventForm() {
+  document.getElementById("eventFormWrap").style.display = "none";
+}
+
+async function saveEvent() {
+  const nama = document.getElementById("evNama").value.trim();
+  const tglMulai = document.getElementById("evTglMulai").value;
+  const tglSelesai = document.getElementById("evTglSelesai").value;
+  const deskripsi = document.getElementById("evDeskripsi").value.trim();
+  const biaya = Number(document.getElementById("evBiaya").value) || 0;
+  if (!nama || !tglMulai || !tglSelesai) {
+    document.getElementById("eventFormErr").innerHTML = ICON.warning + "Nama, tanggal mulai, dan tanggal selesai wajib diisi.";
+    document.getElementById("eventFormErr").style.display = "block";
+    return;
+  }
+  const alatRows = document.querySelectorAll("#evAlatList > div");
+  const kebutuhanAlat = Array.from(alatRows).map(row => ({
+    nama: row.querySelector(".evAlatNama").value.trim(),
+    jumlah: Number(row.querySelector(".evAlatJumlah").value) || 0,
+    tersedia: row.querySelector(".evAlatTersedia").checked
+  })).filter(a => a.nama);
+
+  const payload = { nama, tanggal_mulai: tglMulai, tanggal_selesai: tglSelesai, deskripsi, total_biaya: biaya, kebutuhan_alat: kebutuhanAlat };
+  try {
+    if (editingEventId) {
+      await api(`/event?id=${editingEventId}`, { method: "PUT", body: JSON.stringify(payload) });
+    } else {
+      await api("/event", { method: "POST", body: JSON.stringify(payload) });
+    }
+    cancelEventForm();
+    await loadEvents();
+  } catch (err) {
+    document.getElementById("eventFormErr").innerHTML = ICON.warning + err.message;
+    document.getElementById("eventFormErr").style.display = "block";
+  }
+}
+
+async function deleteEvent(id) {
+  if (!confirm("Hapus event ini?")) return;
+  try {
+    await api(`/event?id=${id}`, { method: "DELETE" });
+    await loadEvents();
+  } catch (err) {
+    alert("Gagal hapus: " + err.message);
+  }
+}
+
+async function updateChecklist(eventId, alatIndex, tersedia) {
+  const ev = allEvents.find(e => e.id === eventId);
+  if (!ev) return;
+  ev.kebutuhan_alat[alatIndex].tersedia = tersedia;
+  try {
+    await api("/event/checklist", { method: "PATCH", body: JSON.stringify({ id: eventId, kebutuhan_alat: ev.kebutuhan_alat }) });
+  } catch (err) {
+    alert("Gagal update checklist: " + err.message);
+    loadEvents(); // reload kembali
+  }
+}
+
+async function updateStatus(eventId, status) {
+  try {
+    await api("/event/checklist", { method: "PATCH", body: JSON.stringify({ id: eventId, status }) });
+    await loadEvents();
+  } catch (err) {
+    alert("Gagal update status: " + err.message);
+  }
+}
 
 start();
 </script>
