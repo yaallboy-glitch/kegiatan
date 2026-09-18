@@ -507,7 +507,8 @@ async function delKeu(id, skipConfirm = false){
     allKeu = allKeu.filter(r => String(r.id) !== String(id));
     renderKeuTable();
     loadKeu().catch(()=>{});
-  }catch(err){ showErr("errBox2",err.message); }
+    return true;
+  }catch(err){ showErr("errBox2",err.message); return false; }
 }
 
 // ===== MENU TITIK-TIGA (PERBAIKAN POSISI FIXED) =====
@@ -559,13 +560,18 @@ async function hapusTerpilih(type) {
   if (set.size === 0) return alert('Tidak ada baris yang ditandai.');
   if (!await confirmHapus(`Hapus ${set.size} baris terpilih?`, 'Hapus massal')) return;
 
+  let okCount = 0, failCount = 0;
   for (const id of Array.from(set)) {
-    if (type === 'keu') await delKeu(id, true);
-    else if (type === 'spj') await delSpj(id, true);
-    else await delProp(id, true);
+    let ok = false;
+    if (type === 'keu') ok = await delKeu(id, true);
+    else if (type === 'spj') ok = await delSpj(id, true);
+    else ok = await delProp(id, true);
+    if (ok) { set.delete(id); okCount++; }
+    else failCount++;
   }
-  // set.clear(); — dihapus supaya item gagal tetap ditandai
+
   if (type === 'keu') renderKeuTable(); else if (type === 'spj') renderSpjTable(); else renderPropTable();
+  if (failCount > 0) showErr("errBox2", `${okCount} terhapus, ${failCount} gagal.`);
 }
 
 // ===== LPJ =====
