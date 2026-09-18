@@ -483,7 +483,7 @@ function renderFiles() {
       <div class="fMeta"><b>${escapeHtml(f.filename)}</b><small>${escapeHtml(f.kategori || "Umum")}</small></div>
       <div class="fRight">
         ${fmtSize(f.size)} &middot; ${fmtDate(f.uploaded_at)}
-        <span class="dlBtn" onclick="downloadFile(${f.id}, ${JSON.stringify(f.filename)})" title="Unduh">${ICON.download}</span>
+        <span class="dlBtn" onclick="downloadFile(${f.id}, ${escapeHtml(JSON.stringify(f.filename))})" title="Unduh">${ICON.download}</span>
         ${canEditFile ? `<span class="dlBtn" onclick="deleteFile(${f.id})" title="Hapus" style="color:#ef4444">${ICON.trash}</span>` : ""}
       </div>
     </div>`;
