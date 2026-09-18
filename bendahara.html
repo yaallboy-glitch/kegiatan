@@ -592,20 +592,20 @@ function renderSpjTable(){
 async function addSpj(e){ e.preventDefault(); try{ await api("/spj",{method:"POST",body:JSON.stringify({no_spj:sNo.value,tanggal:sTgl.value,kegiatan:sKeg.value,rincian:sRin.value,nominal:+sNom.value})}); sNo.value=sTgl.value=sKeg.value=sRin.value=sNom.value=""; loadSpj(); }catch(err){ showErr("errBox2",err.message); } }
 async function setStatus(id,status){ try{ await api("/spj/status",{method:"POST",body:JSON.stringify({id,status})}); loadSpj(); }catch(err){ showErr("errBox2",err.message); } }
 
-async function delSpj(id){
-  if(!(await confirmHapus("Data LPJ ini akan dihapus secara permanen dan tidak bisa dikembalikan.", "Hapus data LPJ ini?")))return;
+async function delSpj(id, skipConfirm = false){
+  if(!skipConfirm && !(await confirmHapus("Data LPJ ini akan dihapus secara permanen dan tidak bisa dikembalikan.", "Hapus data LPJ ini?"))) return false;
 
   try {
     await api(`/spj?id=${id}`, { method: 'DELETE' });
   } catch (e) {
     showErr("errBox2", e?.message || "Gagal menghapus LPJ");
-    return;
+    return false;
   }
 
   deletedSpjIds.add(String(id));
   allSpj = allSpj.filter(r => String(r.id) !== String(id));
   renderSpjTable();
-  loadSpj().catch(()=>{});
+  loadSpj().catch(()=>{}); return true;
 }
 
 // ===== PROPOSAL =====
