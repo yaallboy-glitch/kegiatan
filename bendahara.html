@@ -560,11 +560,11 @@ async function hapusTerpilih(type) {
   if (!await confirmHapus(`Hapus ${set.size} baris terpilih?`, 'Hapus massal')) return;
 
   for (const id of Array.from(set)) {
-    if (type === 'keu') await delKeu(id);
-    else if (type === 'spj') await delSpj(id);
-    else await delProp(id);
+    if (type === 'keu') await delKeu(id, true);
+    else if (type === 'spj') await delSpj(id, true);
+    else await delProp(id, true);
   }
-  set.clear();
+  // set.clear(); — dihapus supaya item gagal tetap ditandai
   if (type === 'keu') renderKeuTable(); else if (type === 'spj') renderSpjTable(); else renderPropTable();
 }
 
@@ -628,20 +628,20 @@ function renderPropTable(){
 }
 async function addProp(e){ e.preventDefault(); try{ await api("/proposal",{method:"POST",body:JSON.stringify({judul:pJudul.value,isi:pIsi.value})}); pJudul.value=pIsi.value=""; loadProp(); }catch(err){ showErr("errBox2",err.message); } }
 
-async function delProp(id){
-  if(!(await confirmHapus("Proposal ini akan dihapus secara permanen dan tidak bisa dikembalikan.", "Hapus proposal ini?")))return;
+async function delProp(id, skipConfirm = false){
+  if(!skipConfirm && !(await confirmHapus("Proposal ini akan dihapus secara permanen dan tidak bisa dikembalikan.", "Hapus proposal ini?"))) return false;
 
   try {
     await api(`/proposal?id=${id}`, { method: 'DELETE' });
   } catch (e) {
-    showErr("errBox2", e?.message || "Gagal menghapus proposal");
-    return;
+        showErr("errBox2", e?.message || "Gagal menghapus proposal");
+    return false;
   }
 
   deletedPropIds.add(String(id));
   allProp = allProp.filter(r => String(r.id) !== String(id));
   renderPropTable();
-  loadProp().catch(()=>{});
+  loadProp().catch(()=>{}); return true;
 }
 
 // ===== LOG =====
