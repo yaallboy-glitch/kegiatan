@@ -1,0 +1,293 @@
+/* ============================================================
+   ui-theme.css — Design System bersama untuk BMS
+   (Dashboard, Bendahara, File, Footage, Export)
+
+   Prinsip:
+   - Additive / override. Tidak mengubah struktur layout inti,
+     sehingga fungsi (auth, fetch, chat, upload, export) tetap utuh.
+   - TIDAK menyentuh padding .main maupun kolom grid utama, karena
+     tiap halaman sudah mengaturnya sendiri secara responsif
+     (mis. export.html butuh padding-top:66px untuk header tetap).
+   - Identitas brand dipertahankan: Merah - Biru - Emas di atas dark.
+   - Mobile-first, lalu tablet, desktop, layar besar, dan landscape.
+   - Menghormati prefers-reduced-motion & prefers-contrast.
+   ============================================================ */
+
+/* ---------- 1. TOKEN LAYER (memperluas token halaman) ---------- */
+:root{
+  /* Warna brand (selaras dengan :root tiap halaman) */
+  --kt-red:#e11d48;
+  --kt-red-2:#dc2626;
+  --kt-blue:#3b82f6;
+  --kt-blue-2:#1d4ed8;
+  --kt-gold:#facc15;
+  --kt-gold-2:#f0c94a;
+  --kt-gold-dark:#a16207;
+  --kt-green:#22c55e;
+
+  /* Gradien brand */
+  --kt-grad-brand:linear-gradient(100deg,var(--kt-red) 0%,var(--kt-blue) 55%,var(--kt-gold-dark) 100%);
+  --kt-grad-gold:linear-gradient(145deg,var(--kt-gold-2),var(--kt-gold));
+  --kt-grad-surface:linear-gradient(160deg,rgba(255,255,255,.035),rgba(255,255,255,0) 60%);
+
+  /* Elevasi */
+  --kt-shadow-1:0 1px 2px rgba(0,0,0,.35);
+  --kt-shadow-2:0 6px 18px rgba(0,0,0,.35);
+  --kt-shadow-3:0 14px 34px rgba(0,0,0,.45);
+  --kt-shadow-gold:0 6px 20px rgba(212,175,55,.28);
+  --kt-glow-gold:0 0 0 1px rgba(250,204,21,.35),0 0 22px rgba(250,204,21,.18);
+
+  /* Radius */
+  --kt-r-sm:8px;
+  --kt-r-md:12px;
+  --kt-r-lg:16px;
+  --kt-r-pill:999px;
+
+  /* Spasi (ritme 4/8) */
+  --kt-s-1:4px; --kt-s-2:8px; --kt-s-3:12px; --kt-s-4:16px;
+  --kt-s-5:24px; --kt-s-6:32px; --kt-s-7:48px;
+
+  /* Gerak */
+  --kt-ease:cubic-bezier(.22,.61,.36,1);
+  --kt-ease-out:cubic-bezier(.16,1,.3,1);
+  --kt-ease-spring:cubic-bezier(.34,1.56,.64,1);
+  --kt-dur-1:120ms; --kt-dur-2:200ms; --kt-dur-3:320ms; --kt-dur-4:480ms;
+
+  /* Fokus */
+  --kt-ring:0 0 0 3px rgba(250,204,21,.55);
+  --kt-ring-blue:0 0 0 3px rgba(59,130,246,.5);
+
+  /* Target sentuh minimum */
+  --kt-touch:44px;
+}
+
+/* ---------- 2. BASE REFINEMENT ---------- */
+html{ -webkit-text-size-adjust:100%; scroll-behavior:smooth; }
+body{
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+::selection{ background:rgba(250,204,21,.28); color:#fff; }
+
+/* Scrollbar halus (WebKit) */
+*::-webkit-scrollbar{ width:10px; height:10px; }
+*::-webkit-scrollbar-track{ background:transparent; }
+*::-webkit-scrollbar-thumb{
+  background:linear-gradient(180deg,rgba(250,204,21,.35),rgba(59,130,246,.35));
+  border-radius:var(--kt-r-pill);
+  border:2px solid transparent;
+  background-clip:padding-box;
+}
+*::-webkit-scrollbar-thumb:hover{ background:rgba(250,204,21,.55); background-clip:padding-box; }
+
+/* Fokus keyboard yang jelas & konsisten */
+:where(a,button,input,select,textarea,[tabindex]):focus-visible{
+  outline:none;
+  box-shadow:var(--kt-ring);
+  border-radius:var(--kt-r-sm);
+}
+/* Jangan ganggu fokus mouse */
+:where(a,button,input,select,textarea,[tabindex]):focus:not(:focus-visible){ outline:none; }
+
+/* ---------- 3. MOTION TOKENS & KEYFRAMES ---------- */
+@keyframes ktFadeUp{ from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:none} }
+@keyframes ktFadeIn{ from{opacity:0} to{opacity:1} }
+@keyframes ktScaleIn{ from{opacity:0; transform:scale(.96)} to{opacity:1; transform:none} }
+@keyframes ktShimmer{ 0%{background-position:-160% 0} 100%{background-position:260% 0} }
+@keyframes ktPulse{ 0%{box-shadow:0 0 0 0 rgba(250,204,21,.5)} 70%{box-shadow:0 0 0 8px rgba(250,204,21,0)} 100%{box-shadow:0 0 0 0 rgba(250,204,21,0)} }
+@keyframes ktFloat{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+@keyframes ktGradShift{ 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+@keyframes ktRipple{ to{ transform:scale(2.6); opacity:0 } }
+
+/* Reveal saat masuk viewport (dipicu ui-enhance.js).
+   Opt-in: hanya menyembunyikan bila JS aktif (html.kt-js),
+   sehingga konten TIDAK pernah hilang kalau JS gagal dimuat. */
+html.kt-js .kt-reveal{ opacity:0; }
+html.kt-js .kt-reveal.kt-in{ animation:ktFadeUp var(--kt-dur-4) var(--kt-ease-out) both; }
+html.kt-js .kt-reveal.kt-in.kt-d1{ animation-delay:60ms }
+html.kt-js .kt-reveal.kt-in.kt-d2{ animation-delay:120ms }
+html.kt-js .kt-reveal.kt-in.kt-d3{ animation-delay:180ms }
+html.kt-js .kt-reveal.kt-in.kt-d4{ animation-delay:240ms }
+
+/* ---------- 4. KOMPONEN: TOMBOL ---------- */
+button, .pillBtn, .navlink, .pmItem, .topProfileBtn, .logoutBtn, .menuToggle, .mainBtn{
+  transition:transform var(--kt-dur-2) var(--kt-ease),
+             box-shadow var(--kt-dur-2) var(--kt-ease),
+             background-color var(--kt-dur-2) var(--kt-ease),
+             border-color var(--kt-dur-2) var(--kt-ease),
+             color var(--kt-dur-2) var(--kt-ease);
+}
+button:active, .pillBtn:active, .navlink:active, .pmItem:active{ transform:translateY(0) scale(.985); }
+
+/* Tombol utama (mainBtn) & alias btnGold */
+.mainBtn, .btnGold{
+  position:relative; overflow:hidden;
+  background:var(--kt-grad-gold);
+  box-shadow:var(--kt-shadow-gold);
+  transition:transform var(--kt-dur-2) var(--kt-ease), box-shadow var(--kt-dur-2) var(--kt-ease), filter var(--kt-dur-2) var(--kt-ease);
+}
+.mainBtn:hover:not(:disabled), .btnGold:hover:not(:disabled){ transform:translateY(-1px); box-shadow:0 10px 26px rgba(212,175,55,.4); filter:brightness(1.04); }
+.mainBtn:active:not(:disabled), .btnGold:active:not(:disabled){ transform:translateY(0) scale(.99); }
+.mainBtn:disabled, .btnGold:disabled{ filter:grayscale(.25); }
+
+/* Efek ripple (dipicu ui-enhance.js) */
+.kt-ripple{ position:relative; overflow:hidden; }
+.kt-ripple > .kt-ripple-ink{
+  position:absolute; border-radius:50%; transform:scale(0);
+  background:rgba(255,255,255,.35); pointer-events:none;
+  animation:ktRipple 600ms var(--kt-ease-out) forwards;
+}
+
+/* ---------- 5. KOMPONEN: KARTU & PANEL ---------- */
+.statCard, .panel, .footItem, .fileRow, .quoteBanner{
+  transition:transform var(--kt-dur-3) var(--kt-ease),
+             box-shadow var(--kt-dur-3) var(--kt-ease),
+             border-color var(--kt-dur-3) var(--kt-ease),
+             background-color var(--kt-dur-3) var(--kt-ease);
+}
+.statCard{ position:relative; overflow:hidden; }
+.statCard::before{
+  content:""; position:absolute; inset:0; background:var(--kt-grad-surface);
+  opacity:0; transition:opacity var(--kt-dur-3) var(--kt-ease); pointer-events:none;
+}
+.statCard:hover{ transform:translateY(-3px); box-shadow:var(--kt-shadow-3); border-color:rgba(250,204,21,.35); }
+.statCard:hover::before{ opacity:1; }
+.statCard .ic{ transition:transform var(--kt-dur-3) var(--kt-ease-spring), box-shadow var(--kt-dur-3) var(--kt-ease); }
+.statCard:hover .ic{ transform:scale(1.08) rotate(-3deg); box-shadow:var(--kt-glow-gold); }
+
+.panel:hover{ border-color:rgba(250,204,21,.22); box-shadow:var(--kt-shadow-2); }
+
+/* Baris file: sorot halus saat hover */
+.fileRow{ border-radius:var(--kt-r-sm); }
+.fileRow:hover{ background:rgba(255,255,255,.03); }
+
+/* ---------- 6. KOMPONEN: NAVIGASI ---------- */
+.navlink{ position:relative; }
+.navlink::after{
+  content:""; position:absolute; left:0; top:50%; transform:translateY(-50%) scaleY(0);
+  width:3px; height:60%; border-radius:var(--kt-r-pill);
+  background:var(--kt-grad-gold); transition:transform var(--kt-dur-2) var(--kt-ease);
+}
+.navlink:hover::after{ transform:translateY(-50%) scaleY(1); }
+.navlink.active::after{ display:none; }
+.navlink.active{
+  background:var(--kt-grad-brand);
+  background-size:180% 180%;
+  animation:ktGradShift 8s var(--kt-ease) infinite;
+  box-shadow:var(--kt-shadow-2);
+}
+
+/* ---------- 7. KOMPONEN: INPUT & FORM ---------- */
+input, select, textarea{
+  transition:border-color var(--kt-dur-2) var(--kt-ease),
+             box-shadow var(--kt-dur-2) var(--kt-ease),
+             background-color var(--kt-dur-2) var(--kt-ease);
+}
+input:hover, select:hover, textarea:hover{ border-color:rgba(250,204,21,.4); }
+input:focus, select:focus, textarea:focus{
+  outline:none; border-color:var(--kt-gold);
+  box-shadow:0 0 0 3px rgba(250,204,21,.18);
+}
+input::placeholder, textarea::placeholder{ color:var(--text-dim2); }
+
+/* ---------- 8. KOMPONEN: TABEL ---------- */
+table{ border-collapse:separate; border-spacing:0; }
+thead th{
+  position:sticky; top:0; z-index:2;
+  background:linear-gradient(180deg,var(--card2),var(--card));
+  backdrop-filter:blur(6px);
+}
+tbody tr{ transition:background-color var(--kt-dur-2) var(--kt-ease); }
+tbody tr:hover{ background:rgba(250,204,21,.05); }
+
+/* ---------- 9. KOMPONEN: MODAL & OVERLAY ---------- */
+.modalBox, .delConfirmBox, .profileMenu, .dropdownMenu{
+  animation:ktScaleIn var(--kt-dur-3) var(--kt-ease-out) both;
+}
+.sidebarOverlay{ animation:ktFadeIn var(--kt-dur-2) var(--kt-ease) both; }
+
+/* ---------- 10. KOMPONEN: BADGE & STATUS ---------- */
+.bell .dot{ animation:ktPulse 2s var(--kt-ease) infinite; }
+
+/* Skeleton shimmer (opsional, untuk loading) */
+.kt-skeleton{
+  background:linear-gradient(90deg,rgba(255,255,255,.04) 25%,rgba(255,255,255,.10) 37%,rgba(255,255,255,.04) 63%);
+  background-size:260% 100%;
+  animation:ktShimmer 1.4s linear infinite;
+  border-radius:var(--kt-r-sm);
+}
+
+/* ---------- 11. RESPONSIF (aman: tidak menyentuh .main & grid inti) ---------- */
+
+/* 11a. Ponsel kecil (<=380px) */
+@media (max-width:380px){
+  .topbar h1{ font-size:17px; }
+  .statGrid{ grid-template-columns:1fr; }
+  .pillGroup{ flex-wrap:wrap; }
+  .profileMenu{ min-width:min(92vw,220px); }
+}
+
+/* 11b. Ponsel (<=600px) — target sentuh & tabel bisa digeser */
+@media (max-width:600px){
+  .topbar{ gap:10px; }
+  .wrapTable{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .wrapTable table{ min-width:520px; }
+  .bell, .topProfileBtn, .menuToggle{ min-width:var(--kt-touch); min-height:var(--kt-touch); }
+}
+
+/* 11c. Tablet (>=768px) — jarak topbar sedikit lebih lega */
+@media (min-width:768px){
+  .topbar{ gap:14px; }
+}
+
+/* 11d. Layar besar (>=1440px) — tipografi sedikit lebih besar */
+@media (min-width:1440px){
+  .topbar h1{ font-size:24px; }
+  .statCard .big{ font-size:26px; }
+}
+
+/* 11e. Landscape ponsel (tinggi pendek) — rapatkan vertikal */
+@media (orientation:landscape) and (max-height:520px){
+  .sidebar{ padding-top:12px; padding-bottom:12px; }
+  .brand{ padding-bottom:10px; margin-bottom:8px; }
+  .brand .logo{ width:44px; height:44px; }
+  .topbar{ margin-bottom:14px; }
+  .loginWrap{ align-items:flex-start; padding:16px 0; }
+  .loginCard{ padding:20px 18px; }
+}
+
+/* 11f. Perangkat sentuh: pastikan target >=44px */
+@media (pointer:coarse){
+  .navlink, .pmItem, .pillBtn, .subnav button{ min-height:var(--kt-touch); }
+  .navlink{ align-items:center; }
+}
+
+/* ---------- 12. AKSESIBILITAS: REDUCED MOTION ---------- */
+@media (prefers-reduced-motion:reduce){
+  *, *::before, *::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    scroll-behavior:auto !important;
+  }
+  html.kt-js .kt-reveal{ opacity:1 !important; }
+  .navlink.active{ animation:none; }
+}
+
+/* ---------- 13. AKSESIBILITAS: KONTRAS TINGGI ---------- */
+@media (prefers-contrast:more){
+  :root{ --border:#4a4a55; --text-dim:#c8c8d2; --text-dim2:#a8a8b4; }
+  .navlink{ border:1px solid transparent; }
+  .navlink:hover{ border-color:var(--border); }
+}
+
+/* ---------- 14. CETAK (halaman laporan) ---------- */
+@media print{
+  .sidebar, .mobileBar, .topRight, .bell, .chatBubble, #ktchat-bubble,
+  .sosmedWidget, .kt-no-print{ display:none !important; }
+  body{ background:#fff !important; color:#000 !important; }
+  .main{ padding:0 !important; }
+  .panel, .statCard{ border:1px solid #ccc !important; box-shadow:none !important; }
+}
