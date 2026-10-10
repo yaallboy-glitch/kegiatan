@@ -319,5 +319,10 @@ function simpanFoto(file) {
   rd.readAsDataURL(file);
 }
 
-/* tampilkan nav secepat mungkin jika sudah login */
-if (tok()) ensureNav();
+/* hindari flash login saat pindah antar halaman */
+if (tok()) {
+  const loginView = document.getElementById("loginView"), appView = document.getElementById("appView");
+  if (loginView) loginView.style.display = "none";
+  if (appView) appView.hidden = false;
+  ensureNav();
+}
