@@ -268,11 +268,15 @@ select.inp{padding-right:12px}
   background:rgba(20,21,26,.76);
   backdrop-filter:blur(28px) saturate(135%);-webkit-backdrop-filter:blur(28px) saturate(135%);
   border-top:1px solid rgba(255,255,255,.20);
-  box-shadow:0 -18px 48px -18px rgba(0,0,0,.82),inset 0 1px 0 rgba(255,255,255,.08)}
+  box-shadow:0 -18px 48px -18px rgba(0,0,0,.82),inset 0 1px 0 rgba(255,255,255,.08);
+  clip-path:none;transition:clip-path 760ms cubic-bezier(.22,1,.36,1)}
 .bottomNav::before{content:"";position:absolute;inset:7px 9% 7px;border-radius:20px;
   background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.09);pointer-events:none}
 .bottomNav::after{content:"";position:absolute;top:0;left:16%;right:16%;height:1px;
   background:rgba(255,255,255,.28)}
+.bnEdge{position:fixed;left:0;right:0;bottom:0;width:100%;height:calc(var(--navh) + env(safe-area-inset-bottom));pointer-events:none;overflow:visible;z-index:203}
+.bottomNav.is-moving .bnItem.active{color:#fff}
+@media (prefers-reduced-motion:reduce){.bottomNav{transition:none}.bnPuck{transition:none}}
 .bnItem{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:3px;border-radius:var(--r2);color:var(--mid);font-size:9.5px;font-weight:700;
   position:relative;isolation:isolate;
@@ -287,14 +291,15 @@ select.inp{padding-right:12px}
 .bnItem:hover:not(.active){color:var(--gold2)}
 .bnItem.active,.bnItem.active span{color:#fff}
 .bnItem.active svg{color:#fff;transform:translateY(-1px) scale(1.08)}
-.bnPuck{position:absolute;left:0;top:0;bottom:0;width:0;z-index:1;pointer-events:none;
-  transform:translateX(var(--bnx,40px));transition:transform 730ms cubic-bezier(0,0,.58,1);
+.bnPuck{position:fixed;left:0;bottom:calc(var(--navh) - 4px);width:0;height:0;z-index:204;pointer-events:none;
+  transform:translate(var(--bnx,40px),var(--bny,-4px));transition:transform 760ms cubic-bezier(.22,1,.36,1);
   will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}
-.bnCircle{position:absolute;left:0;top:50%;width:50px;height:50px;margin:-25px 0 0 -25px;border-radius:50%;
+.bnCircle{position:absolute;left:0;top:0;width:50px;height:50px;margin:-25px 0 0 -25px;border-radius:50%;display:grid;place-items:center;
   background:radial-gradient(120% 120% at 30% 22%,#d95b9e 0%,#a52c79 58%,#641950 100%);
   border:1px solid rgba(255,255,255,.28);box-shadow:0 12px 28px -8px rgba(105,24,82,.72),0 0 0 7px rgba(165,44,121,.12),inset 0 1px 0 rgba(255,255,255,.35);
   opacity:1;transform:scale(1);
   will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}
+.bnCircle svg{width:21px;height:21px;color:#fff}
 .bottomNav.ready .bnCircle{opacity:1;transform:scale(1)}
 
 /* ---- sheet "Lainnya" ---- */
