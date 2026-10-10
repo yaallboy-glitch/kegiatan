@@ -265,17 +265,18 @@ select.inp{padding-right:12px}
   border:2px solid rgba(212,175,55,.55);font-size:24px;font-weight:800;color:#fff}
 .profilWho{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 .profilWho b{font-size:17px}
-/* ---- BOTTOM NAV (horizontal, fixed) ---- */
+/* ---- BOTTOM NAV (horizontal, fixed · glass notch) ---- */
 .bottomNav{position:fixed;left:0;right:0;bottom:0;z-index:200;
   display:flex;align-items:stretch;justify-content:space-evenly;gap:2px;
   height:calc(var(--navh) + env(safe-area-inset-bottom));
-  padding:4px 6px calc(4px + env(safe-area-inset-bottom));
-  background:rgba(12,11,14,.58);backdrop-filter:blur(26px) saturate(180%);
-  -webkit-backdrop-filter:blur(26px) saturate(180%);
-  border-top:1px solid var(--glassBrd);box-shadow:0 -18px 48px -18px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.1)}
-.bottomNav::before{content:"";position:absolute;top:0;left:10%;right:10%;height:2px;
+  padding:6px 6px calc(6px + env(safe-area-inset-bottom));
+  background:rgba(14,13,17,.55);backdrop-filter:blur(30px) saturate(190%);
+  -webkit-backdrop-filter:blur(30px) saturate(190%);
+  border-top:1px solid var(--glassBrd);
+  box-shadow:0 -18px 48px -18px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.12)}
+.bottomNav::before{content:"";position:absolute;top:0;left:12%;right:12%;height:2px;
   background:linear-gradient(90deg,var(--crimson),var(--blue) 52%,var(--gold));opacity:.9;
-  box-shadow:0 0 16px rgba(194,35,38,.3)}
+  box-shadow:0 0 18px rgba(194,35,38,.35)}
 .bnItem{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:3px;border-radius:var(--r2);color:var(--mid);font-size:9.5px;font-weight:700;
   position:relative;isolation:isolate;animation:bnIn .5s var(--ease) both;
@@ -283,25 +284,26 @@ select.inp{padding-right:12px}
 .bnItem:nth-child(2){animation-delay:.05s}.bnItem:nth-child(3){animation-delay:.1s}
 .bnItem:nth-child(4){animation-delay:.15s}.bnItem:nth-child(5){animation-delay:.2s}
 @keyframes bnIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-.bnItem>*{position:relative;z-index:1}
-.bnItem::before{content:"";position:absolute;inset:3px 4px;border-radius:var(--r2);z-index:0;
-  background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(212,175,55,.08));
-  border:1px solid rgba(255,255,255,.18);
-  box-shadow:0 10px 24px -14px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.13);
-  opacity:0;transform:scale(.78);transform-origin:center;
-  transition:opacity .24s var(--ease),transform .42s var(--spring)}
-.bnItem::after{content:"";position:absolute;left:22%;right:22%;bottom:3px;height:2px;border-radius:99px;
-  background:linear-gradient(90deg,var(--crimson),var(--blue) 52%,var(--gold));opacity:0;transform:scaleX(.35);
-  transition:opacity .2s var(--ease),transform .42s var(--spring)}
-.bnItem svg{width:21px;height:21px;transition:transform .34s var(--spring);will-change:transform}
-.bnItem span{white-space:nowrap}
-.bnItem:active,.bnItem.is-pressed{transform:scale(.91)}
+.bnItem>*{position:relative;z-index:2}
+.bnItem svg{width:21px;height:21px;transition:transform .34s var(--spring),color .2s var(--ease);will-change:transform}
+.bnItem span{white-space:nowrap;transition:color .2s var(--ease)}
+.bnItem:active,.bnItem.is-pressed{transform:scale(.9)}
 .bnItem:hover{color:var(--txt)}
-.bnItem:hover:not(.active)::before{opacity:.38;transform:scale(.94);border-color:var(--glassBrd)}
-.bnItem.active{color:var(--gold2)}
-.bnItem.active::before{opacity:1;transform:scale(1)}
-.bnItem.active::after{opacity:1;transform:scaleX(1)}
-.bnItem.active svg{transform:translateY(-2px) scale(1.06)}
+.bnItem:hover:not(.active){color:var(--gold2)}
+.bnItem.active,.bnItem.active span{color:#fff}
+.bnItem.active svg{color:#fff;transform:translateY(-1px) scale(1.08)}
+/* indikator melingkar yang bertravel (glass notch) */
+.bnPuck{position:absolute;left:0;top:0;bottom:0;width:0;z-index:1;pointer-events:none;
+  transform:translateX(var(--bnx,40px));transition:transform .5s var(--spring)}
+.bnCircle{position:absolute;left:0;top:calc(var(--navh) * .30);width:50px;height:50px;
+  margin:-25px 0 0 -25px;border-radius:50%;
+  background:radial-gradient(120% 120% at 30% 22%,#f0d24a 0%,var(--crimson) 58%,var(--crimsonD) 100%);
+  border:1px solid rgba(255,255,255,.30);
+  box-shadow:0 12px 28px -8px rgba(194,35,38,.7),0 0 0 7px rgba(194,35,38,.10),
+    inset 0 1px 0 rgba(255,255,255,.4);
+  opacity:0;transform:scale(.55);
+  transition:opacity .22s var(--ease),transform .5s var(--spring)}
+.bottomNav.ready .bnCircle{opacity:1;transform:scale(1)}
 
 /* ---- sheet "Lainnya" ---- */
 .ovBottom{align-items:flex-end;padding:0}
@@ -435,7 +437,9 @@ select.inp{padding-right:12px}
   .bottomNav::before{display:none}
   .bnItem{flex:0 1 auto;flex-direction:row;gap:8px;padding:10px 18px;
     font-size:13px;border-radius:var(--pill)}
-  .bnItem::before{inset:2px 5px;border-radius:var(--pill)}
+  .bnPuck{display:none}
+  .bnItem.active,.bnItem.active span{color:var(--gold2)}
+  .bnItem.active svg{color:var(--gold2)}
   .bnItem svg{width:18px;height:18px}
   .bnItem.active svg{transform:translateY(-1px) scale(1.05)}
   .main{padding-bottom:130px}

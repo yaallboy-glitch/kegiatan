@@ -170,6 +170,14 @@ const NAV = [
   { lainnya: true, label: "Lainnya", ic: "lainnya" }
 ];
 const FOTO_KEY = () => "bmsFoto:" + ((me && me.username) || "anon");
+function moveIndicator() {
+  const nav = document.querySelector(".bottomNav"); if (!nav) return;
+  const active = nav.querySelector(".bnItem.active");
+  if (!active) { nav.classList.remove("ready"); return; }
+  const ar = active.getBoundingClientRect(), nr = nav.getBoundingClientRect();
+  nav.style.setProperty("--bnx", (ar.left - nr.left + ar.width / 2) + "px");
+  nav.classList.add("ready");
+}
 function renderShell() {
   const page = location.pathname.split("/").pop() || "index.html";
   const foto = localStorage.getItem(FOTO_KEY());
@@ -178,7 +186,7 @@ function renderShell() {
     : '<a class="bnItem' + (page === n.href ? " active" : "") + '" href="' + n.href + '"' + (page === n.href ? ' aria-current="page"' : "") + '>' + IC[n.ic] + '<span>' + n.label + '</span></a>').join("");
   const admin = isAdmin(me);
   document.getElementById("appShell").innerHTML =
-    '<nav class="bottomNav" aria-label="Navigasi utama">' + navHtml + '</nav>'
+    '<nav class="bottomNav" aria-label="Navigasi utama">' + navHtml + '<span class="bnPuck" aria-hidden="true"><i class="bnCircle"></i></span></nav>'
     + '<div class="ov ovBottom" id="sheetOv"><div class="sheet">'
     + '<div class="sheetHandle"></div><p class="sheetTitle">Menu Lainnya</p>'
     + '<a class="sheetItem" href="index.html#pengumuman">' + IC.bell + 'Pengumuman</a>'
@@ -202,7 +210,14 @@ function renderShell() {
     + '<div id="toast" role="status"></div>';
   const av = document.getElementById("avatarBtn");
   if (av) { if (foto) { av.textContent = ""; av.style.backgroundImage = 'url("' + foto + '")'; } else av.textContent = initials(me && me.nama); av.onclick = openProfil; }
+  document.querySelectorAll(".bnItem").forEach(item => {
+    item.addEventListener("pointerdown", () => item.classList.add("is-pressed"), { passive: true });
+    item.addEventListener("pointerup", () => item.classList.remove("is-pressed"), { passive: true });
+    item.addEventListener("pointercancel", () => item.classList.remove("is-pressed"), { passive: true });
+  });
   document.getElementById("bnLainnya").onclick = () => document.getElementById("sheetOv").classList.add("open");
+  if (!window.__bnR) { window.__bnR = 1; window.addEventListener("resize", () => requestAnimationFrame(moveIndicator)); }
+  requestAnimationFrame(moveIndicator);
   document.getElementById("shProfil").onclick = () => { document.getElementById("sheetOv").classList.remove("open"); openProfil(); };
   document.getElementById("shLogout").onclick = async () => { if (await confirmBox("Keluar dari aplikasi?", "Logout")) logout(); };
   document.querySelectorAll(".ov").forEach(o => o.addEventListener("click", e => { if (e.target === o && o.id !== "namaOv") o.classList.remove("open"); }));
