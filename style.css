@@ -275,22 +275,30 @@ select.inp{padding-right:12px}
   background:rgba(255,255,255,.28)}
 .bnItem{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:3px;border-radius:var(--r2);color:var(--mid);font-size:9.5px;font-weight:700;
-  position:relative;isolation:isolate;transition:color .18s ease,background .18s ease}
+  position:relative;isolation:isolate;
+  transition:color 280ms cubic-bezier(0,0,.58,1);
+  -webkit-tap-highlight-color:transparent}
 .bnItem>*{position:relative;z-index:2}
-.bnItem svg{width:21px;height:21px;transition:color .18s ease}
-.bnItem span{white-space:nowrap;transition:color .18s ease}
-.bnItem:active,.bnItem.is-pressed{background:rgba(255,255,255,.08)}
+.bnItem svg{width:21px;height:21px;transition:color 280ms cubic-bezier(0,0,.58,1),transform 400ms cubic-bezier(0,0,.58,1);
+  will-change:transform}
+.bnItem span{white-space:nowrap;transition:color 280ms cubic-bezier(0,0,.58,1)}
+.bnItem:active,.bnItem.is-pressed{background:rgba(255,255,255,.06)}
 .bnItem:hover{color:var(--txt)}
 .bnItem:hover:not(.active){color:var(--gold2)}
 .bnItem.active,.bnItem.active span{color:#fff}
 .bnItem.active svg{color:#fff;transform:translateY(-1px) scale(1.08)}
 .bnPuck{position:absolute;left:0;top:0;bottom:0;width:0;z-index:1;pointer-events:none;
-  transform:translateX(var(--bnx,40px));transition:transform 730ms cubic-bezier(0,0,.58,1)}
+  transform:translateX(var(--bnx,40px));transition:transform 730ms cubic-bezier(0,0,.58,1);
+  will-change:transform;-webkit-backface-visibility:hidden;backface-visibility:hidden}
 .bnCircle{position:absolute;left:0;top:50%;width:50px;height:50px;margin:-25px 0 0 -25px;border-radius:50%;
   background:radial-gradient(120% 120% at 30% 22%,#d95b9e 0%,#a52c79 58%,#641950 100%);
   border:1px solid rgba(255,255,255,.28);box-shadow:0 12px 28px -8px rgba(105,24,82,.72),0 0 0 7px rgba(165,44,121,.12),inset 0 1px 0 rgba(255,255,255,.35);
-  opacity:0;transform:scale(.55);transition:opacity 200ms cubic-bezier(0,0,.58,1),transform 730ms cubic-bezier(0,0,.58,1)}
+  opacity:0;transform:scale(.55);
+  transition:opacity 400ms cubic-bezier(0,0,.58,1),transform 600ms cubic-bezier(0,0,.58,1);
+  will-change:transform,opacity;-webkit-backface-visibility:hidden;backface-visibility:hidden;
+  animation:bnCircleIn 600ms cubic-bezier(0,0,.58,1) 120ms both}
 .bottomNav.ready .bnCircle{opacity:1;transform:scale(1)}
+@keyframes bnCircleIn{from{opacity:0;transform:scale(.55)}to{opacity:1;transform:scale(1)}}
 
 /* ---- sheet "Lainnya" ---- */
 .ovBottom{align-items:flex-end;padding:0}
