@@ -20,8 +20,12 @@ html{-webkit-text-size-adjust:100%}
 body{
   font-family:'Plus Jakarta Sans',system-ui,sans-serif;
   background:var(--bg); color:var(--txt); line-height:1.5; min-height:100dvh;
-  background-image:radial-gradient(900px 520px at 92% 4%,rgba(255,177,95,.28),transparent 62%),
+  background-image:url("IMG_6411.png"),radial-gradient(900px 520px at 92% 4%,rgba(255,177,95,.28),transparent 62%),
     radial-gradient(800px 500px at 4% 36%,rgba(113,170,214,.20),transparent 62%);
+  background-size:min(48vw,420px) auto,auto,auto;
+  background-position:center,center,center;
+  background-repeat:no-repeat,no-repeat,no-repeat;
+  background-blend-mode:soft-light,normal,normal;
 }
 a{color:inherit;text-decoration:none}
 button,input,select,textarea{font:inherit;color:inherit}
