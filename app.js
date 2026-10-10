@@ -224,7 +224,7 @@ function renderShell() {
           document.querySelector(".bottomNav").classList.add("ready");
         }
         document.body.classList.add("pageTransitionOut", to > from ? "pageTransitionForward" : "pageTransitionBack");
-        setTimeout(() => { location.href = item.href; }, 220);
+        setTimeout(() => { location.href = item.href; }, 760);
       });
     }
     item.addEventListener("pointerdown", () => item.classList.add("is-pressed"), { passive: true });
@@ -232,7 +232,7 @@ function renderShell() {
     item.addEventListener("pointercancel", () => item.classList.remove("is-pressed"), { passive: true });
   });
   document.getElementById("bnLainnya").onclick = () => document.getElementById("sheetOv").classList.add("open");
-  requestAnimationFrame(moveIndicator);
+  moveIndicator();
   if (!window.__bnResize) { window.__bnResize = 1; window.addEventListener("resize", () => requestAnimationFrame(moveIndicator)); }
   document.getElementById("shProfil").onclick = () => { document.getElementById("sheetOv").classList.remove("open"); openProfil(); };
   document.getElementById("shLogout").onclick = async () => { if (await confirmBox("Keluar dari aplikasi?", "Logout")) logout(); };
