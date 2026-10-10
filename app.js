@@ -202,6 +202,11 @@ function renderShell() {
     + '<div id="toast" role="status"></div>';
   const av = document.getElementById("avatarBtn");
   if (av) { if (foto) { av.textContent = ""; av.style.backgroundImage = 'url("' + foto + '")'; } else av.textContent = initials(me && me.nama); av.onclick = openProfil; }
+  document.querySelectorAll(".bnItem").forEach(item => {
+    item.addEventListener("pointerdown", () => item.classList.add("is-pressed"), { passive: true });
+    item.addEventListener("pointerup", () => item.classList.remove("is-pressed"), { passive: true });
+    item.addEventListener("pointercancel", () => item.classList.remove("is-pressed"), { passive: true });
+  });
   document.getElementById("bnLainnya").onclick = () => document.getElementById("sheetOv").classList.add("open");
   document.getElementById("shProfil").onclick = () => { document.getElementById("sheetOv").classList.remove("open"); openProfil(); };
   document.getElementById("shLogout").onclick = async () => { if (await confirmBox("Keluar dari aplikasi?", "Logout")) logout(); };
