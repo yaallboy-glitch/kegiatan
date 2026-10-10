@@ -210,7 +210,16 @@ function renderShell() {
     + '<div id="toast" role="status"></div>';
   const av = document.getElementById("avatarBtn");
   if (av) { if (foto) { av.textContent = ""; av.style.backgroundImage = 'url("' + foto + '")'; } else av.textContent = initials(me && me.nama); av.onclick = openProfil; }
-  document.querySelectorAll(".bnItem").forEach(item => {
+  const nav = document.querySelector(".bottomNav");
+  const navItems = [...document.querySelectorAll(".bnItem")];
+  const previousIndex = Number(sessionStorage.getItem("bmsNavFrom"));
+  if (nav && Number.isInteger(previousIndex) && navItems[previousIndex]) {
+    const sr = navItems[previousIndex].getBoundingClientRect(), nr = nav.getBoundingClientRect();
+    nav.style.setProperty("--bnx", (sr.left - nr.left + sr.width / 2) + "px");
+    nav.classList.add("ready");
+  }
+  navItems.forEach((item, index) => {
+    item.addEventListener("click", () => sessionStorage.setItem("bmsNavFrom", String(index)));
     item.addEventListener("pointerdown", () => item.classList.add("is-pressed"), { passive: true });
     item.addEventListener("pointerup", () => item.classList.remove("is-pressed"), { passive: true });
     item.addEventListener("pointercancel", () => item.classList.remove("is-pressed"), { passive: true });
