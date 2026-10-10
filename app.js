@@ -218,6 +218,11 @@ function renderShell() {
         e.preventDefault();
         const from = NAV.findIndex(n => n.href === location.pathname.split("/").pop());
         const to = NAV.findIndex(n => n.href === new URL(item.href).pathname.split("/").pop());
+        const puck = document.querySelector(".bnPuck");
+        if (puck) {
+          puck.style.setProperty("--bnx", (item.offsetLeft + item.offsetWidth / 2) + "px");
+          document.querySelector(".bottomNav").classList.add("ready");
+        }
         document.body.classList.add("pageTransitionOut", to > from ? "pageTransitionForward" : "pageTransitionBack");
         setTimeout(() => { location.href = item.href; }, 220);
       });

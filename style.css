@@ -424,7 +424,7 @@ select.inp{padding-right:12px}
   .bottomNav::before{display:none}
   .bnItem{flex:0 1 auto;flex-direction:row;gap:8px;padding:10px 18px;
     font-size:13px;border-radius:var(--pill)}
-  .bnPuck{display:none}
+  .bnPuck{display:block}
   .bnItem.active,.bnItem.active span{color:#fff}
   .bnItem.active svg{color:var(--gold2)}
   .bnItem svg{width:18px;height:18px}
