@@ -177,15 +177,22 @@ select.inp{padding-right:12px}
 .tile:nth-child(2){animation-delay:.05s}.tile:nth-child(3){animation-delay:.1s}
 .tile:nth-child(4){animation-delay:.15s}.tile:nth-child(5){animation-delay:.2s}
 .tile:hover{border-color:rgba(212,175,55,.35);transform:translateY(-2px)}
-.tileSaldo{grid-column:span 2;border-color:rgba(212,175,55,.34);
-  background:linear-gradient(135deg,rgba(194,35,38,.2),rgba(36,64,142,.18) 72%,transparent),var(--card)}
+.tileSaldo{grid-column:span 2;border-color:rgba(216,149,50,.46);
+  background:
+    linear-gradient(120deg,rgba(255,255,255,.78) 0%,rgba(255,255,255,.3) 38%,rgba(233,88,50,.12) 68%,rgba(63,111,159,.16) 100%),
+    var(--card)}
+.tileSaldo::before{content:"";position:absolute;inset:1px;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(112deg,rgba(255,255,255,.72),transparent 34%,rgba(255,255,255,.18) 66%,rgba(255,196,105,.24));
+  opacity:.9}
 .tileSaldo::after{content:"";position:absolute;right:-34px;top:-50px;width:160px;height:160px;
-  border-radius:50%;background:radial-gradient(circle,rgba(212,175,55,.22),transparent 70%);pointer-events:none}
+  border-radius:50%;background:radial-gradient(circle,rgba(242,182,83,.28),rgba(233,88,50,.08) 38%,transparent 72%);
+  pointer-events:none}
+.tileSaldo .tileLabel,.tileSaldo .tileBig,.tileSaldo .tileSub{position:relative;z-index:1;text-shadow:0 1px 1px rgba(255,255,255,.5)}
 .tileLabel{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--mid);margin-bottom:8px}
-.tileSaldo .tileLabel{color:var(--gold2)}
-.tileBig{font-size:31px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
-.tileNum{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
-.tileSub{font-size:11.5px;color:var(--dim);margin-top:4px}
+.tileSaldo .tileLabel{color:#78521d}
+.tileBig{font-size:31px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--txt)}
+.tileNum{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--txt)}
+.tileSub{font-size:11.5px;color:var(--mid);margin-top:4px}
 .sect{margin-bottom:16px;animation:riseIn .55s var(--ease) both}
 .btnRow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .formGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
