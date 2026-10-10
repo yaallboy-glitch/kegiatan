@@ -173,7 +173,7 @@ const FOTO_KEY = () => "bmsFoto:" + ((me && me.username) || "anon");
 function moveIndicator() {
   const nav = document.querySelector(".bottomNav"); if (!nav) return;
   const active = nav.querySelector(".bnItem.active");
-  if (!active) { nav.classList.remove("ready"); return; }
+  if (!active) return;
   const ar = active.getBoundingClientRect(), nr = nav.getBoundingClientRect();
   nav.style.setProperty("--bnx", (ar.left - nr.left + ar.width / 2) + "px");
   nav.classList.add("ready");
