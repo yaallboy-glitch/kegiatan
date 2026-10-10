@@ -430,3 +430,7 @@ select.inp{padding-right:12px}
     transition-duration:.01ms!important;scroll-behavior:auto!important
   }
 }
+/* Nav tetap diam saat pindah halaman (tidak ikut fade/kedip) */
+@view-transition{navigation:auto}
+.bottomNav{view-transition-name:bottomnav}
+::view-transition-group(bottomnav){animation-duration:0s}

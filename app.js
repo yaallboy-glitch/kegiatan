@@ -217,17 +217,45 @@ function initGlassNav() {
 }
 
 const FOTO_KEY = () => "bmsFoto:" + ((me && me.username) || "anon");
-function renderShell() {
+/* Nav dibuat SEKALI & langsung saat halaman dimuat (tidak menunggu fetch /auth/me) supaya tidak berkedip */
+function ensureNav() {
+  if (document.querySelector(".bottomNav")) return;
   const page = location.pathname.split("/").pop() || "index.html";
-  const foto = localStorage.getItem(FOTO_KEY());
   const navHtml = NAV.map(n => n.lainnya
     ? '<button class="bnItem" id="bnLainnya" aria-haspopup="dialog">' + IC.lainnya + '<span>' + n.label + '</span></button>'
     : '<a class="bnItem' + (page === n.href ? " active" : "") + '" href="' + n.href + '"' + (page === n.href ? ' aria-current="page"' : "") + '>' + IC[n.ic] + '<span>' + n.label + '</span></a>').join("");
-  const admin = isAdmin(me);
   const bubbleIcons = NAV.map(n => n.lainnya ? IC.lainnya : IC[n.ic]).join("");
-  document.getElementById("appShell").innerHTML =
-    '<nav class="bottomNav" aria-label="Navigasi utama"><div class="bnBar"></div><div class="bnTabs">' + navHtml + '</div><div class="bnBubble" aria-hidden="true">' + bubbleIcons + '</div></nav>'
-    + '<div class="ov ovBottom" id="sheetOv"><div class="sheet">'
+  const el = document.createElement("nav");
+  el.className = "bottomNav"; el.setAttribute("aria-label", "Navigasi utama");
+  el.innerHTML = '<div class="bnBar"></div><div class="bnTabs">' + navHtml + '</div><div class="bnBubble" aria-hidden="true">' + bubbleIcons + '</div>';
+  document.body.appendChild(el);
+  const navItems = [...document.querySelectorAll(".bnItem")];
+  window._bn = initGlassNav();
+  navItems.forEach(item => {
+    if (item.tagName === "A" && item.href && item.href !== location.href) {
+      item.addEventListener("click", e => {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        const from = NAV.findIndex(n => n.href === (location.pathname.split("/").pop() || "index.html"));
+        const to = NAV.findIndex(n => n.href === new URL(item.href).pathname.split("/").pop());
+        if (window._bn) window._bn.go(to); else { navItems.forEach(el => el.classList.remove("active")); item.classList.add("active"); }
+        document.body.classList.add("pageTransitionOut", to > from ? "pageTransitionForward" : "pageTransitionBack");
+        setTimeout(() => { location.href = item.href; }, 920);
+      });
+    }
+    item.addEventListener("pointerdown", () => item.classList.add("is-pressed"), { passive: true });
+    item.addEventListener("pointerup", () => item.classList.remove("is-pressed"), { passive: true });
+    item.addEventListener("pointercancel", () => item.classList.remove("is-pressed"), { passive: true });
+  });
+  document.getElementById("bnLainnya").onclick = () => document.getElementById("sheetOv").classList.add("open");
+}
+function renderShell() {
+  const page = location.pathname.split("/").pop() || "index.html";
+  const foto = localStorage.getItem(FOTO_KEY());
+  const admin = isAdmin(me);
+    ensureNav();
+document.getElementById("appShell").innerHTML =
+    '<div class="ov ovBottom" id="sheetOv"><div class="sheet">'
     + '<div class="sheetHandle"></div><p class="sheetTitle">Menu Lainnya</p>'
     + '<a class="sheetItem" href="index.html#pengumuman">' + IC.bell + 'Pengumuman</a>'
     + '<a class="sheetItem" href="anggota.html">' + IC.users + 'Anggota</a>'
@@ -250,25 +278,6 @@ function renderShell() {
     + '<div id="toast" role="status"></div>';
   const av = document.getElementById("avatarBtn");
   if (av) { if (foto) { av.textContent = ""; av.style.backgroundImage = 'url("' + foto + '")'; } else av.textContent = initials(me && me.nama); av.onclick = openProfil; }
-  const navItems = [...document.querySelectorAll(".bnItem")];
-  window._bn = initGlassNav();
-  navItems.forEach(item => {
-    if (item.tagName === "A" && item.href && item.href !== location.href) {
-      item.addEventListener("click", e => {
-        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-        e.preventDefault();
-        const from = NAV.findIndex(n => n.href === (location.pathname.split("/").pop() || "index.html"));
-        const to = NAV.findIndex(n => n.href === new URL(item.href).pathname.split("/").pop());
-        if (window._bn) window._bn.go(to); else { navItems.forEach(el => el.classList.remove("active")); item.classList.add("active"); }
-        document.body.classList.add("pageTransitionOut", to > from ? "pageTransitionForward" : "pageTransitionBack");
-        setTimeout(() => { location.href = item.href; }, 920);
-      });
-    }
-    item.addEventListener("pointerdown", () => item.classList.add("is-pressed"), { passive: true });
-    item.addEventListener("pointerup", () => item.classList.remove("is-pressed"), { passive: true });
-    item.addEventListener("pointercancel", () => item.classList.remove("is-pressed"), { passive: true });
-  });
-  document.getElementById("bnLainnya").onclick = () => document.getElementById("sheetOv").classList.add("open");
   document.getElementById("shProfil").onclick = () => { document.getElementById("sheetOv").classList.remove("open"); openProfil(); };
   document.getElementById("shLogout").onclick = async () => { if (await confirmBox("Keluar dari aplikasi?", "Logout")) logout(); };
   document.querySelectorAll(".ov").forEach(o => o.addEventListener("click", e => { if (e.target === o && o.id !== "namaOv") o.classList.remove("open"); }));
@@ -309,3 +318,6 @@ function simpanFoto(file) {
   };
   rd.readAsDataURL(file);
 }
+
+/* tampilkan nav secepat mungkin jika sudah login */
+if (tok()) ensureNav();
