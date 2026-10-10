@@ -170,63 +170,6 @@ const NAV = [
   { lainnya: true, label: "Lainnya", ic: "lainnya" }
 ];
 const FOTO_KEY = () => "bmsFoto:" + ((me && me.username) || "anon");
-function navPath(x, depth, w, h) {
-  const notch = 44, radius = 22, left = x - notch, right = x + notch, curve = notch * .55;
-  return `M${radius},0H${left}C${left + curve},0 ${x - curve},${depth} ${x},${depth}C${x + curve},${depth} ${right - curve},0 ${right},0H${w - radius}Q${w},0 ${w},${radius}V${h - radius}Q${w},${h} ${w - radius},${h}H${radius}Q0,${h} 0,${h - radius}V${radius}Q0,0 ${radius},0Z`;
-}
-function moveIndicator() {
-  const nav = document.querySelector(".bottomNav");
-  const active = nav && nav.querySelector(".bnItem.active");
-  const puck = nav && nav.querySelector(".bnPuck");
-  const edge = nav && nav.querySelector(".bnEdge");
-  if (!nav || !active || !puck || !edge) return;
-  const x = active.offsetLeft + active.offsetWidth / 2;
-  const h = nav.clientHeight;
-  const path = navPath(x, 30, nav.clientWidth, h);
-  const bubble = puck.querySelector(".bnCircle");
-  const icon = active.querySelector("svg");
-  if (bubble && icon && !bubble.firstChild) bubble.innerHTML = icon.outerHTML;
-  puck.style.setProperty("--bny", "-4px");
-  puck.style.setProperty("--bnx", x + "px");
-  edge.setAttribute("viewBox", `0 0 ${nav.clientWidth} ${h}`);
-  edge.querySelector("path").setAttribute("d", path);
-  nav.style.clipPath = `path('${path}')`;
-  nav.classList.add("ready");
-}
-function animateIndicator(item, to) {
-  const nav = document.querySelector(".bottomNav");
-  const puck = nav && nav.querySelector(".bnPuck");
-  const edge = nav && nav.querySelector(".bnEdge");
-  const active = nav && nav.querySelector(".bnItem.active");
-  if (!nav || !puck || !edge || !active) return;
-  const fromX = active.offsetLeft + active.offsetWidth / 2;
-  const toX = item.offsetLeft + item.offsetWidth / 2;
-  const h = nav.clientHeight, w = nav.clientWidth, start = performance.now(), duration = 760;
-  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-  const sine = t => -(Math.cos(Math.PI * t) - 1) / 2;
-  const icon = item.querySelector("svg");
-  const bubble = puck.querySelector(".bnCircle");
-  nav.classList.add("is-moving");
-  nav.querySelectorAll(".bnItem").forEach(el => el.classList.remove("active"));
-  item.classList.add("active");
-  bubble.innerHTML = icon ? icon.outerHTML : "";
-  function frame(now) {
-    const p = Math.min(1, (now - start) / duration);
-    const close = sine(Math.min(1, p / .3));
-    const move = ease(Math.min(1, Math.max(0, (p - .14) / .72)));
-    const open = sine(Math.min(1, Math.max(0, (p - .66) / .34)));
-    const depth = p < .5 ? 30 * (1 - close) : 30 * open;
-    const x = fromX + (toX - fromX) * move;
-    const path = navPath(x, depth, w, h);
-    edge.querySelector("path").setAttribute("d", path);
-    nav.style.clipPath = `path('${path}')`;
-    puck.style.setProperty("--bnx", x + "px");
-    puck.style.setProperty("--bny", (depth - 34 - (1 - depth / 30) * 20 - Math.sin(move * Math.PI) * 18) + "px");
-    if (p < 1) requestAnimationFrame(frame);
-    else { nav.classList.remove("is-moving"); moveIndicator(); }
-  }
-  requestAnimationFrame(frame);
-}
 function renderShell() {
   const page = location.pathname.split("/").pop() || "index.html";
   const foto = localStorage.getItem(FOTO_KEY());
@@ -234,8 +177,9 @@ function renderShell() {
     ? '<button class="bnItem" id="bnLainnya" aria-haspopup="dialog">' + IC.lainnya + '<span>' + n.label + '</span></button>'
     : '<a class="bnItem' + (page === n.href ? " active" : "") + '" href="' + n.href + '"' + (page === n.href ? ' aria-current="page"' : "") + '>' + IC[n.ic] + '<span>' + n.label + '</span></a>').join("");
   const admin = isAdmin(me);
+  const bubbleIcons = NAV.map(n => n.lainnya ? IC.lainnya : IC[n.ic]).join("");
   document.getElementById("appShell").innerHTML =
-    '<nav class="bottomNav" aria-label="Navigasi utama">' + navHtml + '</nav><svg class="bnEdge" aria-hidden="true"><path fill="none" stroke="rgba(255,255,255,.42)" stroke-width="1.2"></path></svg><span class="bnPuck" aria-hidden="true"><i class="bnCircle"></i></span>'
+    '<nav class="bottomNav" aria-label="Navigasi utama"><div class="bnBar"></div><div class="bnTabs">' + navHtml + '</div><div class="bnBubble" aria-hidden="true">' + bubbleIcons + '</div></nav>'
     + '<div class="ov ovBottom" id="sheetOv"><div class="sheet">'
     + '<div class="sheetHandle"></div><p class="sheetTitle">Menu Lainnya</p>'
     + '<a class="sheetItem" href="index.html#pengumuman">' + IC.bell + 'Pengumuman</a>'
@@ -267,7 +211,8 @@ function renderShell() {
         e.preventDefault();
         const from = NAV.findIndex(n => n.href === location.pathname.split("/").pop());
         const to = NAV.findIndex(n => n.href === new URL(item.href).pathname.split("/").pop());
-        animateIndicator(item, to);
+        navItems.forEach(el => el.classList.remove("active"));
+        item.classList.add("active");
         document.body.classList.add("pageTransitionOut", to > from ? "pageTransitionForward" : "pageTransitionBack");
         setTimeout(() => { location.href = item.href; }, 760);
       });
@@ -277,8 +222,6 @@ function renderShell() {
     item.addEventListener("pointercancel", () => item.classList.remove("is-pressed"), { passive: true });
   });
   document.getElementById("bnLainnya").onclick = () => document.getElementById("sheetOv").classList.add("open");
-  moveIndicator();
-  if (!window.__bnResize) { window.__bnResize = 1; window.addEventListener("resize", () => requestAnimationFrame(moveIndicator)); }
   document.getElementById("shProfil").onclick = () => { document.getElementById("sheetOv").classList.remove("open"); openProfil(); };
   document.getElementById("shLogout").onclick = async () => { if (await confirmBox("Keluar dari aplikasi?", "Logout")) logout(); };
   document.querySelectorAll(".ov").forEach(o => o.addEventListener("click", e => { if (e.target === o && o.id !== "namaOv") o.classList.remove("open"); }));
