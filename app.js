@@ -169,6 +169,53 @@ const NAV = [
   { href: "footage.html", label: "Footage", ic: "footage" },
   { lainnya: true, label: "Lainnya", ic: "lainnya" }
 ];
+/* ---- GLASS NAV: lekukan + bubble berpindah (bentuk digambar lewat clip-path) ---- */
+function initGlassNav() {
+  const nav = document.querySelector(".bottomNav");
+  if (!nav) return null;
+  const bar = nav.querySelector(".bnBar"), bubble = nav.querySelector(".bnBubble");
+  const icons = [...bubble.children], items = [...nav.querySelectorAll(".bnItem")];
+  const N = items.length, H = 72, HW = 36, K = 20, D = 30, DUR = 880;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let W = nav.clientWidth || 360, cur = items.findIndex(el => el.classList.contains("active")), busy = false;
+  const cx = i => W / (N * 2) * (2 * i + 1);
+  const clamp = v => Math.min(1, Math.max(0, v)), seg = (p, a, b) => clamp((p - a) / (b - a));
+  const sine = t => -(Math.cos(Math.PI * t) - 1) / 2;
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const path = (x, d) => { const l = x - HW, r = x + HW;
+    return `M0,0 H${l} C${l + K},0 ${x - K},${d} ${x},${d} C${x + K},${d} ${r - K},0 ${r},0 H${W} V${H} H0 Z`; };
+  const draw = (x, d, y) => { bar.style.clipPath = `path('${path(x, d)}')`; bubble.style.transform = `translate(${x - 24}px,${y}px)`; };
+  const showIcon = i => icons.forEach((s, j) => s.style.opacity = j === i ? 1 : 0);
+  const rest = () => {
+    W = nav.clientWidth || 360;
+    if (cur < 0) { bar.style.clipPath = `path('M0,0 H${W} V${H} H0 Z')`; bubble.style.opacity = 0; return; }
+    bubble.style.opacity = 1; showIcon(cur); draw(cx(cur), D, D - 34);
+  };
+  function go(to) {
+    if (busy || to === cur || to < 0 || to >= N) return;
+    if (reduce) { cur = to; items.forEach((el, j) => el.classList.toggle("active", j === to)); rest(); return; }
+    busy = true; W = nav.clientWidth || 360;
+    const from = cur, x1 = cx(to), x0 = from < 0 ? x1 : cx(from), D0 = from < 0 ? 0 : D, t0 = performance.now();
+    let swapped = false;
+    items.forEach(el => el.classList.remove("active"));
+    bubble.style.opacity = 1; if (from >= 0) showIcon(from);
+    (function step(now) {
+      const p = Math.min(1, (now - t0) / DUR);
+      const close = sine(seg(p, 0, .36)), move = ease(seg(p, .18, .82)), open = sine(seg(p, .64, 1));
+      const d = p < .5 ? D0 * (1 - close) : D * open;
+      const arc = Math.sin(move * Math.PI) * 18;
+      draw(lerp(x0, x1, move), d, d - 34 - (1 - d / D) * 20 - arc);
+      if (move > .5 && !swapped) { swapped = true; showIcon(to); }
+      if (p < 1) return requestAnimationFrame(step);
+      cur = to; items[to].classList.add("active"); rest(); busy = false;
+    })(t0);
+  }
+  addEventListener("resize", () => { if (!busy) rest(); });
+  rest();
+  return { go };
+}
+
 const FOTO_KEY = () => "bmsFoto:" + ((me && me.username) || "anon");
 function renderShell() {
   const page = location.pathname.split("/").pop() || "index.html";
@@ -204,17 +251,17 @@ function renderShell() {
   const av = document.getElementById("avatarBtn");
   if (av) { if (foto) { av.textContent = ""; av.style.backgroundImage = 'url("' + foto + '")'; } else av.textContent = initials(me && me.nama); av.onclick = openProfil; }
   const navItems = [...document.querySelectorAll(".bnItem")];
+  window._bn = initGlassNav();
   navItems.forEach(item => {
     if (item.tagName === "A" && item.href && item.href !== location.href) {
       item.addEventListener("click", e => {
         if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         e.preventDefault();
-        const from = NAV.findIndex(n => n.href === location.pathname.split("/").pop());
+        const from = NAV.findIndex(n => n.href === (location.pathname.split("/").pop() || "index.html"));
         const to = NAV.findIndex(n => n.href === new URL(item.href).pathname.split("/").pop());
-        navItems.forEach(el => el.classList.remove("active"));
-        item.classList.add("active");
+        if (window._bn) window._bn.go(to); else { navItems.forEach(el => el.classList.remove("active")); item.classList.add("active"); }
         document.body.classList.add("pageTransitionOut", to > from ? "pageTransitionForward" : "pageTransitionBack");
-        setTimeout(() => { location.href = item.href; }, 760);
+        setTimeout(() => { location.href = item.href; }, 920);
       });
     }
     item.addEventListener("pointerdown", () => item.classList.add("is-pressed"), { passive: true });
