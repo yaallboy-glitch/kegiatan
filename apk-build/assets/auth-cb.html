@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Menyelesaikan login…</title>
+<style>
+  body{margin:0;background:#0a090b;color:#f1f0f2;font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+    display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center;padding:24px}
+  .sp{width:34px;height:34px;border:3px solid rgba(212,175,55,.25);border-top-color:#d4af37;
+    border-radius:50%;animation:s 1s linear infinite;margin:0 auto 16px}
+  @keyframes s{to{transform:rotate(360deg)}}
+  p{color:#9ca3af;font-size:14px;margin:0}
+  .err{color:#e05252}
+</style>
+</head>
+<body>
+<div>
+  <div class="sp"></div>
+  <p id="msg">Menyelesaikan login…</p>
+</div>
+<script>
+(async function () {
+  var API = "https://kegiatan-api.newbrigademudasoropati.workers.dev";
+  var msg = document.getElementById("msg");
+  function fail(m) {
+    msg.className = "err"; msg.textContent = m;
+    setTimeout(function () { try { localStorage.setItem("loginErr", m); } catch (e) {} location.replace("index.html"); }, 1800);
+  }
+  try {
+    var f = new URLSearchParams(location.hash.replace(/^#/, ""));
+    var err = f.get("error");
+    var idt = f.get("id_token");
+    if (err) return fail("Login dibatalkan (" + err + ").");
+    if (!idt) return fail("Token Google tidak diterima.");
+    var r = await fetch(API + "/auth/google", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ credential: idt })
+    });
+    var d = {}; try { d = await r.json(); } catch (e) {}
+    if (!d.token) return fail(d.error || ("Login gagal (" + r.status + ")."));
+    localStorage.setItem("token", d.token);
+    if (d.needs_name) {
+      var nm = "";
+      try {
+        var p = idt.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+        var j = JSON.parse(decodeURIComponent(Array.prototype.map.call(atob(p), function (c) {
+          return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join("")));
+        nm = j.name || "";
+      } catch (e) {}
+      try { localStorage.setItem("googleName", nm); } catch (e) {}
+    }
+    location.replace("index.html");
+  } catch (e) { fail("Gagal: " + e.message); }
+})();
+</script>
+</body>
+</html>

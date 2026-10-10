@@ -1,0 +1,14 @@
+{
+  "name": "BMS — Karang Taruna",
+  "short_name": "BMS",
+  "description": "Aplikasi Karang Taruna Brigade Muda Soropati: keuangan, file, footage, pengumuman.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a090b",
+  "theme_color": "#0a090b",
+  "icons": [
+    { "src": "IMG_6411.png", "sizes": "933x976", "type": "image/png", "purpose": "any" }
+  ]
+}

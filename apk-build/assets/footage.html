@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a090b">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>BMS — Footage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="main wrap">
+  <header class="topbar">
+    <div><p class="topKicker">BMS &bull; MEDIA</p><h1>Footage</h1></div>
+    <div class="topActions"><button class="avatarBtn" id="avatarBtn" title="Akun"></button></div>
+  </header>
+  <div class="errBox" id="ftErr"></div>
+
+  <div class="folderBar" id="folderBar" aria-label="Folder footage"></div>
+
+  <section class="card sect">
+    <div class="cardTitle"><b>Upload Footage</b></div>
+    <div class="formGrid">
+      <div class="field spanAll"><label for="ftJudul">Judul</label>
+        <input class="inp" id="ftJudul" maxlength="120" placeholder="Judul footage"></div>
+      <div class="field"><label for="ftFolder">Folder</label>
+        <select class="inp" id="ftFolder"><option value="">Tanpa folder</option></select></div>
+      <div class="field"><label>Berkas</label>
+        <div class="upRow">
+          <input class="inp" id="ftNama" readonly placeholder="Pilih video/gambar">
+          <input type="file" id="ftInput" accept="video/*,image/*" hidden>
+          <button class="btn btn-ghost" id="ftPick" type="button">Pilih</button>
+        </div></div>
+      <div class="btnRow spanAll">
+        <button class="btn btn-primary" id="ftUpBtn" type="button">Upload</button>
+        <button class="btn btn-ghost btn-sm" id="ftNewFolder" type="button">Folder baru</button>
+        <button class="btn btn-danger btn-sm" id="ftDelFolder" type="button" hidden>Hapus folder aktif</button>
+      </div>
+    </div>
+    <div id="upQueue" class="upQueue"></div>
+  </section>
+
+  <section class="card">
+    <div class="cardTitle"><b>Daftar Footage</b><span class="chip" id="ftCount">0</span></div>
+    <div id="ftGrid" class="ftGrid"><p class="empty">Memuat…</p></div>
+  </section>
+</main>
+
+<div class="ov ovLight" id="lbOv">
+  <button class="lbClose" id="lbClose" aria-label="Tutup">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+  </button>
+  <div class="lbBody" id="lbBody"></div>
+  <p class="lbCap" id="lbCap"></p>
+  <div class="btnRow lbAct"><button class="btn btn-ghost btn-sm" id="lbDl">Unduh</button></div>
+</div>
+
+<div id="appShell"></div>
+<script src="app.js"></script>
+<script>let allFolders = [], allFoot = [], curFolder = "ALL", lbIndex = -1;
+const PLAY_IC = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l6 3.5-6 3.5z" fill="currentColor" stroke="none"/></svg>';
+const IMG_IC = '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M4 18l5-5 4 4 3-3 4 4"/></svg>';
+
+async function initFootage() {
+  if (!requireAuth()) return;
+  await loadMe(); if (!me) { logout(); return; }
+  renderShell();
+  document.getElementById("ftPick").onclick = () => document.getElementById("ftInput").click();
+  document.getElementById("ftInput").onchange = e => {
+    const f = e.target.files[0] || null;
+    document.getElementById("ftNama").value = f ? f.name : "";
+    if (f && !document.getElementById("ftJudul").value) document.getElementById("ftJudul").value = f.name.replace(/\.[^.]+$/, "");
+  };
+  document.getElementById("ftUpBtn").onclick = startUpload;
+  document.getElementById("ftNewFolder").onclick = newFolder;
+  document.getElementById("ftDelFolder").onclick = delFolder;
+  document.getElementById("lbClose").onclick = closeLb;
+  document.getElementById("lbOv").onclick = e => { if (e.target.id === "lbOv") closeLb(); };
+  document.getElementById("lbDl").onclick = dlLb;
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeLb(); });
+  await loadFolders();
+  loadFoot();
+}
+async function loadFolders() {
+  try { const rows = await api("/footage/folders"); allFolders = Array.isArray(rows) ? rows : []; }
+  catch { allFolders = []; }
+  const sel = document.getElementById("ftFolder");
+  sel.innerHTML = '<option value="">Tanpa folder</option>' + allFolders.map(f => '<option value="' + f.id + '">' + esc(f.nama) + '</option>').join("");
+  renderFolders();
+}
+function renderFolders() {
+  const bar = document.getElementById("folderBar");
+  bar.innerHTML = '<button class="folderChip' + (curFolder === "ALL" ? " active" : "") + '" data-f="ALL">Semua</button>'
+    + '<button class="folderChip' + (curFolder === "ROOT" ? " active" : "") + '" data-f="ROOT">Tanpa Folder</button>'
+    + allFolders.map(f => '<button class="folderChip' + (String(curFolder) === String(f.id) ? " active" : "") + '" data-f="' + f.id + '">' + esc(f.nama) + '</button>').join("");
+  bar.querySelectorAll(".folderChip").forEach(c => c.onclick = () => { curFolder = c.dataset.f; renderFolders(); renderFoot(); });
+  const active = allFolders.find(f => String(f.id) === String(curFolder));
+  document.getElementById("ftDelFolder").hidden = !active || !(isAdmin(me) || me.role === "bendahara");
+}
+async function loadFoot() {
+  clearErr("ftErr");
+  try { const rows = await api("/footage"); allFoot = Array.isArray(rows) ? rows : []; }
+  catch (e) { showErr("ftErr", e.message); allFoot = []; }
+  renderFoot();
+}
+function footVisible() {
+  if (curFolder === "ALL") return allFoot;
+  if (curFolder === "ROOT") return allFoot.filter(f => !f.folder_id);
+  return allFoot.filter(f => String(f.folder_id) === String(curFolder));
+}
+function renderFoot() {
+  const list = footVisible();
+  document.getElementById("ftCount").textContent = list.length + " media";
+  const w = document.getElementById("ftGrid");
+  if (!list.length) { w.innerHTML = '<p class="empty">Belum ada footage di tampilan ini.</p>'; return; }
+  const canDel = isAdmin(me) || me.role === "bendahara";
+  w.innerHTML = list.map(f => {
+    const gi = allFoot.indexOf(f);
+    const isVid = String(f.tipe || f.mime_type || f.nama || "").match(/mp4|mov|webm|video/i);
+    return '<div class="ftCard">'
+      + '<button class="ftThumb" data-open="' + gi + '" title="Buka">' + (isVid ? PLAY_IC : IMG_IC) + '</button>'
+      + '<span class="ftMeta"><b>' + esc(f.judul || f.nama || "(tanpa judul)") + '</b>' + (f.nama && f.judul ? '<small>' + esc(f.nama) + '</small>' : "") + '</span>'
+      + (canDel ? '<button class="rowDel ftDel" title="Hapus" data-id="' + f.id + '">' + IC.trash + '</button>' : "")
+      + '</div>';
+  }).join("");
+  w.querySelectorAll("[data-open]").forEach(el => el.onclick = () => openLb(+el.dataset.open));
+  w.querySelectorAll(".ftDel").forEach(b => b.onclick = async () => {
+    if (!(await confirmBox("Hapus footage ini?", "Hapus"))) return;
+    try { await apiDel("/footage?id=" + b.dataset.id); toast("Footage dihapus"); loadFoot(); } catch (e) { toast(e.message); }
+  });
+}
+/* ===== lightbox ===== */
+let lbObjUrl = null;
+function openLb(i) {
+  lbIndex = i;
+  const f = allFoot[i]; if (!f) return;
+  document.getElementById("lbCap").textContent = f.judul || f.nama || "";
+  const body = document.getElementById("lbBody");
+  body.innerHTML = '<div class="lbLoading">Memuat media…</div>';
+  document.getElementById("lbOv").classList.add("open");
+  const isVid = String(f.tipe || f.mime_type || f.nama || "").match(/mp4|mov|webm|video/i);
+  fetchBlob((isVid ? "/footage/view?id=" : "/footage/thumb?id=") + f.id).then(blob => {
+    if (lbObjUrl) URL.revokeObjectURL(lbObjUrl);
+    lbObjUrl = URL.createObjectURL(blob);
+    body.innerHTML = isVid
+      ? '<video class="lbMedia" src="' + lbObjUrl + '" controls autoplay playsinline></video>'
+      : '<img class="lbMedia" src="' + lbObjUrl + '" alt="' + esc(f.judul || "") + '">';
+  }).catch(e => { body.innerHTML = '<div class="lbLoading">' + esc(e.message) + '</div>'; });
+}
+function closeLb() {
+  const ov = document.getElementById("lbOv");
+  if (!ov.classList.contains("open")) return;
+  ov.classList.remove("open");
+  document.getElementById("lbBody").innerHTML = "";
+  if (lbObjUrl) { URL.revokeObjectURL(lbObjUrl); lbObjUrl = null; }
+  lbIndex = -1;
+}
+async function dlLb() {
+  const f = allFoot[lbIndex]; if (!f) return;
+  try { const blob = await fetchBlob("/footage/download?id=" + f.id); dlBlob(blob, f.nama || f.judul || "footage"); }
+  catch (e) { toast(e.message); }
+}
+
+/* ===== upload chunked ===== */
+async function startUpload() {
+  const file = document.getElementById("ftInput").files[0];
+  if (!file) return toast("Pilih file video/gambar dulu.");
+  clearErr("ftErr");
+  const judul = document.getElementById("ftJudul").value.trim() || file.name;
+  const folderVal = document.getElementById("ftFolder").value;
+  const queue = document.getElementById("upQueue");
+  queue.innerHTML = '<div class="upItem"><span class="upItemName">' + esc(file.name) + '</span>'
+    + '<div class="upProg"><div class="upProgFill" id="uFill"></div></div>'
+    + '<span class="upItemPct" id="uPct">0%</span></div>';
+  const btn = document.getElementById("ftUpBtn"); btn.disabled = true; btn.textContent = "Mengunggah…";
+  try {
+    const start = await apiPost("/footage/upload/start", {
+      filename: file.name, mime_type: file.type || "application/octet-stream",
+      size: file.size, judul: judul, folder_id: folderVal || null
+    });
+    if (!start.upload_id) throw new Error("Server tidak memberi upload_id.");
+    let chunk = start.chunk_size || 5242880, off = 0;
+    while (off < file.size) {
+      const end = Math.min(off + chunk, file.size) - 1;
+      const res = await putChunk(start.upload_id, file.slice(off, end + 1), off, end, file.size);
+      off = end + 1;
+      const pct = Math.min(100, Math.round(off / file.size * 100));
+      const fl = document.getElementById("uFill"), pc = document.getElementById("uPct");
+      if (fl) { fl.style.animation = "none"; fl.style.width = pct + "%"; }
+      if (pc) pc.textContent = pct + "%";
+      if (res && res.done) break;
+    }
+    toast("Footage terunggah");
+    document.getElementById("ftInput").value = "";
+    document.getElementById("ftNama").value = "";
+    document.getElementById("ftJudul").value = "";
+    queue.innerHTML = "";
+    loadFoot();
+  } catch (e) { showErr("ftErr", e.message); queue.innerHTML = ""; }
+  finally { btn.disabled = false; btn.textContent = "Upload"; }
+}
+function putChunk(upId, blob, start, end, total) {
+  return new Promise((res, rej) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", API + "/footage/upload/chunk?upload_id=" + encodeURIComponent(upId));
+    xhr.setRequestHeader("Authorization", "Bearer " + tok());
+    xhr.setRequestHeader("Content-Range", "bytes " + start + "-" + end + "/" + total);
+    xhr.upload.onprogress = ev => {
+      if (!ev.lengthComputable) return;
+      const pct = Math.min(100, Math.round((start + ev.loaded) / total * 100));
+      const fl = document.getElementById("uFill"), pc = document.getElementById("uPct");
+      if (fl) { fl.style.animation = "none"; fl.style.width = pct + "%"; }
+      if (pc) pc.textContent = pct + "%";
+    };
+    xhr.onload = () => {
+      if (xhr.status === 401) { logout(); rej(new Error("Sesi habis, silakan login lagi.")); return; }
+      let d = {};
+      try { d = xhr.responseText ? JSON.parse(xhr.responseText) : {}; } catch {}
+      if (xhr.status >= 200 && xhr.status < 300) res(d);
+      else rej(new Error(d.error || "Gagal upload chunk (status " + xhr.status + ")"));
+    };
+    xhr.onerror = () => rej(new Error("Koneksi terputus saat upload."));
+    xhr.send(blob);
+  });
+}
+/* ===== folder ===== */
+async function newFolder() {
+  const nama = (window.prompt("Nama folder baru:") || "").trim();
+  if (!nama) return;
+  try {
+    const created = await apiPost("/footage/folders", { nama: nama });
+    allFolders.push({ id: created.id, nama: nama });
+    toast("Folder dibuat");
+    await loadFolders();
+  } catch (e) { toast(e.message); }
+}
+async function delFolder() {
+  const active = allFolders.find(f => String(f.id) === String(curFolder));
+  if (!active) return;
+  if (!(await confirmBox('Hapus folder "' + active.nama + '"? Footage di dalamnya tidak ikut terhapus.', "Hapus Folder"))) return;
+  try {
+    await apiDel("/footage/folders?id=" + active.id);
+    curFolder = "ALL";
+    toast("Folder dihapus");
+    await loadFolders();
+    loadFoot();
+  } catch (e) { toast(e.message); }
+}
+initFootage();</script>
+</body>
+</html>

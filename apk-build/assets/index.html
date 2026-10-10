@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a090b">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>BMS — Karang Taruna</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<main id="loginView" class="loginView">
+  <div class="loginCard">
+    <img class="loginLogo" src="IMG_6411.png" alt="Logo Karang Taruna">
+    <p class="loginKicker">KARANG TARUNA</p>
+    <h1>Brigade <span>Muda</span> Soropati</h1>
+    <p class="loginSub">Dashboard keuangan, arsip file, footage kegiatan, dan pengumuman — dalam satu aplikasi.</p>
+    <div class="errBox" id="loginErr"></div>
+    <button type="button" id="gBtn" class="btnGoogle" onclick="doGoogleLogin()">
+      <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      <span>Masuk dengan Google</span>
+    </button>
+    <p class="loginHint">Gunakan akun Google yang terdaftar. Akses & hak sesuai peran Anda.</p>
+  </div>
+  <p class="loginFoot">BMS &bull; Web App v1</p>
+</main>
+
+<!-- ============ SETUP NAMA ============ -->
+<div class="ov" id="namaOv">
+  <div class="ovBox">
+    <div class="ovIcon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+    <h3>Lengkapi Profil</h3>
+    <p class="ovText">Sebelum lanjut, isi <b>nama asli</b> Anda. Nama tersimpan permanen sesuai akun Google.</p>
+    <input class="inp" id="namaInput" maxlength="100" placeholder="Nama asli lengkap">
+    <div class="errBox" id="namaErr"></div>
+    <button class="btn btn-primary" id="namaBtn" onclick="submitNama()">Simpan &amp; Lanjutkan</button>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="appView" hidden>
+  <main class="main wrap">
+    <header class="topbar">
+      <div>
+        <p class="topKicker">BMS &bull; KARANG TARUNA</p>
+        <h1 id="pageTitle">Dashboard</h1>
+      </div>
+      <div class="topActions">
+        <button class="iconBtn" id="bellBtn" title="Pengumuman" onclick="goPengumuman()">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11 13.5v3a2 2 0 0 0 4 0v-2"/></svg>
+          <span class="dot" id="bellDot" hidden></span>
+        </button>
+        <button class="avatarBtn" id="avatarBtn" title="Akun"></button>
+      </div>
+    </header>
+
+    <div class="errBox" id="dashErr"></div>
+
+    <!-- statistik (bento asimetris) -->
+    <section class="bento" aria-label="Ringkasan">
+      <div class="tile tileSaldo">
+        <p class="tileLabel">Saldo Kas</p>
+        <p class="tileBig" id="statSaldo">…</p>
+        <p class="tileSub" id="statSaldoSub">memuat data keuangan</p>
+      </div>
+      <div class="tile"><p class="tileLabel">Transaksi</p><p class="tileNum" id="statTrans">-</p><p class="tileSub">total baris</p></div>
+      <div class="tile"><p class="tileLabel">Anggota</p><p class="tileNum" id="statAnggota">-</p><p class="tileSub">terdaftar</p></div>
+      <div class="tile"><p class="tileLabel">File</p><p class="tileNum" id="statFile">-</p><p class="tileSub">arsip</p></div>
+      <div class="tile"><p class="tileLabel">Footage</p><p class="tileNum" id="statFootage">-</p><p class="tileSub">media</p></div>
+    </section>
+
+    <!-- kegiatan -->
+    <section class="card sect">
+      <div class="cardTitle"><b>Kegiatan</b><span class="chip blue" id="evCount">-</span></div>
+      <div id="eventWrap"><p class="empty">Memuat kegiatan…</p></div>
+    </section>
+
+    <!-- pengumuman -->
+    <section class="card sect" id="pengumuman">
+      <div class="cardTitle"><b>Pengumuman</b><span class="chip gold" id="pgCount">-</span></div>
+      <div class="errBox" id="pgErr"></div>
+      <form class="pgForm" id="pgForm" onsubmit="addPeng(event)" hidden>
+        <input class="inp" id="pgJudul" maxlength="120" placeholder="Judul pengumuman" required>
+        <textarea class="inp" id="pgIsi" maxlength="1000" placeholder="Isi pengumuman" required></textarea>
+        <button class="btn btn-gold btn-sm" id="pgBtn" type="submit">Terbitkan</button>
+      </form>
+      <div id="pgList"><p class="empty">Memuat pengumuman…</p></div>
+    </section>
+  </main>
+</div>
+
+<div id="appShell"></div>
+<script src="app.js"></script>
+<script>
+/* ===== boot ===== */
+async function boot() {
+  const le = localStorage.getItem("loginErr");
+  if (le) { showErr("loginErr", le); localStorage.removeItem("loginErr"); }
+  if (!tok()) return;
+  const gname = localStorage.getItem("googleName");
+  if (gname !== null) {
+    localStorage.removeItem("googleName");
+    document.getElementById("loginView").style.display = "none";
+    document.getElementById("appView").hidden = false;
+    document.getElementById("namaInput").value = gname || "";
+    document.getElementById("namaOv").classList.add("open");
+    return;
+  }
+  document.getElementById("loginView").style.display = "none";
+  document.getElementById("appView").hidden = false;
+  await loadMe();
+  if (!me) { logout(); return; }
+  renderShell();
+  if (isAdmin(me)) document.getElementById("pgForm").hidden = false;
+  loadStats(); loadEvents(); loadPengumuman();
+  if (location.hash === "#pengumuman") setTimeout(() => document.getElementById("pengumuman").scrollIntoView({ behavior: "smooth" }), 350);
+}
+
+/* ===== statistik ===== */
+async function loadStats() {
+  clearErr("dashErr");
+  try {
+    const [keu, users, files, foot] = await Promise.all([
+      api("/keuangan").catch(() => []), api("/users").catch(() => []),
+      api("/file").catch(() => []), api("/footage").catch(() => [])
+    ]);
+    let masuk = 0, keluar = 0;
+    (Array.isArray(keu) ? keu : []).forEach(r => r.jenis === "masuk" ? masuk += Number(r.jumlah || 0) : keluar += Number(r.jumlah || 0));
+    document.getElementById("statSaldo").textContent = rp(masuk - keluar);
+    document.getElementById("statSaldoSub").textContent = "masuk " + rp(masuk) + " · keluar " + rp(keluar);
+    document.getElementById("statTrans").textContent = Array.isArray(keu) ? keu.length : 0;
+    document.getElementById("statAnggota").textContent = Array.isArray(users) ? users.length : 0;
+    document.getElementById("statFile").textContent = Array.isArray(files) ? files.length : 0;
+    document.getElementById("statFootage").textContent = Array.isArray(foot) ? foot.length : 0;
+  } catch (e) { showErr("dashErr", e.message); }
+}
+
+/* ===== kegiatan + checklist ===== */
+let allEvents = [];
+async function loadEvents() {
+  const w = document.getElementById("eventWrap");
+  try { allEvents = (await api("/event")) || []; renderEvents(); }
+  catch (e) { w.innerHTML = '<p class="empty">Kegiatan belum tersedia.</p>'; document.getElementById("evCount").textContent = "0"; }
+}
+function renderEvents() {
+  const w = document.getElementById("eventWrap");
+  document.getElementById("evCount").textContent = allEvents.length + " kegiatan";
+  if (!allEvents.length) { w.innerHTML = '<p class="empty">Belum ada kegiatan.</p>'; return; }
+  w.innerHTML = allEvents.map(ev => {
+    const tgl = [ev.tanggal_mulai, ev.tanggal_selesai].filter(Boolean).join(" → ");
+    const alat = Array.isArray(ev.kebutuhan_alat) ? ev.kebutuhan_alat : [];
+    const done = alat.filter(a => a.tersedia).length;
+    const st = ev.status === "selesai" ? "green" : ev.status === "batal" ? "red" : "gold";
+    return '<div class="evCard">'
+      + '<div class="evHead"><b>' + esc(ev.nama) + '</b><span class="chip ' + st + '">' + esc(ev.status || "-") + '</span></div>'
+      + '<p class="evMeta">' + esc(tgl || "-") + (ev.total_biaya ? " · " + rp(ev.total_biaya) : "") + '</p>'
+      + (ev.deskripsi ? '<p class="evDesc">' + esc(ev.deskripsi) + '</p>' : "")
+      + (alat.length ? '<button class="btn btn-ghost btn-sm alatBtn" data-i="' + allEvents.indexOf(ev) + '">Alat siap: ' + done + "/" + alat.length + '</button>'
+        + '<div class="alatList" hidden>' + alat.map((a, i) => '<label class="alatRow"><input type="checkbox" data-e="' + allEvents.indexOf(ev) + '" data-i="' + i + '"' + (a.tersedia ? " checked" : "") + (isAdmin(me) ? "" : " disabled") + '><span>' + esc(a.nama) + ' <i>×' + esc(a.jumlah) + '</i></span></label>').join("") + '</div>' : "")
+      + '</div>';
+  }).join("");
+  w.querySelectorAll(".alatBtn").forEach(b => b.onclick = () => { const l = b.nextElementSibling; l.hidden = !l.hidden; });
+  w.querySelectorAll("input[type=checkbox]").forEach(cb => cb.onchange = () => toggleAlat(+cb.dataset.e, +cb.dataset.i, cb.checked));
+}
+async function toggleAlat(ei, i, checked) {
+  const ev = allEvents[ei];
+  if (!Array.isArray(ev.kebutuhan_alat)) return;
+  const alat = ev.kebutuhan_alat.map((a, idx) => idx === i ? { ...a, tersedia: checked } : a);
+  try { await apiPatch("/event/checklist", { id: ev.id, kebutuhan_alat: alat }); ev.kebutuhan_alat = alat; toast("Checklist diperbarui"); renderEvents(); }
+  catch (e) { toast(e.message); loadEvents(); }
+}
+/* ===== pengumuman ===== */
+let _latestPgId = null;
+async function loadPengumuman() {
+  clearErr("pgErr");
+  const l = document.getElementById("pgList");
+  try { const rows = (await api("/pengumuman")) || []; renderPg(rows); }
+  catch (e) { l.innerHTML = ""; showErr("pgErr", e.message); }
+}
+function renderPg(rows) {
+  const l = document.getElementById("pgList");
+  document.getElementById("pgCount").textContent = rows.length + " item";
+  if (!rows.length) { l.innerHTML = '<p class="empty">Belum ada pengumuman.</p>'; return; }
+  const sorted = [...rows].sort((a, b) => new Date(b.dibuat_at || 0) - new Date(a.dibuat_at || 0));
+  _latestPgId = sorted[0].id;
+  l.innerHTML = sorted.map(p => {
+    const ketua = p.dibuat_oleh_role === "ketua";
+    const canDel = isAdmin(me) || (me && p.dibuat_oleh === me.username);
+    return '<div class="pgCard' + (ketua ? " pgKetua" : "") + '">'
+      + (ketua ? '<span class="chip gold">Dari Ketua</span>' : "")
+      + '<b>' + esc(p.judul) + '</b><p>' + esc(p.isi) + '</p>'
+      + '<div class="pgFoot"><span>' + esc(p.dibuat_oleh_nama || p.dibuat_oleh || "-") + (p.dibuat_at ? " · " + fmtTglPanjang(p.dibuat_at) : "") + '</span>'
+      + (canDel ? '<button class="delPg" title="Hapus" data-id="' + p.id + '">' + IC.trash + '</button>' : "")
+      + '</div></div>';
+  }).join("");
+  l.querySelectorAll(".delPg").forEach(b => b.onclick = async () => {
+    if (!(await confirmBox("Hapus pengumuman ini?", "Hapus"))) return;
+    try { await apiDel("/pengumuman?id=" + b.dataset.id); toast("Pengumuman dihapus"); loadPengumuman(); }
+    catch (e) { toast(e.message); }
+  });
+  if (String(localStorage.getItem("lastSeenPengumumanId")) !== String(_latestPgId)) document.getElementById("bellDot").hidden = false;
+}
+function goPengumuman() {
+  if (_latestPgId != null) { localStorage.setItem("lastSeenPengumumanId", String(_latestPgId)); document.getElementById("bellDot").hidden = true; }
+  document.getElementById("pengumuman").scrollIntoView({ behavior: "smooth" });
+}
+async function addPeng(e) {
+  e.preventDefault();
+  const judul = document.getElementById("pgJudul").value.trim(), isi = document.getElementById("pgIsi").value.trim();
+  if (!judul || !isi) return;
+  const btn = document.getElementById("pgBtn"); btn.disabled = true; btn.textContent = "Menerbitkan…";
+  try { await apiPost("/pengumuman", { judul, isi }); document.getElementById("pgJudul").value = ""; document.getElementById("pgIsi").value = ""; toast("Pengumuman diterbitkan"); loadPengumuman(); }
+  catch (er) { showErr("pgErr", er.message); }
+  finally { btn.disabled = false; btn.textContent = "Terbitkan"; }
+}
+boot();
+</script>
+</body>
+</html>

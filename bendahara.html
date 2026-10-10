@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a090b">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>BMS — Bendahara</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+<main class="main wrap">
+  <header class="topbar">
+    <div><p class="topKicker">BMS &bull; KEUANGAN</p><h1>Bendahara</h1></div>
+    <div class="topActions"><button class="avatarBtn" id="avatarBtn" title="Akun"></button></div>
+  </header>
+  <div class="errBox" id="bErr"></div>
+
+  <nav class="tabs" id="tabs" aria-label="Sub menu Bendahara">
+    <button class="tab active" data-view="vRing">Ringkasan</button>
+    <button class="tab" data-view="vKeu">Keuangan</button>
+    <button class="tab" data-view="vSpj">LPJ</button>
+    <button class="tab" data-view="vProp">Proposal</button>
+    <button class="tab" data-view="vLog">Log</button>
+  </nav>
+
+  <!-- Ringkasan -->
+  <section class="view active" id="vRing">
+    <div class="bento">
+      <div class="tile tileSaldo"><p class="tileLabel">Saldo</p><p class="tileBig" id="rSaldo">…</p><p class="tileSub" id="rSaldoSub">-</p></div>
+      <div class="tile"><p class="tileLabel">Masuk</p><p class="tileNum" id="rMasuk">-</p><p class="tileSub">periode all</p></div>
+      <div class="tile"><p class="tileLabel">Keluar</p><p class="tileNum" id="rKeluar">-</p><p class="tileSub">periode all</p></div>
+    </div>
+    <div class="card">
+      <div class="cardTitle"><b>Aksi Cepat</b></div>
+      <div class="btnRow">
+        <button class="btn btn-ghost btn-sm" onclick="goTab('vKeu')">Tambah transaksi</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportXlsx()">Export Excel</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportPdf()">Export PDF</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Keuangan -->
+  <section class="view" id="vKeu">
+    <div class="card sect" id="keuFormCard">
+      <div class="cardTitle"><b>Tambah Transaksi</b></div>
+      <form class="formGrid" onsubmit="addKeu(event)">
+        <div class="field"><label for="kTgl">Tanggal</label><input class="inp" type="date" id="kTgl" required></div>
+        <div class="field"><label for="kJenis">Jenis</label><select class="inp" id="kJenis"><option value="masuk">Masuk</option><option value="keluar">Keluar</option></select></div>
+        <div class="field"><label for="kJml">Jumlah (Rp)</label><input class="inp" type="number" id="kJml" min="1" step="1" placeholder="50000" required></div>
+        <div class="field spanAll"><label for="kKet">Keterangan</label><input class="inp" id="kKet" maxlength="200" placeholder="Iuran anggota / belanja kegiatan" required></div>
+        <button class="btn btn-primary spanAll" type="submit" id="kBtn">Simpan</button>
+      </form>
+    </div>
+    <div class="card">
+      <div class="cardTitle"><b>Riwayat</b><span class="chip" id="keuCount">0</span></div>
+      <div class="tableWrap"><table class="tbl" id="tKeu">
+        <thead><tr><th>Tanggal</th><th>Keterangan</th><th>Jenis</th><th class="num">Jumlah</th><th></th></tr></thead>
+        <tbody><tr><td colspan="5" class="empty">Memuat…</td></tr></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- LPJ -->
+  <section class="view" id="vSpj">
+    <div class="card sect">
+      <div class="cardTitle"><b>Tambah LPJ</b></div>
+      <form class="formGrid" onsubmit="addSpj(event)">
+        <div class="field"><label for="sNo">No. LPJ</label><input class="inp" id="sNo" maxlength="60" placeholder="LPJ-001" required></div>
+        <div class="field"><label for="sTgl">Tanggal</label><input class="inp" type="date" id="sTgl" required></div>
+        <div class="field spanAll"><label for="sKeg">Kegiatan</label><input class="inp" id="sKeg" maxlength="150" required></div>
+        <div class="field spanAll"><label for="sRin">Rincian</label><textarea class="inp" id="sRin" maxlength="800" required></textarea></div>
+        <div class="field"><label for="sNom">Nominal (Rp)</label><input class="inp" type="number" id="sNom" min="0" step="1" required></div>
+        <button class="btn btn-primary spanAll" type="submit" id="sBtn">Simpan LPJ</button>
+      </form>
+    </div>
+    <div class="card">
+      <div class="cardTitle"><b>Daftar LPJ</b><span class="chip" id="spjCount">0</span></div>
+      <div id="spjList"><p class="empty">Memuat…</p></div>
+    </div>
+  </section>
+
+  <!-- Proposal -->
+  <section class="view" id="vProp">
+    <div class="card sect">
+      <div class="cardTitle"><b>Proposal Baru</b></div>
+      <form class="formGrid" onsubmit="addProp(event)">
+        <div class="field spanAll"><label for="pJudul">Judul</label><input class="inp" id="pJudul" maxlength="150" placeholder="Proposal bantuan kegiatan" required></div>
+        <div class="field spanAll"><label for="pIsi">Isi</label><textarea class="inp" id="pIsi" maxlength="2000" placeholder="Ringkasan proposal" required></textarea></div>
+        <button class="btn btn-primary spanAll" type="submit" id="pBtn">Simpan Proposal</button>
+      </form>
+    </div>
+    <div class="card">
+      <div class="cardTitle"><b>Daftar Proposal</b><span class="chip" id="propCount">0</span></div>
+      <div id="propList"><p class="empty">Memuat…</p></div>
+    </div>
+  </section>
+  <!-- Log -->
+  <section class="view" id="vLog">
+    <div class="card">
+      <div class="cardTitle"><b>Log Aktivitas</b><button class="btn btn-ghost btn-sm" id="logMore">Muat lebih</button></div>
+      <div class="tableWrap"><table class="tbl" id="tLog">
+        <thead><tr><th>Waktu</th><th>Pengguna</th><th>Aktivitas</th></tr></thead>
+        <tbody><tr><td colspan="3" class="empty">Memuat…</td></tr></tbody>
+      </table></div>
+      <div class="btnRow"><button class="btn btn-danger btn-sm" id="logClear" hidden>Bersihkan Log</button></div>
+    </div>
+  </section>
+</main>
+
+<div id="appShell"></div>
+<script src="app.js"></script>
+<script>
+/* ===== init & tabs ===== */
+async function init() {
+  if (!requireAuth()) return;
+  await loadMe();
+  if (!me) { logout(); return; }
+  renderShell();
+  if (isAdmin(me)) document.getElementById("logClear").hidden = false;
+  document.getElementById("kTgl").valueAsDate = new Date();
+  document.getElementById("sTgl").valueAsDate = new Date();
+  document.querySelectorAll("#tabs .tab").forEach(t => t.onclick = () => goTab(t.dataset.view));
+  document.getElementById("logMore").onclick = () => loadLog(true);
+  document.getElementById("logClear").onclick = async () => {
+    if (!(await confirmBox("Bersihkan seluruh log aktivitas?", "Bersihkan Log"))) return;
+    try { await apiPost("/log/clear", {}); toast("Log dibersihkan"); logOffset = 0; document.querySelector("#tLog tbody").innerHTML = ""; loadLog(); }
+    catch (e) { toast(e.message); }
+  };
+  loadKeu(); loadSpj(); loadProp();
+}
+function goTab(id) {
+  document.querySelectorAll("#tabs .tab").forEach(t => t.classList.toggle("active", t.dataset.view === id));
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === id));
+  if (id === "vLog" && !logLoaded) loadLog();
+}
+
+/* ===== keuangan ===== */
+let allKeu = [];
+async function loadKeu() {
+  try { const rows = await api("/keuangan"); allKeu = Array.isArray(rows) ? rows : []; }
+  catch (e) { showErr("bErr", e.message); allKeu = []; }
+  renderKeu();
+}
+function renderKeu() {
+  let masuk = 0, keluar = 0;
+  allKeu.forEach(r => r.jenis === "masuk" ? masuk += Number(r.jumlah || 0) : keluar += Number(r.jumlah || 0));
+  document.getElementById("rSaldo").textContent = rp(masuk - keluar);
+  document.getElementById("rMasuk").textContent = rp(masuk);
+  document.getElementById("rKeluar").textContent = rp(keluar);
+  document.getElementById("rSaldoSub").textContent = allKeu.length + " transaksi tercatat";
+  document.getElementById("keuCount").textContent = allKeu.length;
+  const tb = document.querySelector("#tKeu tbody");
+  if (!allKeu.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">Belum ada transaksi.</td></tr>'; return; }
+  const canDel = isAdmin(me) || me.role === "bendahara";
+  const sorted = [...allKeu].sort((a, b) => String(b.tanggal || "").localeCompare(String(a.tanggal || "")));
+  tb.innerHTML = sorted.map(r =>
+    '<tr><td>' + esc(r.tanggal) + '</td><td>' + esc(r.keterangan) + '</td>'
+    + '<td><span class="chip ' + (r.jenis === "masuk" ? "green" : "red") + '">' + esc(r.jenis) + '</span></td>'
+    + '<td class="num">' + rp(r.jumlah) + '</td>'
+    + '<td>' + (canDel ? '<button class="rowDel" title="Hapus" data-id="' + r.id + '">' + IC.trash + '</button>' : "") + '</td></tr>').join("");
+  tb.querySelectorAll(".rowDel").forEach(b => b.onclick = async () => {
+    if (!(await confirmBox("Hapus transaksi ini?", "Hapus"))) return;
+    try { await apiDel("/keuangan?id=" + b.dataset.id); toast("Transaksi dihapus"); loadKeu(); } catch (e) { toast(e.message); }
+  });
+}
+async function addKeu(e) {
+  e.preventDefault();
+  clearErr("bErr");
+  const btn = document.getElementById("kBtn"); btn.disabled = true;
+  try {
+    await apiPost("/keuangan", {
+      tanggal: document.getElementById("kTgl").value,
+      keterangan: document.getElementById("kKet").value.trim(),
+      jenis: document.getElementById("kJenis").value,
+      jumlah: +document.getElementById("kJml").value
+    });
+    document.getElementById("kKet").value = ""; document.getElementById("kJml").value = "";
+    toast("Transaksi tersimpan"); loadKeu();
+  } catch (er) { showErr("bErr", er.message); }
+  finally { btn.disabled = false; }
+}
+const v = id => document.getElementById(id).value.trim();
+const vset = (id, val) => { document.getElementById(id).value = val; };
+
+/* ===== LPJ ===== */
+let allSpj = [];
+async function loadSpj() {
+  try { const rows = await api("/spj"); allSpj = Array.isArray(rows) ? rows : []; }
+  catch (e) { showErr("bErr", e.message); allSpj = []; }
+  renderSpj();
+}
+function renderSpj() {
+  document.getElementById("spjCount").textContent = allSpj.length;
+  const w = document.getElementById("spjList");
+  if (!allSpj.length) { w.innerHTML = '<p class="empty">Belum ada LPJ.</p>'; return; }
+  const canAct = isAdmin(me) || me.role === "bendahara";
+  w.innerHTML = allSpj.map(r => {
+    const st = r.status === "disetujui" ? "green" : r.status === "ditolak" ? "red" : "gold";
+    return '<div class="evCard">'
+      + '<div class="evHead"><b>' + esc(r.no_spj) + ' · ' + esc(r.kegiatan) + '</b><span class="chip ' + st + '">' + esc(r.status || "menunggu") + '</span></div>'
+      + '<p class="evMeta">' + esc(r.tanggal || "-") + ' · ' + rp(r.nominal) + '</p>'
+      + '<p class="evDesc">' + esc(r.rincian || "") + '</p>'
+      + (canAct ? '<div class="btnRow">'
+        + (r.status !== "disetujui" ? '<button class="btn btn-ghost btn-sm" data-st="disetujui" data-id="' + r.id + '">Setujui</button>' : "")
+        + (r.status !== "ditolak" ? '<button class="btn btn-ghost btn-sm" data-st="ditolak" data-id="' + r.id + '">Tolak</button>' : "")
+        + '<button class="btn btn-danger btn-sm" data-del="' + r.id + '">Hapus</button></div>' : "")
+      + '</div>';
+  }).join("");
+  w.querySelectorAll("[data-st]").forEach(b => b.onclick = async () => {
+    try { await apiPost("/spj/status", { id: b.dataset.id, status: b.dataset.st }); toast("Status diperbarui"); loadSpj(); } catch (e) { toast(e.message); }
+  });
+  w.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
+    if (!(await confirmBox("Hapus LPJ ini?", "Hapus"))) return;
+    try { await apiDel("/spj?id=" + b.dataset.del); toast("LPJ dihapus"); loadSpj(); } catch (e) { toast(e.message); }
+  });
+}
+async function addSpj(e) {
+  e.preventDefault(); clearErr("bErr");
+  const btn = document.getElementById("sBtn"); btn.disabled = true;
+  try {
+    await apiPost("/spj", { no_spj: v("sNo"), tanggal: v("sTgl"), kegiatan: v("sKeg"), rincian: v("sRin"), nominal: +v("sNom") });
+    vset("sNo", ""); vset("sKeg", ""); vset("sRin", ""); vset("sNom", "");
+    toast("LPJ tersimpan"); loadSpj();
+  } catch (er) { showErr("bErr", er.message); } finally { btn.disabled = false; }
+}
+
+/* ===== Proposal ===== */
+let allProp = [];
+async function loadProp() {
+  try { const rows = await api("/proposal"); allProp = Array.isArray(rows) ? rows : []; }
+  catch (e) { allProp = []; }
+  renderProp();
+}
+function renderProp() {
+  document.getElementById("propCount").textContent = allProp.length;
+  const w = document.getElementById("propList");
+  if (!allProp.length) { w.innerHTML = '<p class="empty">Belum ada proposal.</p>'; return; }
+  const canDel = isAdmin(me) || me.role === "bendahara";
+  w.innerHTML = allProp.map(p =>
+    '<div class="evCard"><div class="evHead"><b>' + esc(p.judul) + '</b>'
+    + (canDel ? '<button class="rowDel" title="Hapus" data-id="' + p.id + '">' + IC.trash + '</button>' : "")
+    + '</div><p class="evDesc">' + esc(p.isi || "") + '</p></div>').join("");
+  w.querySelectorAll(".rowDel").forEach(b => b.onclick = async () => {
+    if (!(await confirmBox("Hapus proposal ini?", "Hapus"))) return;
+    try { await apiDel("/proposal?id=" + b.dataset.id); toast("Proposal dihapus"); loadProp(); } catch (e) { toast(e.message); }
+  });
+}
+async function addProp(e) {
+  e.preventDefault(); clearErr("bErr");
+  const btn = document.getElementById("pBtn"); btn.disabled = true;
+  try { await apiPost("/proposal", { judul: v("pJudul"), isi: v("pIsi") }); vset("pJudul", ""); vset("pIsi", ""); toast("Proposal tersimpan"); loadProp(); }
+  catch (er) { showErr("bErr", er.message); } finally { btn.disabled = false; }
+}
+/* ===== log ===== */
+let logOffset = 0, logLoaded = false;
+const LOG_LIMIT = 20;
+async function loadLog(more) {
+  if (!more) { logOffset = 0; logLoaded = false; }
+  try {
+    const rows = (await api("/log?limit=" + LOG_LIMIT + "&offset=" + logOffset)) || [];
+    const tb = document.querySelector("#tLog tbody");
+    if (!more) tb.innerHTML = "";
+    if (!rows.length && !more) tb.innerHTML = '<tr><td colspan="3" class="empty">Belum ada log.</td></tr>';
+    rows.forEach(r => { const tr = tb.insertRow(-1); tr.innerHTML = '<td>' + esc(r.waktu) + '</td><td><b>' + esc(r.username) + '</b></td><td>' + esc(r.aktivitas) + '</td>'; });
+    logOffset += rows.length; logLoaded = true;
+    document.getElementById("logMore").style.display = rows.length < LOG_LIMIT ? "none" : "inline-flex";
+  } catch (e) { showErr("bErr", e.message); }
+}
+
+/* ===== export (ExcelJS + jsPDF) ===== */
+function keuSorted() { return [...allKeu].sort((a, b) => String(a.tanggal || "").localeCompare(String(b.tanggal || ""))); }
+const stamp = () => new Date().toISOString().slice(0, 10);
+async function exportXlsx() {
+  if (!allKeu.length) return toast("Tidak ada data untuk diexport.");
+  try {
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("Keuangan");
+    ws.columns = [
+      { header: "Tanggal", key: "tgl", width: 14 }, { header: "Keterangan", key: "ket", width: 42 },
+      { header: "Jenis", key: "jns", width: 10 }, { header: "Jumlah", key: "jml", width: 16 }
+    ];
+    ws.getRow(1).font = { bold: true };
+    let m = 0, k = 0;
+    keuSorted().forEach(r => {
+      r.jenis === "masuk" ? m += +r.jumlah || 0 : k += +r.jumlah || 0;
+      const row = ws.addRow({ tgl: r.tanggal, ket: r.keterangan, jns: r.jenis, jml: +r.jumlah || 0 });
+      row.getCell("jml").numFmt = "#,##0";
+    });
+    const foot = ws.addRow({ tgl: "", ket: "SALDO (masuk - keluar)", jns: "", jml: m - k });
+    foot.font = { bold: true }; foot.getCell("jml").numFmt = "#,##0";
+    const buf = await wb.xlsx.writeBuffer();
+    dlBlob(new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), "keuangan-bms-" + stamp() + ".xlsx");
+    toast("Excel diunduh");
+  } catch (e) { toast("Export gagal: " + e.message); }
+}
+function exportPdf() {
+  if (!allKeu.length) return toast("Tidak ada data untuk diexport.");
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    let m = 0, k = 0;
+    const body = keuSorted().map(r => {
+      r.jenis === "masuk" ? m += +r.jumlah || 0 : k += +r.jumlah || 0;
+      return [r.tanggal, r.keterangan || "", r.jenis, rp(r.jumlah)];
+    });
+    doc.setFont("helvetica", "bold"); doc.setFontSize(13);
+    doc.text("Laporan Keuangan - BMS Karang Taruna", 14, 16);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+    doc.text("Dicetak: " + new Date().toLocaleString("id-ID"), 14, 22);
+    doc.autoTable({
+      startY: 27, head: [["Tanggal", "Keterangan", "Jenis", "Jumlah"]], body,
+      styles: { fontSize: 8.5 }, headStyles: { fillColor: [194, 35, 38] },
+      columnStyles: { 3: { halign: "right" } }
+    });
+    const y = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 40) + 8;
+    doc.setFont("helvetica", "bold");
+    doc.text("Masuk: " + rp(m) + "   Keluar: " + rp(k) + "   Saldo: " + rp(m - k), 14, y);
+    doc.save("keuangan-bms-" + stamp() + ".pdf");
+    toast("PDF diunduh");
+  } catch (e) { toast("Export gagal: " + e.message); }
+}
+init();
+</script>

@@ -1,0 +1,17 @@
+node_modules/
+
+.env
+.env.*
+!.env.example
+
+apk-build/toolchain/
+apk-build/out/
+apk-build/keystore/
+*.apk
+*.aab
+*.idsig
+*.keystore
+*.jks
+
+.DS_Store
+*.bak

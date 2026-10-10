@@ -1,0 +1,13 @@
+{
+  "name": "bms-app",
+  "private": true,
+  "version": "1.0.0",
+  "description": "BMS Karang Taruna web app with Android wrapper",
+  "dependencies": {
+    "@capacitor/core": "^7.4.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3",
+    "typescript": "^5.8.3"
+  }
+}

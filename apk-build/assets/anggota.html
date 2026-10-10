@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a090b">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>BMS — Anggota</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="main wrap">
+  <header class="topbar">
+    <div><p class="topKicker">BMS &bull; KEANGGOTAAN</p><h1>Anggota</h1></div>
+    <div class="topActions"><button class="avatarBtn" id="avatarBtn" title="Akun"></button></div>
+  </header>
+  <div class="errBox" id="aErr"></div>
+
+  <input class="inp searchInp" id="aSearch" placeholder="Cari nama / email…">
+
+  <div class="legendRow" aria-label="Daftar peran">
+    <span class="chip gold">admin</span><span class="chip gold">ketua</span>
+    <span class="chip blue">bendahara</span><span class="chip">anggota</span><span class="chip">anggota_pj</span>
+  </div>
+
+  <section class="card">
+    <div class="cardTitle"><b>Daftar Pengguna</b><span class="chip" id="agCount">0</span></div>
+    <div id="agList" class="agList"><p class="empty">Memuat…</p></div>
+    <div class="errBox" id="agMsg"></div>
+  </section>
+</main>
+
+<div id="appShell"></div>
+<script src="app.js"></script>
+<script>let allUsers = [];
+const ROLES = ["admin", "ketua", "bendahara", "anggota", "anggota_pj"];
+
+async function initAnggota() {
+  if (!requireAuth()) return;
+  await loadMe(); if (!me) { logout(); return; }
+  renderShell();
+  document.getElementById("aSearch").oninput = renderUsers;
+  loadUsers();
+}
+async function loadUsers() {
+  clearErr("aErr");
+  try { const rows = await api("/users"); allUsers = Array.isArray(rows) ? rows : []; }
+  catch (e) { showErr("aErr", e.message); allUsers = []; }
+  renderUsers();
+}
+function renderUsers() {
+  const q = (document.getElementById("aSearch").value || "").toLowerCase();
+  const list = allUsers.filter(u => [u.nama, u.username, u.google_email, u.email].join(" ").toLowerCase().includes(q));
+  document.getElementById("agCount").textContent = allUsers.length + " pengguna";
+  const w = document.getElementById("agList");
+  if (!list.length) { w.innerHTML = '<p class="empty">' + (allUsers.length ? "Tidak cocok dengan pencarian." : "Belum ada pengguna.") + '</p>'; return; }
+  const canEdit = isAdmin(me);
+  w.innerHTML = list.map(u => {
+    const nama = u.nama || u.username || "-";
+    const email = u.google_email || u.email || "";
+    return '<div class="agRow">'
+      + '<span class="agAv">' + esc(initials(nama)) + '</span>'
+      + '<span class="agInfo"><b>' + esc(nama) + '</b><small>' + esc(email) + '</small></span>'
+      + (canEdit
+        ? '<span class="agRoleWrap">'
+          + '<select class="inp agRole" data-u="' + esc(u.username) + '">' + ROLES.map(r => '<option value="' + r + '"' + (u.role === r ? " selected" : "") + '>' + r + '</option>').join("") + '</select>'
+          + '<button class="btn btn-ghost btn-sm agSave" data-u="' + esc(u.username) + '" data-e="' + esc(email) + '">Simpan</button></span>'
+        : '<span class="chip' + (u.role === "admin" || u.role === "ketua" ? " gold" : "") + '">' + esc(u.role || "-") + '</span>')
+      + '</div>';
+  }).join("");
+  w.querySelectorAll(".agSave").forEach(b => b.onclick = () => saveRole(b));
+}
+async function saveRole(btn) {
+  clearErr("agMsg");
+  const username = btn.dataset.u, google_email = btn.dataset.e;
+  const role = btn.parentElement.querySelector(".agRole").value;
+  btn.disabled = true; btn.textContent = "…";
+  try {
+    await apiPost("/users/update", { username: username, role: role, google_email: google_email });
+    const u = allUsers.find(x => x.username === username);
+    if (u) u.role = role;
+    toast("Role " + username + " → " + role);
+  } catch (e) { showErr("agMsg", e.message); }
+  finally { btn.disabled = false; btn.textContent = "Simpan"; }
+}
+initAnggota();
+</script>
+</body>
+</html>

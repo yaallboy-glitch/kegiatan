@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a090b">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>BMS — File</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main class="main wrap">
+  <header class="topbar">
+    <div><p class="topKicker">BMS &bull; ARSIP</p><h1>File</h1></div>
+    <div class="topActions"><button class="avatarBtn" id="avatarBtn" title="Akun"></button></div>
+  </header>
+  <div class="errBox" id="fErr"></div>
+
+  <section class="card sect">
+    <div class="cardTitle"><b>Upload File</b></div>
+    <div class="formGrid">
+      <div class="field spanAll">
+        <label for="fKat">Kategori</label>
+        <input class="inp" id="fKat" list="katList" maxlength="60" placeholder="Dokumen">
+        <datalist id="katList"><option value="Dokumen"><option value="Gambar"><option value="Video"><option value="Lainnya"></datalist>
+      </div>
+      <div class="field spanAll">
+        <label>Berkas</label>
+        <div class="upRow">
+          <input class="inp" id="fNama" readonly placeholder="Belum ada file dipilih">
+          <input type="file" id="fInput" hidden>
+          <button class="btn btn-ghost" id="fPick" type="button">Pilih</button>
+          <button class="btn btn-primary" id="fUpBtn" type="button">Upload</button>
+        </div>
+      </div>
+    </div>
+    <div class="upProg" id="fProg" hidden><div class="upProgFill" id="fProgFill"></div></div>
+  </section>
+
+  <section class="card">
+    <div class="cardTitle">
+      <b>Arsip</b>
+      <div class="btnRow">
+        <button class="iconBtn" id="syncBtn" title="Sinkronkan daftar" hidden>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+        </button>
+        <span class="chip" id="fCount">0</span>
+      </div>
+    </div>
+    <input class="inp searchInp" id="fSearch" placeholder="Cari file…">
+    <div id="fList" class="fileList"><p class="empty">Memuat…</p></div>
+  </section>
+</main>
+
+<div id="appShell"></div>
+<script src="app.js"></script>
+<script>let allFiles = [], pickedFile = null;
+const FILE_IC = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>';
+const DL_IC = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M12 4v11"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg>';
+const fmtSize = n => n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : n >= 1024 ? Math.round(n / 1024) + " KB" : n + " B";
+
+async function initFile() {
+  if (!requireAuth()) return;
+  await loadMe(); if (!me) { logout(); return; }
+  renderShell();
+  if (isAdmin(me)) document.getElementById("syncBtn").hidden = false;
+  document.getElementById("fPick").onclick = () => document.getElementById("fInput").click();
+  document.getElementById("fInput").onchange = e => {
+    pickedFile = e.target.files[0] || null;
+    document.getElementById("fNama").value = pickedFile ? pickedFile.name : "";
+  };
+  document.getElementById("fUpBtn").onclick = doUpload;
+  document.getElementById("fSearch").oninput = renderFiles;
+  document.getElementById("syncBtn").onclick = async () => {
+    try { await apiPost("/file/sync", {}); toast("Sinkronisasi selesai"); loadFiles(); } catch (e) { toast(e.message); }
+  };
+  loadFiles();
+}
+async function loadFiles() {
+  clearErr("fErr");
+  try { const rows = await api("/file"); allFiles = Array.isArray(rows) ? rows : []; }
+  catch (e) { showErr("fErr", e.message); allFiles = []; }
+  renderFiles();
+}
+function renderFiles() {
+  const q = (document.getElementById("fSearch").value || "").toLowerCase();
+  const list = allFiles.filter(f => String(f.nama || f.name || "").toLowerCase().includes(q));
+  document.getElementById("fCount").textContent = allFiles.length + " file";
+  const w = document.getElementById("fList");
+  if (!list.length) { w.innerHTML = '<p class="empty">' + (allFiles.length ? "Tidak cocok dengan pencarian." : "Belum ada file.") + '</p>'; return; }
+  const canDel = isAdmin(me) || me.role === "bendahara";
+  w.innerHTML = list.map(f => {
+    const nama = f.nama || f.name || "(tanpa nama)";
+    const size = f.ukuran || f.size;
+    return '<div class="fileRow">'
+      + '<span class="fileIc">' + FILE_IC + '</span>'
+      + '<span class="fileInfo"><b>' + esc(nama) + '</b><small>' + (f.kategori ? esc(f.kategori) + " · " : "") + (size ? fmtSize(+size) : "-") + '</small></span>'
+      + '<span class="fileAct">'
+      + '<button class="iconBtn" title="Unduh" data-dl="' + f.id + '">' + DL_IC + '</button>'
+      + (canDel ? '<button class="iconBtn" title="Hapus" data-del="' + f.id + '">' + IC.trash + '</button>' : "")
+      + '</span></div>';
+  }).join("");
+  w.querySelectorAll("[data-dl]").forEach(b => b.onclick = () => dlFile(b.dataset.dl));
+  w.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
+    if (!(await confirmBox("Hapus file ini?", "Hapus"))) return;
+    try { await apiDel("/file?id=" + b.dataset.del); toast("File dihapus"); loadFiles(); } catch (e) { toast(e.message); }
+  });
+}
+async function dlFile(id) {
+  try {
+    const blob = await fetchBlob("/file/download?id=" + id);
+    const f = allFiles.find(x => String(x.id) === String(id));
+    dlBlob(blob, (f && (f.nama || f.name)) || "download");
+  } catch (e) { toast(e.message); }
+}
+async function doUpload() {
+  if (!pickedFile) return toast("Pilih file dulu.");
+  clearErr("fErr");
+  const fd = new FormData();
+  fd.append("file", pickedFile);
+  fd.append("kategori", v2("fKat") || "Lainnya");
+  const btn = document.getElementById("fUpBtn"); btn.disabled = true; btn.textContent = "Mengunggah…";
+  const prog = document.getElementById("fProg"); prog.hidden = false;
+  try {
+    await apiUpload("/file", fd);
+    toast("File terunggah");
+    pickedFile = null;
+    document.getElementById("fInput").value = ""; document.getElementById("fNama").value = ""; document.getElementById("fKat").value = "";
+    loadFiles();
+  } catch (e) { showErr("fErr", e.message); }
+  finally {
+    btn.disabled = false; btn.textContent = "Upload";
+    setTimeout(() => { prog.hidden = true; }, 700);
+  }
+}
+const v2 = id => document.getElementById(id).value.trim();
+initFile();
+</script>
+</body>
+</html>
