@@ -170,6 +170,14 @@ const NAV = [
   { lainnya: true, label: "Lainnya", ic: "lainnya" }
 ];
 const FOTO_KEY = () => "bmsFoto:" + ((me && me.username) || "anon");
+function moveIndicator() {
+  const nav = document.querySelector(".bottomNav");
+  const active = nav && nav.querySelector(".bnItem.active");
+  const puck = nav && nav.querySelector(".bnPuck");
+  if (!nav || !active || !puck) return;
+  puck.style.setProperty("--bnx", (active.offsetLeft + active.offsetWidth / 2) + "px");
+  nav.classList.add("ready");
+}
 function renderShell() {
   const page = location.pathname.split("/").pop() || "index.html";
   const foto = localStorage.getItem(FOTO_KEY());
@@ -219,6 +227,8 @@ function renderShell() {
     item.addEventListener("pointercancel", () => item.classList.remove("is-pressed"), { passive: true });
   });
   document.getElementById("bnLainnya").onclick = () => document.getElementById("sheetOv").classList.add("open");
+  requestAnimationFrame(moveIndicator);
+  if (!window.__bnResize) { window.__bnResize = 1; window.addEventListener("resize", () => requestAnimationFrame(moveIndicator)); }
   document.getElementById("shProfil").onclick = () => { document.getElementById("sheetOv").classList.remove("open"); openProfil(); };
   document.getElementById("shLogout").onclick = async () => { if (await confirmBox("Keluar dari aplikasi?", "Logout")) logout(); };
   document.querySelectorAll(".ov").forEach(o => o.addEventListener("click", e => { if (e.target === o && o.id !== "namaOv") o.classList.remove("open"); }));
