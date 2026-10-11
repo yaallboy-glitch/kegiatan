@@ -16,30 +16,65 @@
 <script>if (localStorage.getItem("token")) document.documentElement.classList.add("hasToken");</script>
 </head>
 <body>
-<div id="loader" role="status" aria-label="Memuat">
-  <div class="orbWrap">
-    <div class="orb">
-      <i class="orbDot"></i>
-      <span class="orbRing"></span>
-      <span class="orbShimmer"></span>
-      <span class="orbFill"></span>
-      <i class="orbBub" style="left:22%;--y:28%;--s:4px;--x:3px;--d:4s;--dl:2.2s"></i>
-      <i class="orbBub" style="left:78%;--y:24%;--s:3px;--x:-3px;--d:3.5s;--dl:2.6s"></i>
-      <i class="orbBub" style="left:35%;--y:36%;--s:5px;--x:4px;--d:4.2s;--dl:2.8s"></i>
-      <i class="orbBub" style="left:62%;--y:18%;--s:3px;--x:-4px;--d:3.8s;--dl:3.4s"></i>
-      <i class="orbBub" style="left:50%;--y:32%;--s:6px;--x:5px;--d:3.6s;--dl:3.1s"></i>
-      <div class="orbLogoPos"><div class="orbLogoBob">
-        <img class="orbLogo" src="IMG_6411.png" alt="">
-      </div></div>
+<!-- Filter "air": logo bergelombang & sedikit buram, lalu perlahan jernih (selaras dengan naiknya cairan) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <filter id="water" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.014 0.03" numOctaves="2" seed="4" result="noise">
+        <animate attributeName="baseFrequency" begin="1.7s" dur="3.6s" fill="freeze"
+                 values="0.014 0.03; 0.026 0.016; 0.014 0.03; 0.02 0.022"/>
+      </feTurbulence>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="0" xChannelSelector="R" yChannelSelector="G" result="d">
+        <animate attributeName="scale" begin="1.7s" dur="3.6s" fill="freeze"
+                 values="0; 20; 15; 9; 3; 0" keyTimes="0; .12; .4; .65; .88; 1"/>
+      </feDisplacementMap>
+      <feGaussianBlur in="d" stdDeviation="0">
+        <animate attributeName="stdDeviation" begin="1.7s" dur="3.6s" fill="freeze"
+                 values="0; 2.4; 1.6; .8; .2; 0" keyTimes="0; .12; .4; .65; .88; 1"/>
+      </feGaussianBlur>
+    </filter>
+  </defs>
+</svg>
+
+<!-- Latar bersama -->
+<div class="scene" aria-hidden="true">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+</div>
+
+<!-- ================= LOADER ================= -->
+<div id="loader" role="status" aria-label="Memuat halaman">
+  <div class="orb">
+    <span class="dot"></span>
+
+    <svg class="ring" viewBox="0 0 200 200" aria-hidden="true">
+      <path pathLength="100" d="M100 190 A90 90 0 0 1 100 10"/>
+      <path pathLength="100" d="M100 190 A90 90 0 0 0 100 10"/>
+    </svg>
+
+    <div class="glass">
+      <div class="liquid">
+        <div class="wave w2"></div>
+        <div class="wave"></div>
+
+        <i class="bub" style="left:20%; --s:5px; --x:6px;  --d:3.4s; --dl:2.4s"></i>
+        <i class="bub" style="left:78%; --s:4px; --x:-5px; --d:2.9s; --dl:2.9s"></i>
+        <i class="bub" style="left:30%; --s:3px; --x:-4px; --d:3.8s; --dl:3.4s"></i>
+        <i class="bub" style="left:68%; --s:6px; --x:5px;  --d:3.6s; --dl:3.1s"></i>
+
+        <div class="logo-pos"><div class="logo-bob">
+          <img class="logo" alt="Logo Karang Taruna" src="IMG_6411.png">
+        </div></div>
+      </div>
     </div>
-    <p class="orbLabel">Loading</p>
+
+    <div class="label">Loading</div>
   </div>
 </div>
 
 <!-- ============ LOGIN ============ -->
 <main id="loginView" class="loginView">
   <div class="loginCard">
-    <img class="loginLogo" src="IMG_6411.png" alt="Logo Karang Taruna">
+    <div class="logo-slot" id="logoSlot"></div>
     <p class="loginKicker">KARANG TARUNA</p>
     <h1>Brigade <span>Muda</span> Soropati</h1>
     <p class="loginSub">Dashboard keuangan, arsip file, footage kegiatan, dan pengumuman — dalam satu aplikasi.</p>
@@ -120,20 +155,69 @@
 <div id="appShell"></div>
 <script src="app.js"></script>
 <script>
-/* ===== boot ===== */
-function dismissLoader() {
-  const l = document.getElementById("loader");
-  if (l) l.classList.add("done");
-}
+/* ===== loader controller (clinepintar/loading.html) ===== */
+(function() {
+  var body = document.body;
+  var loader = document.getElementById("loader");
+  if (!loader) return;
+  var orb = loader.querySelector(".orb");
+  var slot = document.getElementById("logoSlot");
 
+  // Jika sudah login, loader tidak perlu menunggu
+  if (tok()) {
+    loader.remove();
+    return;
+  }
+
+  body.classList.add("is-loading");
+  var MIN_TIME = 5600; // waktu siklus air naik & logo jernih
+  var start = performance.now();
+  var docked = false;
+
+  function dock() {
+    if (docked) return; docked = true;
+    orb.style.transition = "none";
+    orb.style.transform  = "none";
+    orb.style.setProperty("--orb", (slot ? slot.clientWidth : 96) + "px");
+    orb.classList.add("settled");
+    if (slot) slot.appendChild(orb);
+    loader.remove();
+    body.classList.remove("is-loading");
+  }
+
+  function finish() {
+    body.classList.add("show-login");
+    loader.classList.add("done");
+    loader.removeAttribute("role");
+    if (!slot) { dock(); return; }
+
+    var o = orb.getBoundingClientRect();
+    var s = slot.getBoundingClientRect();
+    var scale = s.width / (o.width || 1);
+    var dx = (s.left + s.width / 2) - (o.left + o.width / 2);
+    var dy = (s.top + s.height / 2) - (o.top + o.height / 2);
+    orb.style.transform = "translate3d(" + dx + "px," + dy + "px,0) scale(" + scale + ")";
+
+    orb.addEventListener("transitionend", function h(e) {
+      if (e.propertyName !== "transform") return;
+      orb.removeEventListener("transitionend", h);
+      dock();
+    });
+    setTimeout(dock, 1700);
+  }
+
+  function whenReady() {
+    setTimeout(finish, Math.max(0, MIN_TIME - (performance.now() - start)));
+  }
+  if (document.readyState === "complete") whenReady();
+  else window.addEventListener("load", whenReady);
+})();
+
+/* ===== boot ===== */
 async function boot() {
   const le = localStorage.getItem("loginErr");
   if (le) { showErr("loginErr", le); localStorage.removeItem("loginErr"); }
-  if (!tok()) {
-    setTimeout(dismissLoader, 4200);
-    return;
-  }
-  dismissLoader();
+  if (!tok()) return;
   const gname = localStorage.getItem("googleName");
   if (gname !== null) {
     localStorage.removeItem("googleName");
