@@ -141,6 +141,7 @@ window.__onGoogleIdToken = async function (idt) {
   try { await handleCredential(idt); } catch (e) { showErr("loginErr", e.message); }
 };
 window.__onGoogleError = function (m) { showErr("loginErr", m || "Login gagal."); };
+initGoogle();
 async function loadMe() { try { me = await api("/auth/me"); return me; } catch (e) { return null; } }
 function requireAuth() { if (!tok()) { location.replace("index.html"); return false; } return true; }
 
