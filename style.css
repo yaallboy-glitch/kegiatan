@@ -492,14 +492,6 @@ html.hasToken #loginView{display:none}
   -webkit-backdrop-filter:blur(24px) saturate(175%);backdrop-filter:blur(24px) saturate(175%)}
 .iconBtn{background:var(--lg-fill);border:1px solid var(--lg-rim);box-shadow:var(--lg-bevel),0 8px 14px -10px rgba(54,74,108,.5)}
 
-/* ---- aksesibilitas gerak ---- */
-@media (prefers-reduced-motion: reduce) {
-  *,*::before,*::after{
-    animation-duration:.01ms!important;animation-iteration-count:1!important;
-    transition-duration:.01ms!important;scroll-behavior:auto!important
-  }
-  .launchScreen{animation:none!important;opacity:0;visibility:hidden}
-}
 /* Nav tetap diam saat pindah halaman (tidak ikut fade/kedip) */
 @view-transition{navigation:auto}
 .bottomNav{view-transition-name:bottomnav}
