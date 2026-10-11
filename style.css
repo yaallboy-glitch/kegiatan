@@ -2,7 +2,7 @@
    BMS — light glass · sunset accent · Plus Jakarta Sans
    ============================================================ */
 :root{
-  --bg:#e9edf1; --bg2:rgba(255,255,255,.62); --card:rgba(255,255,255,.68); --card2:rgba(255,255,255,.5);
+  --bg:#dfe6ed; --bg2:rgba(244,248,252,.42); --card:rgba(244,248,252,.42); --card2:rgba(232,240,248,.3);
   --hair:rgba(43,62,86,.16); --hair2:rgba(43,62,86,.28);
   --txt:#1f2d43; --mid:#53657b; --dim:#77869a;
   --crimson:#e95832; --crimsonD:#c83c27; --crimsonSoft:rgba(233,88,50,.13);
@@ -71,9 +71,9 @@ select.inp{padding-right:12px}
 .formRow{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px}
 
 /* ---- cards ---- */
-.card{background:var(--card);border:1px solid var(--glassBrd);border-radius:var(--r3);padding:18px;
-  backdrop-filter:blur(var(--blur)) saturate(135%);-webkit-backdrop-filter:blur(var(--blur)) saturate(135%);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.82),0 16px 34px -26px rgba(37,57,82,.34)}
+.card{background:var(--card);border:1px solid rgba(255,255,255,.58);border-radius:var(--r3);padding:18px;
+  backdrop-filter:blur(var(--blur)) saturate(155%);-webkit-backdrop-filter:blur(var(--blur)) saturate(155%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.74),0 16px 34px -26px rgba(37,57,82,.28)}
 .cardTitle{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
 .cardTitle b{font-size:15px}
 .chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;
