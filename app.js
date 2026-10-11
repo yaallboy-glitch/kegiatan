@@ -176,7 +176,7 @@ function initGlassNav() {
   if (!nav) return null;
   const bar = nav.querySelector(".bnBar"), bubble = nav.querySelector(".bnBubble");
   const icons = [...bubble.children], items = [...nav.querySelectorAll(".bnItem")];
-  const N = items.length, H = 72, HW = 36, K = 20, D = 30, DUR = 880;
+  const N = items.length, H = 72, HW = 36, K = 20, D = 30, DUR = 520;
   let W = nav.clientWidth || 360, cur = items.findIndex(el => el.classList.contains("active")), busy = false;
   const cx = i => W / (N * 2) * (2 * i + 1);
   const clamp = v => Math.min(1, Math.max(0, v)), seg = (p, a, b) => clamp((p - a) / (b - a));
@@ -192,8 +192,8 @@ function initGlassNav() {
     if (cur < 0) { bar.style.clipPath = `path('M0,0 H${W} V${H} H0 Z')`; bubble.style.opacity = 0; return; }
     bubble.style.opacity = 1; showIcon(cur); draw(cx(cur), D, D - 34);
   };
-  function go(to) {
-    if (busy || to === cur || to < 0 || to >= N) return;
+  function go(to, onDone) {
+    if (busy || to === cur || to < 0 || to >= N) { if (onDone) onDone(); return; }
     busy = true; W = nav.clientWidth || 360;
     const from = cur, x1 = cx(to), x0 = from < 0 ? x1 : cx(from), D0 = from < 0 ? 0 : D, t0 = performance.now();
     let swapped = false;
@@ -208,6 +208,7 @@ function initGlassNav() {
       if (move > .5 && !swapped) { swapped = true; showIcon(to); }
       if (p < 1) return requestAnimationFrame(step);
       cur = to; items[to].classList.add("active"); rest(); busy = false;
+      if (onDone) onDone();
     })(t0);
   }
   addEventListener("resize", () => { if (!busy) rest(); });
@@ -235,10 +236,17 @@ function ensureNav() {
       item.addEventListener("click", e => {
         if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         e.preventDefault();
-        const from = NAV.findIndex(n => n.href === (location.pathname.split("/").pop() || "index.html"));
         const to = NAV.findIndex(n => n.href === new URL(item.href).pathname.split("/").pop());
-        if (window._bn) window._bn.go(to); else { navItems.forEach(el => el.classList.remove("active")); item.classList.add("active"); }
-        location.href = item.href;
+        const navigate = () => { location.href = item.href; };
+        if (window._bn && to >= 0) {
+          window._bn.go(to, navigate);
+          // cadangan bila requestAnimationFrame macet
+          setTimeout(navigate, 950);
+        } else {
+          navItems.forEach(el => el.classList.remove("active"));
+          item.classList.add("active");
+          navigate();
+        }
       });
     }
     item.addEventListener("pointerdown", () => item.classList.add("is-pressed"), { passive: true });

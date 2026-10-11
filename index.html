@@ -16,7 +16,25 @@
 <script>if (localStorage.getItem("token")) document.documentElement.classList.add("hasToken");</script>
 </head>
 <body>
-<div class="launchScreen" aria-hidden="true"><div class="launchHalo"></div><div class="launchLogo"><span class="launchShard shardA"><img src="IMG_6411.png" alt=""></span><span class="launchShard shardB"><img src="IMG_6411.png" alt=""></span><span class="launchShard shardC"><img src="IMG_6411.png" alt=""></span><span class="launchShard shardD"><img src="IMG_6411.png" alt=""></span><span class="launchShard shardE"><img src="IMG_6411.png" alt=""></span><span class="launchShard shardF"><img src="IMG_6411.png" alt=""></span><span class="launchShard shardG"><img src="IMG_6411.png" alt=""></span><span class="launchShard shardH"><img src="IMG_6411.png" alt=""></span><img class="launchCore" src="IMG_6411.png" alt=""></div><p class="launchWordmark">BRIGADE MUDA SOROPATI</p></div>
+<div id="loader" role="status" aria-label="Memuat">
+  <div class="orbWrap">
+    <div class="orb">
+      <i class="orbDot"></i>
+      <span class="orbRing"></span>
+      <span class="orbShimmer"></span>
+      <span class="orbFill"></span>
+      <i class="orbBub" style="left:22%;--y:28%;--s:4px;--x:3px;--d:4s;--dl:2.2s"></i>
+      <i class="orbBub" style="left:78%;--y:24%;--s:3px;--x:-3px;--d:3.5s;--dl:2.6s"></i>
+      <i class="orbBub" style="left:35%;--y:36%;--s:5px;--x:4px;--d:4.2s;--dl:2.8s"></i>
+      <i class="orbBub" style="left:62%;--y:18%;--s:3px;--x:-4px;--d:3.8s;--dl:3.4s"></i>
+      <i class="orbBub" style="left:50%;--y:32%;--s:6px;--x:5px;--d:3.6s;--dl:3.1s"></i>
+      <div class="orbLogoPos"><div class="orbLogoBob">
+        <img class="orbLogo" src="IMG_6411.png" alt="">
+      </div></div>
+    </div>
+    <p class="orbLabel">Loading</p>
+  </div>
+</div>
 
 <!-- ============ LOGIN ============ -->
 <main id="loginView" class="loginView">
@@ -103,10 +121,19 @@
 <script src="app.js"></script>
 <script>
 /* ===== boot ===== */
+function dismissLoader() {
+  const l = document.getElementById("loader");
+  if (l) l.classList.add("done");
+}
+
 async function boot() {
   const le = localStorage.getItem("loginErr");
   if (le) { showErr("loginErr", le); localStorage.removeItem("loginErr"); }
-  if (!tok()) return;
+  if (!tok()) {
+    setTimeout(dismissLoader, 4200);
+    return;
+  }
+  dismissLoader();
   const gname = localStorage.getItem("googleName");
   if (gname !== null) {
     localStorage.removeItem("googleName");

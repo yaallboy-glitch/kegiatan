@@ -141,6 +141,7 @@ window.__onGoogleIdToken = async function (idt) {
   try { await handleCredential(idt); } catch (e) { showErr("loginErr", e.message); }
 };
 window.__onGoogleError = function (m) { showErr("loginErr", m || "Login gagal."); };
+initGoogle();
 async function loadMe() { try { me = await api("/auth/me"); return me; } catch (e) { return null; } }
 function requireAuth() { if (!tok()) { location.replace("index.html"); return false; } return true; }
 
@@ -169,25 +170,98 @@ const NAV = [
   { href: "footage.html", label: "Footage", ic: "footage" },
   { lainnya: true, label: "Lainnya", ic: "lainnya" }
 ];
+/* ---- GLASS NAV: lekukan + bubble berpindah (bentuk digambar lewat clip-path) ---- */
+function initGlassNav() {
+  const nav = document.querySelector(".bottomNav");
+  if (!nav) return null;
+  const bar = nav.querySelector(".bnBar"), bubble = nav.querySelector(".bnBubble");
+  const icons = [...bubble.children], items = [...nav.querySelectorAll(".bnItem")];
+  const N = items.length, H = 72, HW = 36, K = 20, D = 30, DUR = 520;
+  let W = nav.clientWidth || 360, cur = items.findIndex(el => el.classList.contains("active")), busy = false;
+  const cx = i => W / (N * 2) * (2 * i + 1);
+  const clamp = v => Math.min(1, Math.max(0, v)), seg = (p, a, b) => clamp((p - a) / (b - a));
+  const sine = t => -(Math.cos(Math.PI * t) - 1) / 2;
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const path = (x, d) => { const l = x - HW, r = x + HW;
+    return `M0,0 H${l} C${l + K},0 ${x - K},${d} ${x},${d} C${x + K},${d} ${r - K},0 ${r},0 H${W} V${H} H0 Z`; };
+  const draw = (x, d, y) => { bar.style.clipPath = `path('${path(x, d)}')`; bubble.style.transform = `translate(${x - 24}px,${y}px)`; };
+  const showIcon = i => icons.forEach((s, j) => s.style.opacity = j === i ? 1 : 0);
+  const rest = () => {
+    W = nav.clientWidth || 360;
+    if (cur < 0) { bar.style.clipPath = `path('M0,0 H${W} V${H} H0 Z')`; bubble.style.opacity = 0; return; }
+    bubble.style.opacity = 1; showIcon(cur); draw(cx(cur), D, D - 34);
+  };
+  function go(to, onDone) {
+    if (busy || to === cur || to < 0 || to >= N) { if (onDone) onDone(); return; }
+    busy = true; W = nav.clientWidth || 360;
+    const from = cur, x1 = cx(to), x0 = from < 0 ? x1 : cx(from), D0 = from < 0 ? 0 : D, t0 = performance.now();
+    let swapped = false;
+    items.forEach(el => el.classList.remove("active"));
+    bubble.style.opacity = 1; if (from >= 0) showIcon(from);
+    (function step(now) {
+      const p = Math.min(1, (now - t0) / DUR);
+      const close = sine(seg(p, 0, .36)), move = ease(seg(p, .18, .82)), open = sine(seg(p, .64, 1));
+      const d = p < .5 ? D0 * (1 - close) : D * open;
+      const arc = Math.sin(move * Math.PI) * 18;
+      draw(lerp(x0, x1, move), d, d - 34 - (1 - d / D) * 20 - arc);
+      if (move > .5 && !swapped) { swapped = true; showIcon(to); }
+      if (p < 1) return requestAnimationFrame(step);
+      cur = to; items[to].classList.add("active"); rest(); busy = false;
+      if (onDone) onDone();
+    })(t0);
+  }
+  addEventListener("resize", () => { if (!busy) rest(); });
+  rest();
+  return { go };
+}
+
 const FOTO_KEY = () => "bmsFoto:" + ((me && me.username) || "anon");
-function moveIndicator() {
-  const nav = document.querySelector(".bottomNav"); if (!nav) return;
-  const active = nav.querySelector(".bnItem.active");
-  if (!active) { nav.classList.remove("ready"); return; }
-  const ar = active.getBoundingClientRect(), nr = nav.getBoundingClientRect();
-  nav.style.setProperty("--bnx", (ar.left - nr.left + ar.width / 2) + "px");
-  nav.classList.add("ready");
+/* Nav dibuat SEKALI & langsung saat halaman dimuat (tidak menunggu fetch /auth/me) supaya tidak berkedip */
+function ensureNav() {
+  if (document.querySelector(".bottomNav")) return;
+  const page = location.pathname.split("/").pop() || "index.html";
+  const navHtml = NAV.map(n => n.lainnya
+    ? '<button class="bnItem" id="bnLainnya" aria-haspopup="dialog">' + IC.lainnya + '<span>' + n.label + '</span></button>'
+    : '<a class="bnItem' + (page === n.href ? " active" : "") + '" href="' + n.href + '"' + (page === n.href ? ' aria-current="page"' : "") + '>' + IC[n.ic] + '<span>' + n.label + '</span></a>').join("");
+  const bubbleIcons = NAV.map(n => n.lainnya ? IC.lainnya : IC[n.ic]).join("");
+  const el = document.createElement("nav");
+  el.className = "bottomNav"; el.setAttribute("aria-label", "Navigasi utama");
+  el.innerHTML = '<div class="bnBar"></div><div class="bnTabs">' + navHtml + '</div><div class="bnBubble" aria-hidden="true">' + bubbleIcons + '</div>';
+  document.body.appendChild(el);
+  const navItems = [...document.querySelectorAll(".bnItem")];
+  window._bn = initGlassNav();
+  navItems.forEach(item => {
+    if (item.tagName === "A" && item.href && item.href !== location.href) {
+      item.addEventListener("click", e => {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        const to = NAV.findIndex(n => n.href === new URL(item.href).pathname.split("/").pop());
+        const navigate = () => { location.href = item.href; };
+        if (window._bn && to >= 0) {
+          window._bn.go(to, navigate);
+          // cadangan bila requestAnimationFrame macet
+          setTimeout(navigate, 950);
+        } else {
+          navItems.forEach(el => el.classList.remove("active"));
+          item.classList.add("active");
+          navigate();
+        }
+      });
+    }
+    item.addEventListener("pointerdown", () => item.classList.add("is-pressed"), { passive: true });
+    item.addEventListener("pointerup", () => item.classList.remove("is-pressed"), { passive: true });
+    item.addEventListener("pointercancel", () => item.classList.remove("is-pressed"), { passive: true });
+  });
+  document.getElementById("bnLainnya").onclick = () => document.getElementById("sheetOv").classList.add("open");
 }
 function renderShell() {
   const page = location.pathname.split("/").pop() || "index.html";
   const foto = localStorage.getItem(FOTO_KEY());
-  const navHtml = NAV.map(n => n.lainnya
-    ? '<button class="bnItem" id="bnLainnya" aria-haspopup="dialog">' + IC.lainnya + '<span>' + n.label + '</span></button>'
-    : '<a class="bnItem' + (page === n.href ? " active" : "") + '" href="' + n.href + '"' + (page === n.href ? ' aria-current="page"' : "") + '>' + IC[n.ic] + '<span>' + n.label + '</span></a>').join("");
   const admin = isAdmin(me);
-  document.getElementById("appShell").innerHTML =
-    '<nav class="bottomNav" aria-label="Navigasi utama">' + navHtml + '<span class="bnPuck" aria-hidden="true"><i class="bnCircle"></i></span></nav>'
-    + '<div class="ov ovBottom" id="sheetOv"><div class="sheet">'
+    ensureNav();
+document.getElementById("appShell").innerHTML =
+    '<div class="ov ovBottom" id="sheetOv"><div class="sheet">'
     + '<div class="sheetHandle"></div><p class="sheetTitle">Menu Lainnya</p>'
     + '<a class="sheetItem" href="index.html#pengumuman">' + IC.bell + 'Pengumuman</a>'
     + '<a class="sheetItem" href="anggota.html">' + IC.users + 'Anggota</a>'
@@ -210,14 +284,6 @@ function renderShell() {
     + '<div id="toast" role="status"></div>';
   const av = document.getElementById("avatarBtn");
   if (av) { if (foto) { av.textContent = ""; av.style.backgroundImage = 'url("' + foto + '")'; } else av.textContent = initials(me && me.nama); av.onclick = openProfil; }
-  document.querySelectorAll(".bnItem").forEach(item => {
-    item.addEventListener("pointerdown", () => item.classList.add("is-pressed"), { passive: true });
-    item.addEventListener("pointerup", () => item.classList.remove("is-pressed"), { passive: true });
-    item.addEventListener("pointercancel", () => item.classList.remove("is-pressed"), { passive: true });
-  });
-  document.getElementById("bnLainnya").onclick = () => document.getElementById("sheetOv").classList.add("open");
-  if (!window.__bnR) { window.__bnR = 1; window.addEventListener("resize", () => requestAnimationFrame(moveIndicator)); }
-  requestAnimationFrame(moveIndicator);
   document.getElementById("shProfil").onclick = () => { document.getElementById("sheetOv").classList.remove("open"); openProfil(); };
   document.getElementById("shLogout").onclick = async () => { if (await confirmBox("Keluar dari aplikasi?", "Logout")) logout(); };
   document.querySelectorAll(".ov").forEach(o => o.addEventListener("click", e => { if (e.target === o && o.id !== "namaOv") o.classList.remove("open"); }));
@@ -257,4 +323,12 @@ function simpanFoto(file) {
     img.src = rd.result;
   };
   rd.readAsDataURL(file);
+}
+
+/* hindari flash login saat pindah antar halaman */
+if (tok()) {
+  const loginView = document.getElementById("loginView"), appView = document.getElementById("appView");
+  if (loginView) loginView.style.display = "none";
+  if (appView) appView.hidden = false;
+  ensureNav();
 }
