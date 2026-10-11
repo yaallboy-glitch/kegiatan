@@ -177,7 +177,6 @@ function initGlassNav() {
   const bar = nav.querySelector(".bnBar"), bubble = nav.querySelector(".bnBubble");
   const icons = [...bubble.children], items = [...nav.querySelectorAll(".bnItem")];
   const N = items.length, H = 72, HW = 36, K = 20, D = 30, DUR = 880;
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   let W = nav.clientWidth || 360, cur = items.findIndex(el => el.classList.contains("active")), busy = false;
   const cx = i => W / (N * 2) * (2 * i + 1);
   const clamp = v => Math.min(1, Math.max(0, v)), seg = (p, a, b) => clamp((p - a) / (b - a));
@@ -195,7 +194,6 @@ function initGlassNav() {
   };
   function go(to) {
     if (busy || to === cur || to < 0 || to >= N) return;
-    if (reduce) { cur = to; items.forEach((el, j) => el.classList.toggle("active", j === to)); rest(); return; }
     busy = true; W = nav.clientWidth || 360;
     const from = cur, x1 = cx(to), x0 = from < 0 ? x1 : cx(from), D0 = from < 0 ? 0 : D, t0 = performance.now();
     let swapped = false;
