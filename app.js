@@ -240,8 +240,7 @@ function ensureNav() {
         const from = NAV.findIndex(n => n.href === (location.pathname.split("/").pop() || "index.html"));
         const to = NAV.findIndex(n => n.href === new URL(item.href).pathname.split("/").pop());
         if (window._bn) window._bn.go(to); else { navItems.forEach(el => el.classList.remove("active")); item.classList.add("active"); }
-        document.body.classList.add("pageTransitionOut", to > from ? "pageTransitionForward" : "pageTransitionBack");
-        setTimeout(() => { location.href = item.href; }, 920);
+        location.href = item.href;
       });
     }
     item.addEventListener("pointerdown", () => item.classList.add("is-pressed"), { passive: true });
