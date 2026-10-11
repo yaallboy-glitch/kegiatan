@@ -117,16 +117,6 @@ function initGoogle() {
   } catch (e) { showErr("loginErr", "Gagal memuat tombol Google: " + e.message); }
 }
 async function runAuth(c) { clearErr("loginErr"); try { await handleCredential(c); } catch (e) { showErr("loginErr", e.message); } }
-function googleAuthUrl() {
-  const p = new URLSearchParams({
-    client_id: CLIENT_ID,
-    redirect_uri: REDIRECT_URI,
-    response_type: "token",
-    scope: "openid email profile",
-    prompt: "select_account"
-  });
-  return "https://accounts.google.com/o/oauth2/v2/auth?" + p.toString();
-}
 function doGoogleLogin() {
   const inApp = (window.Android && typeof Android.isApp === "function" && Android.isApp());
   clearErr("loginErr");

@@ -49,7 +49,7 @@ body.is-loading{overflow:hidden}
 
 .scene{position:fixed;inset:0;z-index:0;overflow:hidden;
   background:linear-gradient(135deg,var(--c1),var(--c2));pointer-events:none}
-html.hasToken .scene{display:none}
+html.hasToken #loader,html.hasToken .scene{display:none}
 .blob{position:absolute;border-radius:50%;pointer-events:none;will-change:transform;
   animation:float 12s ease-in-out infinite alternate}
 .b1{width:80vmax;height:80vmax;left:-30vmax;top:-36vmax;
@@ -102,9 +102,9 @@ html.hasToken .scene{display:none}
 /* 4) cairan naik dengan gelombang */
 .liquid{position:absolute;left:0;right:0;top:0;height:140%;z-index:1;
   background:linear-gradient(180deg,rgba(255,255,255,.84),rgba(255,229,216,.8));
-  transform:translate3d(0,75%,0);animation:rise 3.3s cubic-bezier(.3,.1,.2,1) 1.7s forwards;
+  transform:translate3d(0,75%,0);animation:liquidRise 3.3s cubic-bezier(.3,.1,.2,1) 1.7s forwards;
   will-change:transform}
-@keyframes rise{to{transform:translate3d(0,-16%,0)}}
+@keyframes liquidRise{to{transform:translate3d(0,-16%,0)}}
 
 .wave{--w:110px;position:absolute;left:0;top:-21px;height:22px;width:calc(100% + 220px);
   background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 110 22' preserveAspectRatio='none'%3E%3Cpath d='M0 11 Q27.5 0 55 11 T110 11 V22 H0Z' fill='rgba(255,255,255,0.84)'/%3E%3C/svg%3E") repeat-x 0 0 / var(--w) 22px;
@@ -152,11 +152,6 @@ html.hasToken .scene{display:none}
 .orb.settled .liquid{animation:none;transform:translate3d(0,-16%,0)}
 .logo-slot{width:96px;height:96px;margin:0 auto 16px;position:relative}
 .logo-slot .orb{width:100%;height:100%}
-
-/* transisi kartu login */
-body.is-loading #loginView .loginCard{opacity:0;transform:translateY(26px)}
-body.show-login #loginView .loginCard{opacity:1;transform:none;
-  transition:opacity .9s ease .6s,transform .9s cubic-bezier(.2,.8,.2,1) .6s}
 
 /* ---- buttons ---- */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
@@ -219,12 +214,6 @@ html.hasToken #loginView{display:none}
 .loginView{visibility:hidden;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:24px;padding:32px 20px calc(26px + env(safe-area-inset-bottom));position:relative;overflow:hidden}
 body.show-login .loginView{visibility:visible}
-.loginView::before,.loginView::after{content:"";position:absolute;border-radius:50%;filter:blur(55px);pointer-events:none}
-.loginView::before{top:-16%;left:-14%;width:62vw;height:62vw;max-width:540px;max-height:540px;
-  background:radial-gradient(circle at 32% 32%,rgba(194,35,38,.3),transparent 65%);animation:orb 9s var(--ease) infinite alternate}
-.loginView::after{bottom:-20%;right:-12%;width:58vw;height:58vw;max-width:480px;max-height:480px;
-  background:radial-gradient(circle at 60% 60%,rgba(36,64,142,.34),transparent 65%);animation:orb 11s var(--ease) infinite alternate-reverse}
-@keyframes orb{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(-5%,7%,0) scale(1.14)}}
 .loginCard{position:relative;z-index:1;width:min(420px,100%);background:rgba(23,22,27,.78);
   backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
   border:1px solid var(--hair2);border-radius:24px;padding:34px 26px 26px;text-align:center;
@@ -232,14 +221,10 @@ body.show-login .loginView{visibility:visible}
   opacity:0;transform:translateY(26px);will-change:opacity,transform}
 body.show-login .loginCard{opacity:1;transform:none;
   transition:opacity .9s ease .6s,transform .9s cubic-bezier(.2,.8,.2,1) .6s}
-.loginLogo{width:84px;height:84px;border-radius:50%;object-fit:cover;margin:0 auto 14px;
-  border:2px solid var(--gold);box-shadow:0 0 0 5px var(--goldSoft),0 14px 30px -12px rgba(212,175,55,.5)}
 .loginKicker{font-size:11px;font-weight:800;letter-spacing:.3em;color:var(--gold);margin-bottom:6px}
 .loginCard h1{font-size:29px;font-weight:800}
 .loginCard h1 span{color:#e04a4d}
 .loginSub{font-size:13.5px;color:var(--mid);margin:10px 0 20px}
-.gBtnWrap{display:flex;justify-content:center;min-height:46px}
-.gBtnWrap iframe{border-radius:10px!important}
 .btnGoogle{display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;
   background:#fff;color:#1f1f1f;border:1px solid #dadce0;border-radius:var(--r2);
   padding:12px 18px;font:600 15px/1 'Plus Jakarta Sans',system-ui,sans-serif;cursor:pointer;
