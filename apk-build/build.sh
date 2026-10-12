@@ -19,7 +19,7 @@ echo "== 1/7 sync aset web (dari ../) =="
 rm -rf assets && mkdir -p assets
 cp ../index.html ../app.js ../style.css ../auth-cb.html \
    ../bendahara.html ../file.html ../footage.html ../anggota.html \
-   ../manifest.webmanifest ../IMG_6411.png assets/
+   ../manifest.webmanifest ../IMG_6411.png ../logo-800.webp assets/
 
 echo "== 2/7 bersihkan out =="
 rm -rf "$OUT" && mkdir -p "$OUT/classes"

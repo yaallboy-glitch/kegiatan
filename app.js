@@ -52,8 +52,14 @@ function showErr(id, m) { const el = document.getElementById(id); if (!el) retur
 function clearErr(id) { const el = document.getElementById(id); if (!el) return; el.style.display = "none"; }
 let _toastT;
 function toast(msg) { const t = document.getElementById("toast"); if (!t) return; t.textContent = msg; t.classList.add("show"); clearTimeout(_toastT); _toastT = setTimeout(() => t.classList.remove("show"), 2600); }
+let _scrollT;
+addEventListener("scroll", () => {
+  document.body.classList.add("scrolling");
+  clearTimeout(_scrollT);
+  _scrollT = setTimeout(() => document.body.classList.remove("scrolling"), 120);
+}, { passive: true });
 function dlBlob(blob, name) {
-  if (window.Android && typeof window.Android.saveBase64 === "function") {
+  if (window.Android && typeof window.Android.saveBase64 === "function" && (!blob.size || blob.size <= 5 * 1024 * 1024)) {
     const rd = new FileReader();
     rd.onload = () => {
       const b64 = String(rd.result).split(",")[1] || "";
@@ -63,7 +69,7 @@ function dlBlob(blob, name) {
     rd.readAsDataURL(blob);
     return;
   }
-  const u = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 5000);
+  const u = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 1000);
 }
 
 function confirmBox(msg, title) {
@@ -108,6 +114,8 @@ async function submitNama() {
   } catch (e) { showErr("namaErr", e.message); btn.disabled = false; btn.textContent = "Simpan & Lanjutkan"; }
 }
 function initGoogle() {
+  const inApp = (window.Android && typeof Android.isApp === "function" && Android.isApp()) || location.hostname === "appassets.androidplatform.net";
+  if (inApp) return;
   const box = document.getElementById("gBtn");
   if (!box || tok()) return;
   if (typeof google === "undefined" || !google.accounts) { setTimeout(initGoogle, 400); return; }
@@ -118,10 +126,10 @@ function initGoogle() {
 }
 async function runAuth(c) { clearErr("loginErr"); try { await handleCredential(c); } catch (e) { showErr("loginErr", e.message); } }
 function doGoogleLogin() {
-  const inApp = (window.Android && typeof Android.isApp === "function" && Android.isApp());
+  const inApp = (window.Android && typeof Android.isApp === "function" && Android.isApp()) || location.hostname === "appassets.androidplatform.net";
   clearErr("loginErr");
   if (inApp) {
-    if (typeof Android.loginGoogle === "function") { Android.loginGoogle(); return; }
+    if (window.Android && typeof Android.loginGoogle === "function") { Android.loginGoogle(); return; }
     showErr("loginErr", "Fitur login tidak tersedia."); return;
   }
   if (typeof google !== "undefined" && google.accounts && google.accounts.id) { google.accounts.id.prompt(); }

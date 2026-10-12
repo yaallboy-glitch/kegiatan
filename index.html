@@ -10,7 +10,8 @@
 <title>BMS — Karang Taruna</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700&display=swap" as="style">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>if (localStorage.getItem("token")) document.documentElement.classList.add("hasToken");</script>
@@ -18,7 +19,7 @@
 <body>
 <!-- Latar bersama -->
 <div class="scene" aria-hidden="true">
-  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+  <div class="blob b1"></div>
 </div>
 
 <!-- ================= LOADER ================= -->
@@ -62,7 +63,7 @@
         <i class="bub" style="left:68%; --s:6px; --x:5px;  --d:3.6s; --dl:3.1s"></i>
 
         <div class="logo-pos"><div class="logo-bob">
-          <img class="logo" alt="Logo Karang Taruna" src="IMG_6411.png">
+          <img class="logo" src="logo-800.webp" width="400" height="400" fetchpriority="high" alt="Logo Karang Taruna">
         </div></div>
       </div>
     </div>
@@ -163,9 +164,17 @@
   var orb = loader.querySelector(".orb");
   var slot = document.getElementById("logoSlot");
 
-  // Jika sudah login, loader tidak perlu menunggu
+  // Lepas filter air setelah 5.5s agar CPU idle
+  setTimeout(function() {
+    var lg = document.querySelector(".logo");
+    if (lg) lg.style.setProperty("filter", "none");
+  }, 5500);
+
+  // Jika sudah login, loader & scene tidak perlu menunggu
   if (tok()) {
     loader.remove();
+    var sc = document.querySelector(".scene");
+    if (sc) sc.remove();
     return;
   }
 
@@ -181,8 +190,12 @@
     orb.style.transform  = "none";
     orb.style.setProperty("--orb", (slot ? slot.clientWidth : 96) + "px");
     orb.classList.add("settled");
+    var lg = orb.querySelector(".logo");
+    if (lg) lg.style.setProperty("filter", "none");
     if (slot) slot.appendChild(orb);
     loader.remove();
+    var sc = document.querySelector(".scene");
+    if (sc) sc.remove();
     body.classList.remove("is-loading");
   }
 
@@ -190,6 +203,8 @@
     body.classList.add("show-login");
     loader.classList.add("done");
     loader.removeAttribute("role");
+    var sc = document.querySelector(".scene");
+    if (sc) sc.remove();
     if (reduce || !slot) { dock(); return; }
 
     var o = orb.getBoundingClientRect();
