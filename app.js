@@ -258,6 +258,11 @@ function renderShell() {
   const foto = localStorage.getItem(FOTO_KEY());
   const admin = isAdmin(me);
     ensureNav();
+    const scene = document.createElement("div");
+    scene.className = "pageLogoScene";
+    scene.setAttribute("aria-hidden", "true");
+    scene.innerHTML = '<span class="pageLogoMark pageMarkOne"><img src="logo-800.webp" alt=""></span><span class="pageLogoMark pageMarkTwo"><img src="logo-800.webp" alt=""></span><span class="pageLogoMark pageMarkThree"><img src="logo-800.webp" alt=""></span>';
+    document.body.prepend(scene);
 document.getElementById("appShell").innerHTML =
     '<div class="ov ovBottom" id="sheetOv"><div class="sheet">'
     + '<div class="sheetHandle"></div><p class="sheetTitle">Menu Lainnya</p>'
