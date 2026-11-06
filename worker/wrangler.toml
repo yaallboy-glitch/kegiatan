@@ -1,0 +1,17 @@
+name = "kegiatan-api"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "kegiatan_db"
+database_id = "84d5a0d0-a254-4982-998c-e5553199fbae"
+
+# VARIABEL RAHASIA — jangan tulis di sini. Set lewat Dashboard atau:
+#   npx wrangler secret put TOKEN_SECRET
+#   npx wrangler secret put GOOGLE_CLIENT_ID
+#   npx wrangler secret put GOOGLE_CLIENT_SECRET
+#   npx wrangler secret put GOOGLE_REFRESH_TOKEN
+#   npx wrangler secret put GOOGLE_LOGIN_CLIENT_ID
+#   npx wrangler secret put GOOGLE_FOLDER_FOOTAGE
+#   npx wrangler secret put GOOGLE_FOLDER_FILES
