@@ -42,6 +42,28 @@ function isAdminRole(role) {
 
 const ROLE_PROPOSAL_ONLY = ["sekertaris"];
 
+// ================== VALIDASI INPUT ==================
+// SQLite tidak menolak string di kolom REAL: "abc" tersimpan apa adanya lalu
+// jadi NaN di dashboard (saldo kas tampil "Rp NaN" untuk semua orang).
+const VALID_JENIS_KEUANGAN = ["masuk", "keluar"];
+const VALID_STATUS_SPJ = ["pending", "disetujui", "ditolak"];
+const VALID_STATUS_EVENT = ["draft", "berjalan", "selesai"];
+const RE_TANGGAL = /^\d{4}-\d{2}-\d{2}$/;
+
+function numPos(v) {
+  if (v === "" || v === null || v === undefined) return null;
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+// Tanggal wajib YYYY-MM-DD dan harus tanggal yang benar-benar ada (2026-02-31 ditolak).
+function validTanggal(v) {
+  const s = String(v || "").trim();
+  if (!RE_TANGGAL.test(s)) return null;
+  const d = new Date(s + "T00:00:00Z");
+  return isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== s ? null : s;
+}
+
 // Dipakai khusus fitur Event: role "anggota" boleh lihat/tambah/edit,
 // tapi TIDAK boleh hapus event atau acc/checklist alat & status.
 function requireNonAnggota(me, cors) {
@@ -370,7 +392,9 @@ export default {
           await env.DB.prepare("INSERT INTO log_aktivitas (username, aktivitas) VALUES (?,?)")
             .bind(username, "Akun baru terdaftar otomatis via Google (" + email + ")").run();
         }
-        // TIDAK ADA LOG untuk login user lama (dihapus)
+        // LOG: login user lama (dipakai untuk audit trail)
+        await env.DB.prepare("INSERT INTO log_aktivitas (username, aktivitas) VALUES (?,?)")
+          .bind(user.username, "Login via Google").run();
 
         let newToken;
         try { newToken = await makeToken(env, user.username, user.nama); } catch (e) { return json({ error: e.message }, 500, cors); }
@@ -435,7 +459,10 @@ export default {
         }
 
         await env.DB.prepare("UPDATE users SET role=?, google_email=? WHERE username=?").bind(newRole, newGoogleEmail || null, targetUsername).run();
-        // LOG update role DIHAPUS
+        // LOG: ubah role / tautan email
+        await env.DB.prepare("INSERT INTO log_aktivitas (username, aktivitas) VALUES (?,?)")
+          .bind(me.username, `Ubah data anggota ${targetUsername}: role ${target.role} -> ${newRole}` +
+            (newGoogleEmail && newGoogleEmail !== (target.google_email || "") ? `, email ${target.google_email || "(kosong)"} -> ${newGoogleEmail}` : "")).run();
         return json({ ok: true }, 200, cors);
       }
 
@@ -446,21 +473,34 @@ export default {
       }
       if (path === "/keuangan" && request.method === "POST") {
         const denied = requireEdit(me, "bendahara", cors); if (denied) return denied;
-        const d = await request.json();
+        let d;
+        try { d = await request.json(); } catch { return json({ error: "Body request tidak valid (harus JSON)" }, 400, cors); }
+        const tanggal = validTanggal(d.tanggal);
+        if (!tanggal) return json({ error: "Tanggal wajib diisi dengan format YYYY-MM-DD dan harus tanggal yang valid" }, 400, cors);
+        const keterangan = (d.keterangan || "").toString().trim();
+        if (!keterangan) return json({ error: "Keterangan wajib diisi" }, 400, cors);
+        if (keterangan.length > 200) return json({ error: "Keterangan terlalu panjang (maksimal 200 karakter)" }, 400, cors);
+        const jenis = (d.jenis || "").toString().trim().toLowerCase();
+        if (!VALID_JENIS_KEUANGAN.includes(jenis)) return json({ error: "Jenis harus salah satu dari: " + VALID_JENIS_KEUANGAN.join(", ") }, 400, cors);
+        const jumlah = numPos(d.jumlah);
+        if (jumlah === null) return json({ error: "Jumlah harus angka lebih dari 0" }, 400, cors);
         await env.DB.prepare("INSERT INTO keuangan (tanggal,keterangan,jenis,jumlah,created_by) VALUES (?,?,?,?,?)")
-          .bind(d.tanggal, d.keterangan, d.jenis, d.jumlah, me.username).run();
+          .bind(tanggal, keterangan, jenis, jumlah, me.username).run();
         // LOG: Menambah keuangan
         await env.DB.prepare("INSERT INTO log_aktivitas (username, aktivitas) VALUES (?,?)")
-          .bind(me.username, "Menambah keuangan: " + d.keterangan).run();
+          .bind(me.username, "Menambah keuangan: " + keterangan + " (" + jenis + " Rp" + jumlah + ")").run();
         return json({ ok: true }, 200, cors);
       }
       if (path === "/keuangan" && request.method === "DELETE") {
         const denied = requireEdit(me, "bendahara", cors); if (denied) return denied;
         const id = url.searchParams.get("id");
+        if (!id) return json({ error: "Parameter id wajib diisi" }, 400, cors);
+        const row = await env.DB.prepare("SELECT * FROM keuangan WHERE id=?").bind(id).first();
+        if (!row) return json({ error: "Transaksi tidak ditemukan" }, 404, cors);
         await env.DB.prepare("DELETE FROM keuangan WHERE id=?").bind(id).run();
-        // LOG: Menghapus keuangan
+        // LOG: Menghapus keuangan (simpan nilai asli supaya bisa diaudit)
         await env.DB.prepare("INSERT INTO log_aktivitas (username, aktivitas) VALUES (?,?)")
-          .bind(me.username, "Menghapus keuangan ID " + id).run();
+          .bind(me.username, `Menghapus keuangan ID ${id}: ${row.tanggal} ${row.jenis} Rp${row.jumlah} - ${row.keterangan}`).run();
         return json({ ok: true }, 200, cors);
       }
 
@@ -471,23 +511,38 @@ export default {
       }
       if (path === "/spj" && request.method === "POST") {
         const denied = requireEdit(me, "bendahara", cors); if (denied) return denied;
-        const d = await request.json();
+        let d;
+        try { d = await request.json(); } catch { return json({ error: "Body request tidak valid (harus JSON)" }, 400, cors); }
+        const noSpj = (d.no_spj || "").toString().trim();
+        if (!noSpj) return json({ error: "Nomor SPJ wajib diisi" }, 400, cors);
+        const tanggal = validTanggal(d.tanggal);
+        if (!tanggal) return json({ error: "Tanggal wajib diisi dengan format YYYY-MM-DD dan harus tanggal yang valid" }, 400, cors);
+        const kegiatan = (d.kegiatan || "").toString().trim();
+        if (!kegiatan) return json({ error: "Nama kegiatan wajib diisi" }, 400, cors);
+        const nominal = numPos(d.nominal);
+        if (nominal === null) return json({ error: "Nominal harus angka lebih dari 0" }, 400, cors);
         await env.DB.prepare("INSERT INTO spj (no_spj,tanggal,kegiatan,rincian,nominal,created_by) VALUES (?,?,?,?,?,?)")
-          .bind(d.no_spj, d.tanggal, d.kegiatan, d.rincian, d.nominal, me.username).run();
+          .bind(noSpj, tanggal, kegiatan, (d.rincian || "").toString(), nominal, me.username).run();
         // LOG: Menambah SPJ
         await env.DB.prepare("INSERT INTO log_aktivitas (username, aktivitas) VALUES (?,?)")
-          .bind(me.username, "Menambah SPJ: " + d.no_spj).run();
+          .bind(me.username, "Menambah SPJ: " + noSpj + " (Rp" + nominal + ")").run();
         return json({ ok: true }, 200, cors);
       }
       if (path === "/spj/status" && request.method === "POST") {
         const denied = requireEdit(me, "bendahara", cors); if (denied) return denied;
         if (!isAdminRole(me.role)) return json({ error: "Hanya Admin/Ketua yang boleh mengubah status" }, 403, cors);
-        const d = await request.json();
+        let d;
+        try { d = await request.json(); } catch { return json({ error: "Body request tidak valid (harus JSON)" }, 400, cors); }
+        if (!d.id) return json({ error: "Parameter id wajib diisi" }, 400, cors);
+        const status = (d.status || "").toString().trim().toLowerCase();
+        if (!VALID_STATUS_SPJ.includes(status)) return json({ error: "Status tidak valid (harus salah satu dari: " + VALID_STATUS_SPJ.join(", ") + ")" }, 400, cors);
+        const row = await env.DB.prepare("SELECT * FROM spj WHERE id=?").bind(d.id).first();
+        if (!row) return json({ error: "Data SPJ tidak ditemukan" }, 404, cors);
         await env.DB.prepare("UPDATE spj SET status=?, updated_by=? WHERE id=?")
-          .bind(d.status, me.username, d.id).run();
+          .bind(status, me.username, d.id).run();
         // LOG: Mengubah status SPJ
         await env.DB.prepare("INSERT INTO log_aktivitas (username, aktivitas) VALUES (?,?)")
-          .bind(me.username, "Mengubah status SPJ ID " + d.id + " -> " + d.status).run();
+          .bind(me.username, `Mengubah status SPJ ${row.no_spj} (ID ${d.id}): ${row.status} -> ${status}`).run();
         return json({ ok: true }, 200, cors);
       }
 
@@ -751,11 +806,16 @@ export default {
           if (folderParam === "") conds.push("folder_id IS NULL");
           else { conds.push("folder_id=?"); binds.push(folderParam); }
         }
-        let q = "SELECT * FROM footage";
-        if (conds.length) q += " WHERE " + conds.join(" AND ");
-        q += " ORDER BY uploaded_at DESC";
-        const rows = await env.DB.prepare(q).bind(...binds).all();
-        return json(rows.results, 200, cors);
+        const where = conds.length ? " WHERE " + conds.join(" AND ") : "";
+        // Paginasi: tanpa limit, 1277 baris ~295 KB per request. Di 80 anggota
+        // ini menghabiskan CPU-time Worker. Default 60, maksimal 200.
+        const limit = Math.min(Math.max(parseInt(url.searchParams.get("limit")) || 60, 1), 200);
+        const offset = Math.max(parseInt(url.searchParams.get("offset")) || 0, 0);
+        const rows = await env.DB.prepare(
+          "SELECT * FROM footage" + where + " ORDER BY uploaded_at DESC LIMIT ? OFFSET ?"
+        ).bind(...binds, limit, offset).all();
+        const total = await env.DB.prepare("SELECT COUNT(*) AS n FROM footage" + where).bind(...binds).first();
+        return json({ items: rows.results, total: total ? total.n : 0, limit, offset, has_more: offset + rows.results.length < (total ? total.n : 0) }, 200, cors);
       }
       if (path === "/footage" && request.method === "POST") {
         const denied = requireEdit(me, "footage", cors); if (denied) return denied;
@@ -1083,20 +1143,28 @@ export default {
         return json(results, 200, cors);
       }
       if (path === "/event" && request.method === "POST") {
-        const d = await request.json();
+        // Anggota tidak boleh membuat event; hanya pengurus (non-anggota).
+        const denied = requireNonAnggota(me, cors); if (denied) return denied;
+        let d;
+        try { d = await request.json(); } catch { return json({ error: "Body request tidak valid (harus JSON)" }, 400, cors); }
         const nama = (d.nama || "").toString().trim();
-        const tanggalMulai = (d.tanggal_mulai || "").toString();
-        const tanggalSelesai = (d.tanggal_selesai || "").toString();
-        if (!nama || !tanggalMulai || !tanggalSelesai) {
-          return json({ error: "Nama event, tanggal mulai, dan tanggal selesai wajib diisi" }, 400, cors);
+        if (!nama) return json({ error: "Nama event wajib diisi" }, 400, cors);
+        const tanggalMulai = validTanggal(d.tanggal_mulai);
+        const tanggalSelesai = validTanggal(d.tanggal_selesai);
+        if (!tanggalMulai || !tanggalSelesai) {
+          return json({ error: "Tanggal mulai dan tanggal selesai wajib diisi dengan format YYYY-MM-DD" }, 400, cors);
+        }
+        if (tanggalSelesai < tanggalMulai) return json({ error: "Tanggal selesai tidak boleh sebelum tanggal mulai" }, 400, cors);
+        if (d.total_biaya !== undefined && d.total_biaya !== "" && numPos(d.total_biaya) === null && Number(d.total_biaya) !== 0) {
+          return json({ error: "Total biaya harus angka 0 atau lebih" }, 400, cors);
         }
         const deskripsi = (d.deskripsi || "").toString();
-        const totalBiaya = Number(d.total_biaya) || 0;
+        const totalBiaya = Math.max(0, Number(d.total_biaya) || 0);
         let kebutuhanAlat = [];
         if (Array.isArray(d.kebutuhan_alat)) {
           kebutuhanAlat = d.kebutuhan_alat.map((item) => ({
             nama: (item.nama || "").toString().trim(),
-            jumlah: Number(item.jumlah) || 0,
+            jumlah: Math.max(0, Number(item.jumlah) || 0),
             tersedia: !!item.tersedia,
           }));
         }
@@ -1117,19 +1185,35 @@ export default {
         const row = await env.DB.prepare("SELECT * FROM events WHERE id=?").bind(id).first();
         if (!row) return json({ error: "Event tidak ditemukan" }, 404, cors);
 
-        const d = await request.json();
+        let d;
+        try { d = await request.json(); } catch { return json({ error: "Body request tidak valid (harus JSON)" }, 400, cors); }
+
+        // Anggota hanya boleh mengubah event buatannya sendiri, dan tidak boleh
+        // menyentuh anggaran (total_biaya) — itu wewenang pengurus.
+        const isPrivileged = me.role !== "anggota";
+        if (!isPrivileged && row.dibuat_oleh !== me.username) {
+          return json({ error: "Anda hanya boleh mengubah event yang Anda buat sendiri." }, 403, cors);
+        }
+        if (!isPrivileged && d.total_biaya !== undefined && Number(d.total_biaya) !== Number(row.total_biaya || 0)) {
+          return json({ error: "Hanya pengurus yang boleh mengubah anggaran event." }, 403, cors);
+        }
+
         const nama = (d.nama || row.nama).toString().trim();
-        const tanggalMulai = (d.tanggal_mulai || row.tanggal_mulai).toString();
-        const tanggalSelesai = (d.tanggal_selesai || row.tanggal_selesai).toString();
+        if (!nama) return json({ error: "Nama event wajib diisi" }, 400, cors);
+        const tanggalMulai = d.tanggal_mulai !== undefined ? validTanggal(d.tanggal_mulai) : row.tanggal_mulai;
+        const tanggalSelesai = d.tanggal_selesai !== undefined ? validTanggal(d.tanggal_selesai) : row.tanggal_selesai;
+        if (!tanggalMulai || !tanggalSelesai) return json({ error: "Tanggal harus format YYYY-MM-DD dan valid" }, 400, cors);
+        if (tanggalSelesai < tanggalMulai) return json({ error: "Tanggal selesai tidak boleh sebelum tanggal mulai" }, 400, cors);
         const deskripsi = d.deskripsi !== undefined ? (d.deskripsi || "").toString() : row.deskripsi;
-        const totalBiaya = d.total_biaya !== undefined ? (Number(d.total_biaya) || 0) : row.total_biaya;
+        const totalBiaya = (isPrivileged && d.total_biaya !== undefined)
+          ? Math.max(0, Number(d.total_biaya) || 0)
+          : Number(row.total_biaya) || 0;
 
         let oldAlat = [];
         try { oldAlat = JSON.parse(row.kebutuhan_alat || "[]"); } catch { oldAlat = []; }
 
         // Anggota boleh edit nama/jumlah alat, tapi TIDAK boleh mengubah status
         // "tersedia" (itu wewenang acc/checklist -> requireNonAnggota di bawah).
-        const isPrivileged = me.role !== "anggota";
         let kebutuhanAlat = oldAlat;
         if (Array.isArray(d.kebutuhan_alat)) {
           kebutuhanAlat = d.kebutuhan_alat.map((item, i) => {
@@ -1137,7 +1221,7 @@ export default {
             const tersedia = isPrivileged && typeof item.tersedia === "boolean" ? item.tersedia : tersediaLama;
             return {
               nama: (item.nama || "").toString().trim(),
-              jumlah: Number(item.jumlah) || 0,
+              jumlah: Math.max(0, Number(item.jumlah) || 0),
               tersedia,
             };
           });
@@ -1145,7 +1229,12 @@ export default {
 
         // Status juga dijaga di sini sebagai lapis keamanan tambahan (harusnya
         // diubah lewat /event/checklist, bukan lewat PUT umum ini).
-        const status = (isPrivileged && d.status) ? d.status.toString() : row.status;
+        let status = row.status;
+        if (isPrivileged && d.status) {
+          const s = d.status.toString().trim().toLowerCase();
+          if (!VALID_STATUS_EVENT.includes(s)) return json({ error: "Status tidak valid (harus salah satu dari: " + VALID_STATUS_EVENT.join(", ") + ")" }, 400, cors);
+          status = s;
+        }
 
         await env.DB.prepare(
           "UPDATE events SET nama=?, tanggal_mulai=?, tanggal_selesai=?, deskripsi=?, kebutuhan_alat=?, total_biaya=?, status=?, diubah_oleh=? WHERE id=?"
