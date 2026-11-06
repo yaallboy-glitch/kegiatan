@@ -424,7 +424,6 @@ export default {
         if (current.nama_confirmed) return json({ error: "Nama Anda sudah dikonfirmasi sebelumnya dan tidak bisa diubah sendiri. Hubungi admin untuk perubahan." }, 403, cors);
 
         await env.DB.prepare("UPDATE users SET nama=?, nama_confirmed=1 WHERE username=?").bind(namaBaru, me.username).run();
-        // LOG set nama DIHAPUS
 
         let newToken;
         try { newToken = await makeToken(env, me.username, namaBaru); } catch (e) { return json({ error: e.message }, 500, cors); }
@@ -647,7 +646,6 @@ export default {
         if (!judul || !isi) return json({ error: "Judul dan isi pengumuman wajib diisi" }, 400, cors);
         await env.DB.prepare("INSERT INTO pengumuman (judul, isi, dibuat_oleh) VALUES (?,?,?)")
           .bind(judul, isi, me.username).run();
-        // LOG pengumuman DIHAPUS
         return json({ ok: true }, 200, cors);
       }
       if (path === "/pengumuman" && request.method === "DELETE") {
@@ -656,7 +654,6 @@ export default {
         if (!row) return json({ error: "Pengumuman tidak ditemukan" }, 404, cors);
         if (row.dibuat_oleh !== me.username && !isAdminRole(me.role)) return json({ error: "Anda hanya boleh menghapus pengumuman milik sendiri" }, 403, cors);
         await env.DB.prepare("DELETE FROM pengumuman WHERE id=?").bind(id).run();
-        // LOG pengumuman DIHAPUS
         return json({ ok: true }, 200, cors);
       }
 
@@ -762,7 +759,6 @@ export default {
         if (!row) return json({ error: "File tidak ditemukan" }, 404, cors);
         await driveDelete(env, row.drive_file_id);
         await env.DB.prepare("DELETE FROM files WHERE id=?").bind(id).run();
-        // LOG hapus file DIHAPUS
         return json({ ok: true }, 200, cors);
       }
       if (path === "/file/download" && request.method === "GET") {
@@ -792,7 +788,6 @@ export default {
             .bind(f.name, "Sync Drive", f.size ? Number(f.size) : 0, f.mimeType || "", f.id, me.username + " (sync)").run();
           added++;
         }
-        // LOG sync DIHAPUS
         return json({ ok: true, added, total_di_drive: driveFiles.length }, 200, cors);
       }
 
@@ -934,8 +929,7 @@ export default {
         if (!nama) return json({ error: "Nama folder wajib diisi" }, 400, cors);
         let drive;
         try { drive = await driveCreateFolder(env, nama, env.GOOGLE_FOLDER_FOOTAGE); } catch (e) { return json({ error: e.message }, 500, cors); }
-        const ins = await env.DB.prepare("INSERT INTO footage_folders (nama,drive_folder_id,created_by) VALUES (?,?,?)").bind(nama, drive.id, me.username).run();
-        // LOG folder DIHAPUS
+        const ins =        await env.DB.prepare("INSERT INTO footage_folders (nama,drive_folder_id,created_by) VALUES (?,?,?)").bind(nama, drive.id, me.username).run();
         return json({ ok: true, id: ins.meta.last_row_id, nama }, 200, cors);
       }
       if (path === "/footage/folders" && request.method === "DELETE") {
@@ -952,7 +946,6 @@ export default {
         await env.DB.prepare("UPDATE footage SET folder_id=NULL WHERE folder_id=?").bind(id).run();
         await driveDelete(env, row.drive_folder_id);
         await env.DB.prepare("DELETE FROM footage_folders WHERE id=?").bind(id).run();
-        // LOG folder DIHAPUS
         return json({ ok: true }, 200, cors);
       }
 
@@ -995,7 +988,6 @@ export default {
         if (!row) return json({ error: "Footage tidak ditemukan" }, 404, cors);
         const starred = row.starred ? 0 : 1;
         await env.DB.prepare("UPDATE footage SET starred=? WHERE id=?").bind(starred, d.id).run();
-        // LOG star DIHAPUS
         return json({ ok: true, starred: !!starred }, 200, cors);
       }
       if (path === "/footage/download" && request.method === "GET") {
@@ -1097,7 +1089,6 @@ export default {
             existingIds.add(f.id); added++;
           }
         }
-        // LOG sync DIHAPUS
         return json({ ok: true, added, total_di_drive: totalDrive }, 200, cors);
       }
 
@@ -1307,6 +1298,33 @@ export default {
         ).run();
         await env.DB.prepare("DELETE FROM upload_sessions WHERE status='error'").run();
         return json({ ok: true, message: "Pembersihan selesai" }, 200, cors);
+      }
+
+      // ===== STATS (Dashboard counters) =====
+      if (path === "/stats" && request.method === "GET") {
+        const keuangan = await env.DB.prepare("SELECT COUNT(*) AS n FROM keuangan").first();
+        const spj = await env.DB.prepare("SELECT COUNT(*) AS n FROM spj").first();
+        const footage = await env.DB.prepare("SELECT COUNT(*) AS n FROM footage").first();
+        const file = await env.DB.prepare("SELECT COUNT(*) AS n FROM files").first();
+        const users = await env.DB.prepare("SELECT COUNT(*) AS n FROM users").first();
+        const proposal = await env.DB.prepare("SELECT COUNT(*) AS n FROM proposal").first();
+        const event = await env.DB.prepare("SELECT COUNT(*) AS n FROM events").first();
+        const log = await env.DB.prepare("SELECT COUNT(*) AS n FROM log_aktivitas").first();
+        return json({
+          keuangan: keuangan?.n || 0,
+          spj: spj?.n || 0,
+          footage: footage?.n || 0,
+          file: file?.n || 0,
+          users: users?.n || 0,
+          proposal: proposal?.n || 0,
+          event: event?.n || 0,
+          log: log?.n || 0
+        }, 200, cors);
+      }
+
+      // ===== TOKEN VERSION (force re-login on secret rotate) =====
+      if (path === "/auth/token-version" && request.method === "GET") {
+        return json({ token_version: env.TOKEN_VERSION || "1" }, 200, cors);
       }
 
       return json({ error: "Not found: " + path }, 404, cors);
