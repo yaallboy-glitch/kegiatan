@@ -37,9 +37,13 @@ async function apiUpload(path, fd) {
 async function fetchBlob(path) {
   const r = await fetch(API + path, { headers: { Authorization: "Bearer " + tok() } });
   if (r.status === 401) { logout(); throw new Error("Sesi habis, silakan login lagi."); }
+  if (r.status === 429) throw new Error("Terlalu banyak permintaan. Tunggu sebentar lalu coba lagi.");
   if (!r.ok) throw new Error("Gagal mengambil berkas (status " + r.status + ")");
   return r.blob();
 }
+// URL thumbnail untuk <img src>. Worker balas Cache-Control immutable, jadi browser
+// cukup minta sekali per foto. Token lewat query karena <img> tidak bisa kirim header.
+const thumbUrl = (id, px) => API + "/footage/thumb?id=" + encodeURIComponent(id) + (px ? "&s=" + px : "") + "&t=" + encodeURIComponent(tok() || "");
 
 /* ---- helpers ---- */
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -258,6 +262,11 @@ function renderShell() {
   const foto = localStorage.getItem(FOTO_KEY());
   const admin = isAdmin(me);
     ensureNav();
+    const scene = document.createElement("div");
+    scene.className = "pageLogoScene";
+    scene.setAttribute("aria-hidden", "true");
+    scene.innerHTML = '<span class="pageLogoMark pageMarkOne"><img src="logo-800.webp" alt=""></span><span class="pageLogoMark pageMarkTwo"><img src="logo-800.webp" alt=""></span><span class="pageLogoMark pageMarkThree"><img src="logo-800.webp" alt=""></span>';
+    document.body.prepend(scene);
 document.getElementById("appShell").innerHTML =
     '<div class="ov ovBottom" id="sheetOv"><div class="sheet">'
     + '<div class="sheetHandle"></div><p class="sheetTitle">Menu Lainnya</p>'

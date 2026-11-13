@@ -134,6 +134,7 @@ function footQuery() {
 async function loadFootMore() {
   if (!footMore || footBusy) return;
   footBusy = true;
+  const before = allFoot.length;
   try {
     const r = await api("/footage?limit=60&offset=" + footOffset + footQuery());
     const items = Array.isArray(r) ? [] : (r.items || []);
@@ -142,30 +143,43 @@ async function loadFootMore() {
     footMore = Array.isArray(r) ? false : !!r.has_more;
   } catch (e) { toast(e.message); footMore = false; }
   footBusy = false;
-  renderFoot();
+  appendFoot(before);
 }
-function footVisible() { return allFoot; }
+function footCard(f, gi) {
+  const isVid = String(f.tipe || f.mime_type || f.nama || "").match(/mp4|mov|webm|video/i);
+  const canDel = isAdmin(me) || me.role === "bendahara";
+  return '<div class="ftCard">'
+    + '<button class="ftThumb" data-open="' + gi + '" title="Buka">'
+    + '<img class="ftImg" src="' + thumbUrl(f.id) + '" alt="" loading="lazy" decoding="async"'
+    + ' onerror="this.style.display=\'none\'" onload="this.style.opacity=1">'
+    + '<span class="ftIc">' + (isVid ? PLAY_IC : IMG_IC) + '</span></button>'
+    + '<span class="ftMeta"><b>' + esc(f.judul || f.nama || "(tanpa judul)") + '</b>' + (f.nama && f.judul ? '<small>' + esc(f.nama) + '</small>' : "") + '</span>'
+    + (canDel ? '<button class="rowDel ftDel" title="Hapus" data-id="' + f.id + '">' + IC.trash + '</button>' : "")
+    + '</div>';
+}
+function bindFootCards(root, from) {
+  root.querySelectorAll("[data-open]").forEach(el => { if (+el.dataset.open >= from) el.onclick = () => openLb(+el.dataset.open); });
+  root.querySelectorAll(".ftDel").forEach(b => { if (b.dataset.bound) return; b.dataset.bound = "1"; b.onclick = async () => {
+    if (!(await confirmBox("Hapus footage ini?", "Hapus"))) return;
+    try { await apiDel("/footage?id=" + b.dataset.id); toast("Footage dihapus"); b.closest(".ftCard").remove(); footTotal = Math.max(0, footTotal - 1); document.getElementById("ftCount").textContent = footTotal + " media"; } catch (e) { toast(e.message); }
+  }; });
+}
 function renderFoot() {
-  const list = footVisible();
+  const list = allFoot;
   document.getElementById("ftCount").textContent = footTotal + " media";
   const w = document.getElementById("ftGrid");
   if (!list.length) { w.innerHTML = '<p class="empty">Belum ada footage di tampilan ini.</p>'; return; }
-  if (!list.length) { w.innerHTML = '<p class="empty">Belum ada footage di tampilan ini.</p>'; return; }
-  const canDel = isAdmin(me) || me.role === "bendahara";
-  w.innerHTML = list.map(f => {
-    const gi = allFoot.indexOf(f);
-    const isVid = String(f.tipe || f.mime_type || f.nama || "").match(/mp4|mov|webm|video/i);
-    return '<div class="ftCard">'
-      + '<button class="ftThumb" data-open="' + gi + '" title="Buka">' + (isVid ? PLAY_IC : IMG_IC) + '</button>'
-      + '<span class="ftMeta"><b>' + esc(f.judul || f.nama || "(tanpa judul)") + '</b>' + (f.nama && f.judul ? '<small>' + esc(f.nama) + '</small>' : "") + '</span>'
-      + (canDel ? '<button class="rowDel ftDel" title="Hapus" data-id="' + f.id + '">' + IC.trash + '</button>' : "")
-      + '</div>';
-  }).join("");
-  w.querySelectorAll("[data-open]").forEach(el => el.onclick = () => openLb(+el.dataset.open));
-  w.querySelectorAll(".ftDel").forEach(b => b.onclick = async () => {
-    if (!(await confirmBox("Hapus footage ini?", "Hapus"))) return;
-    try { await apiDel("/footage?id=" + b.dataset.id); toast("Footage dihapus"); loadFoot(); } catch (e) { toast(e.message); }
-  });
+  w.innerHTML = list.map((f, i) => footCard(f, i)).join("");
+  bindFootCards(w, 0);
+}
+// Tambah hanya kartu baru -> kartu lama tidak di-render ulang, thumbnail tidak di-fetch ulang.
+function appendFoot(from) {
+  const w = document.getElementById("ftGrid");
+  if (!w.querySelector(".ftCard")) return renderFoot();
+  const html = allFoot.slice(from).map((f, i) => footCard(f, from + i)).join("");
+  if (html) w.insertAdjacentHTML("beforeend", html);
+  bindFootCards(w, from);
+  document.getElementById("ftCount").textContent = footTotal + " media";
 }
 /* ===== lightbox ===== */
 let lbObjUrl = null;
@@ -174,15 +188,20 @@ function openLb(i) {
   const f = allFoot[i]; if (!f) return;
   document.getElementById("lbCap").textContent = f.judul || f.nama || "";
   const body = document.getElementById("lbBody");
-  body.innerHTML = '<div class="lbLoading">Memuat media…</div>';
-  document.getElementById("lbOv").classList.add("open");
   const isVid = String(f.tipe || f.mime_type || f.nama || "").match(/mp4|mov|webm|video/i);
-  fetchBlob((isVid ? "/footage/view?id=" : "/footage/thumb?id=") + f.id).then(blob => {
+  document.getElementById("lbOv").classList.add("open");
+  if (!isVid) {
+    // Foto: pakai thumbnail besar (s2000). Jauh lebih ringan dari file asli.
+    // Tombol "Unduh" tetap mengambil file resolusi penuh.
+    body.innerHTML = '<img class="lbMedia" src="' + thumbUrl(f.id, 2000) + '" alt="' + esc(f.judul || "") + '">';
+    return;
+  }
+  // Video: preload="none" -> file penuh baru diunduh saat user menekan play.
+  body.innerHTML = '<div class="lbLoading">Memuat video...</div>';
+  fetchBlob("/footage/view?id=" + f.id).then(blob => {
     if (lbObjUrl) URL.revokeObjectURL(lbObjUrl);
     lbObjUrl = URL.createObjectURL(blob);
-    body.innerHTML = isVid
-      ? '<video class="lbMedia" src="' + lbObjUrl + '" controls autoplay playsinline></video>'
-      : '<img class="lbMedia" src="' + lbObjUrl + '" alt="' + esc(f.judul || "") + '">';
+    body.innerHTML = '<video class="lbMedia" src="' + lbObjUrl + '" controls autoplay playsinline></video>';
   }).catch(e => { body.innerHTML = '<div class="lbLoading">' + esc(e.message) + '</div>'; });
 }
 function closeLb() {

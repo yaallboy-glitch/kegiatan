@@ -15,3 +15,4 @@ apk-build/keystore/
 
 .DS_Store
 *.bak
+.wrangler/

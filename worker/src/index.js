@@ -8,10 +8,17 @@ const VALID_ROLES = ["admin", "anggota", "bendahara", "pdd", "ketua", "sekertari
 const UPLOAD_CHUNK_SIZE = 8 * 1024 * 1024;
 
 const _rateBuckets = new Map();
+// ponytail: Map in-memory, per isolate. Bukan limit global lintas-colo — cukup
+// untuk menahan spam satu IP; batas keras tetap di Cloudflare Rate Limiting Rules.
 function rateLimit(key, limit, windowMs) {
   const now = Date.now();
   const bucket = _rateBuckets.get(key);
-  if (!bucket || bucket.resetAt < now) { _rateBuckets.set(key, { count: 1, resetAt: now + windowMs }); return false; }
+  if (!bucket || bucket.resetAt < now) {
+    // buang entri kedaluwarsa supaya Map tidak tumbuh terus (ceiling: O(n) scan, fine di <10k key)
+    if (_rateBuckets.size > 5000) for (const [k, v] of _rateBuckets) if (v.resetAt < now) _rateBuckets.delete(k);
+    _rateBuckets.set(key, { count: 1, resetAt: now + windowMs });
+    return false;
+  }
   bucket.count++;
   return bucket.count > limit;
 }
@@ -118,8 +125,13 @@ async function makeToken(env, username, nama) {
   return payload + "." + sig;
 }
 
-async function verifyAuthHeader(env, request) {
-  const auth = request.headers.get("Authorization") || "";
+async function verifyAuthHeader(env, request, allowQueryToken = false) {
+  let auth = request.headers.get("Authorization") || "";
+  // <img src> tidak bisa mengirim header -> endpoint thumbnail boleh terima ?t=<token>.
+  if (!auth.startsWith("Bearer ") && allowQueryToken) {
+    const qt = new URL(request.url).searchParams.get("t");
+    if (qt) auth = "Bearer " + qt;
+  }
   if (!auth.startsWith("Bearer ")) return null;
   const token = auth.slice(7);
   const dot = token.lastIndexOf(".");
@@ -319,15 +331,35 @@ async function resolveFolderDriveId(env, folderId) {
   return row.drive_folder_id;
 }
 
-async function driveGetThumbnail(env, fileId) {
+// Ambil thumbnail Drive. size: 400 (grid/lightbox) atau 2000 (pratinjau HD).
+// ponytail: cache lewat caches.default (native, 0 dependency). Tanpa cache,
+// tiap thumbnail = 2 request Google -> kuota Drive cepat habis kalau di-spam.
+async function driveGetThumbnail(env, fileId, size = 400) {
+  const px = size >= 2000 ? 2000 : 400;
+  const cacheKey = new Request(`https://bms-thumb.internal/${encodeURIComponent(fileId)}?s=${px}`);
+  const cache = caches.default;
+  const hit = await cache.match(cacheKey);
+  if (hit) return hit;
+
   const accessToken = await getGoogleAccessToken(env);
   const metaRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?fields=thumbnailLink`, { headers: { Authorization: "Bearer " + accessToken } });
   const meta = await metaRes.json();
   if (!metaRes.ok || !meta.thumbnailLink) throw new Error("Thumbnail tidak tersedia");
-  const thumbUrl = meta.thumbnailLink.replace(/=s\d+$/, "=s400");
+  const thumbUrl = meta.thumbnailLink.replace(/=s\d+$/, "=s" + px);
   const imgRes = await fetch(thumbUrl, { headers: { Authorization: "Bearer " + accessToken } });
   if (!imgRes.ok) throw new Error("Gagal mengambil thumbnail dari Google Drive");
-  return imgRes;
+
+  const out = new Response(imgRes.body, {
+    status: 200,
+    headers: {
+      "Content-Type": imgRes.headers.get("Content-Type") || "image/jpeg",
+      "Cache-Control": "public, max-age=604800, immutable",
+    },
+  });
+  const toCache = out.clone();
+  // ctx.waitUntil tidak tersedia di helper ini -> put ditunggu (murah, body sudah di memori stream)
+  await cache.put(cacheKey, toCache).catch(() => {});
+  return out;
 }
 
 export default {
@@ -403,7 +435,7 @@ export default {
       }
 
       // ===== CEK AUTH =====
-      const me = await verifyAuthHeader(env, request);
+      const me = await verifyAuthHeader(env, request, true);
       if (!me) return json({ error: "Unauthorized" }, 401, cors);
 
       if (path === "/auth/me" && request.method === "GET") {
@@ -991,6 +1023,8 @@ export default {
         return json({ ok: true, starred: !!starred }, 200, cors);
       }
       if (path === "/footage/download" && request.method === "GET") {
+        if (rateLimit("dl:" + (request.headers.get("CF-Connecting-IP") || me.username), 60, 60000))
+          return json({ error: "Terlalu banyak unduhan. Coba lagi sebentar." }, 429, cors);
         const id = url.searchParams.get("id");
         const row = await env.DB.prepare("SELECT * FROM footage WHERE id=?").bind(id).first();
         if (!row) return json({ error: "Footage tidak ditemukan" }, 404, cors);
@@ -1003,10 +1037,16 @@ export default {
         return new Response(driveRes.body, { status: driveRes.status || 200, headers: dlHeaders });
       }
       if (path === "/footage/thumb" && request.method === "GET") {
+        if (rateLimit("thumb:" + (request.headers.get("CF-Connecting-IP") || me.username), 300, 60000))
+          return json({ error: "Terlalu banyak permintaan thumbnail. Coba lagi sebentar." }, 429, cors);
         const id = url.searchParams.get("id");
+        const size = url.searchParams.get("s") === "2000" ? 2000 : 400;
         const row = await env.DB.prepare("SELECT * FROM footage WHERE id=?").bind(id).first();
         if (!row) return json({ error: "Footage tidak ditemukan" }, 404, cors);
-        try { const thumbRes = await driveGetThumbnail(env, row.drive_file_id); return new Response(thumbRes.body, { status: 200, headers: { ...cors, "Content-Type": thumbRes.headers.get("Content-Type") || "image/jpeg", "Cache-Control": "public, max-age=86400" } }); } catch (e) { return json({ error: e.message }, 404, cors); }
+        try {
+          const thumbRes = await driveGetThumbnail(env, row.drive_file_id, size);
+          return new Response(thumbRes.body, { status: 200, headers: { ...cors, "Content-Type": thumbRes.headers.get("Content-Type") || "image/jpeg", "Cache-Control": "public, max-age=604800, immutable" } });
+        } catch (e) { return json({ error: e.message }, 404, cors); }
       }
       if (path === "/footage/move-bulk" && request.method === "POST") {
         const denied = requireEdit(me, "footage", cors); if (denied) return denied;
@@ -1060,6 +1100,8 @@ export default {
         return json({ ok: true }, 200, cors);
       }
       if (path === "/footage/view" && request.method === "GET") {
+        if (rateLimit("view:" + (request.headers.get("CF-Connecting-IP") || me.username), 60, 60000))
+          return json({ error: "Terlalu banyak permintaan media. Coba lagi sebentar." }, 429, cors);
         const id = url.searchParams.get("id");
         const row = await env.DB.prepare("SELECT * FROM footage WHERE id=?").bind(id).first();
         if (!row) return json({ error: "Footage tidak ditemukan" }, 404, cors);
