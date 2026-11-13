@@ -13,6 +13,10 @@ apk-build/keystore/
 *.keystore
 *.jks
 
+# APK yang bisa diunduh dari web (dipublikasikan lewat Pages)
+!bms.apk
+!apk.json
+
 .DS_Store
 *.bak
 .wrangler/

@@ -438,6 +438,8 @@ body.show-login .loginFoot{opacity:1}
 .sheetItem:nth-of-type(5) svg{color:var(--gold2)}
 .sheetItem:nth-of-type(6) svg{color:var(--blue)}
 .sheetItem:nth-of-type(7) svg{color:var(--red)}
+.sheetMeta{margin-left:auto;font-size:12px;font-weight:600;color:var(--dim)}
+.sheetItem[hidden]{display:none}
 
 /* ---- daftar & upload ---- */
 .searchInp{margin-bottom:12px}

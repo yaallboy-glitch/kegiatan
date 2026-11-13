@@ -2,6 +2,10 @@
    BMS app — shared core: auth · api · shell (nav bawah)
    ============================================================ */
 const API = "https://kegiatan-api.newbrigademudasoropati.workers.dev";
+/* Info APK (versi + tautan unduh) — berkas apk.json di repo, di-update tiap build */
+const APK_URL = "bms.apk";
+const APK_JSON = "apk.json";
+let apkInfo = null;
 const CLIENT_ID = "358445361659-e0a67dcf6dakkf6ak74a0kuu9v49a07v.apps.googleusercontent.com";
 const REDIRECT_URI = "https://appassets.androidplatform.net/auth-cb.html";
 const tok = () => localStorage.getItem("token") || "";
@@ -175,6 +179,7 @@ const IC = {
   shield: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3l8 3.5v5c0 5-3.5 8.5-8 9.5-4.5-1-8-4.5-8-9.5v-5z"/><path d="M9 12l2 2 4-4"/></svg>',
   out: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>',
   cam: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="4"/></svg>',
+  dl: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 11l5 5 5-5"/><path d="M4 21h16"/></svg>',
   trash: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
   check: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>'
 };
@@ -288,6 +293,7 @@ document.getElementById("appShell").innerHTML =
     + '<a class="sheetItem" href="https://www.instagram.com/bmsofficial.id" target="_blank" rel="noopener">' + IC.ig + 'Instagram</a>'
     + '<a class="sheetItem" href="https://www.tiktok.com/@kabarbms.id" target="_blank" rel="noopener">' + IC.tt + 'TikTok</a>'
     + '<button class="sheetItem" id="shProfil">' + IC.user + 'Profil Saya</button>'
+    + '<a class="sheetItem" id="shApk" href="' + APK_URL + '" download>' + IC.dl + 'Unduh Aplikasi (APK)<span class="sheetMeta" id="shApkVer"></span></a>'
     + (admin ? '<a class="sheetItem" href="anggota.html">' + IC.shield + 'Panel Admin</a>' : "")
     + '<button class="sheetItem danger" id="shLogout">' + IC.out + 'Logout</button>'
     + '</div></div>'
@@ -304,6 +310,7 @@ document.getElementById("appShell").innerHTML =
     + '<div id="toast" role="status"></div>';
   const av = document.getElementById("avatarBtn");
   if (av) { if (foto) { av.textContent = ""; av.style.backgroundImage = 'url("' + foto + '")'; } else av.textContent = initials(me && me.nama); av.onclick = openProfil; }
+  isiApkInfo();
   document.getElementById("shProfil").onclick = () => { document.getElementById("sheetOv").classList.remove("open"); openProfil(); };
   document.getElementById("shLogout").onclick = async () => { if (await confirmBox("Keluar dari aplikasi?", "Logout")) logout(); };
   document.querySelectorAll(".ov").forEach(o => o.addEventListener("click", e => { if (e.target === o && o.id !== "namaOv") o.classList.remove("open"); }));
@@ -312,6 +319,16 @@ document.getElementById("appShell").innerHTML =
   document.getElementById("pvGanti").onclick = () => pIn.click();
   document.getElementById("pvTutup").onclick = () => document.getElementById("profilOv").classList.remove("open");
   pIn.onchange = () => { const f = pIn.files[0]; if (f) simpanFoto(f); pIn.value = ""; };
+}
+function isiApkInfo() {
+  const el = document.getElementById("shApkVer");
+  if (!el) return;
+  if (apkInfo) { el.textContent = "v" + apkInfo.versionName; return; }
+  fetch(APK_JSON).then(r => r.ok ? r.json() : null).then(d => {
+    if (!d) return; apkInfo = d;
+    if (d.size) document.getElementById("shApk").setAttribute("download", d.file || "bms.apk");
+    el.textContent = "v" + (d.versionName || "");
+  }).catch(() => {});
 }
 function openProfil() { fillProfil(); document.getElementById("profilOv").classList.add("open"); }
 function fillProfil() {
