@@ -125,12 +125,41 @@ async function makeToken(env, username, nama) {
   return payload + "." + sig;
 }
 
+// Token khusus thumbnail: umur 1 jam, scope "thumb". Hanya boleh baca thumbnail.
+// Dipisah dari token login supaya kalau bocor (URL ikut ke-log), kerusakannya
+// terbatas 1 jam dan tidak bisa dipakai upload/hapus.
+async function makeThumbToken(env, username) {
+  const now = Date.now();
+  const exp = now + 60 * 60 * 1000;
+  const payload = btoa(unescape(encodeURIComponent("thumb|" + username + "|" + now + "|" + exp)));
+  return payload + "." + (await signPayload(env, payload));
+}
+
+async function verifyThumbToken(env, token) {
+  const dot = String(token || "").lastIndexOf(".");
+  if (dot === -1) return null;
+  const payload = token.slice(0, dot);
+  let expected;
+  try { expected = await signPayload(env, payload); } catch { return null; }
+  if (token.slice(dot + 1) !== expected) return null;
+  try {
+    const parts = decodeURIComponent(escape(atob(payload))).split("|");
+    if (parts[0] !== "thumb") return null;          // scope harus thumb
+    if (!parts[1]) return null;
+    if (Date.now() > Number(parts[3])) return null; // kedaluwarsa
+    return { username: parts[1] };
+  } catch { return null; }
+}
+
 async function verifyAuthHeader(env, request, allowQueryToken = false) {
   let auth = request.headers.get("Authorization") || "";
-  // <img src> tidak bisa mengirim header -> endpoint thumbnail boleh terima ?t=<token>.
+  // Endpoint thumbnail boleh terima ?t=<thumb token> karena <img> tak bisa kirim header.
   if (!auth.startsWith("Bearer ") && allowQueryToken) {
     const qt = new URL(request.url).searchParams.get("t");
-    if (qt) auth = "Bearer " + qt;
+    if (qt) {
+      const tt = await verifyThumbToken(env, qt);
+      return tt ? { username: tt.username, nama: null, role: "anggota", thumbOnly: true } : null;
+    }
   }
   if (!auth.startsWith("Bearer ")) return null;
   const token = auth.slice(7);
@@ -145,6 +174,7 @@ async function verifyAuthHeader(env, request, allowQueryToken = false) {
   try {
     const decoded = decodeURIComponent(escape(atob(payload)));
     const parts = decoded.split("|");
+    if (parts[0] === "thumb") return null; // token thumbnail tidak boleh dipakai sebagai token login
     username = parts[0];
     nama = parts[1];
     if (!username) throw new Error("bad payload");
@@ -437,6 +467,8 @@ export default {
       // ===== CEK AUTH =====
       const me = await verifyAuthHeader(env, request, true);
       if (!me) return json({ error: "Unauthorized" }, 401, cors);
+      // Token thumbnail hanya boleh dipakai membaca thumbnail.
+      if (me.thumbOnly && path !== "/footage/thumb") return json({ error: "Token thumbnail hanya untuk melihat thumbnail." }, 403, cors);
 
       if (path === "/auth/me" && request.method === "GET") {
         const urow = await env.DB.prepare("SELECT nama_confirmed FROM users WHERE username=?").bind(me.username).first();
@@ -1362,6 +1394,12 @@ export default {
           event: event?.n || 0,
           log: log?.n || 0
         }, 200, cors);
+      }
+
+      if (path === "/auth/thumb-token" && request.method === "GET") {
+        if (me.thumbOnly) return json({ error: "Token thumbnail tidak bisa membuat token thumbnail baru." }, 403, cors);
+        try { return json({ thumb_token: await makeThumbToken(env, me.username) }, 200, cors); }
+        catch (e) { return json({ error: e.message }, 500, cors); }
       }
 
       // ===== TOKEN VERSION (force re-login on secret rotate) =====

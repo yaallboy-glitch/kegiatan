@@ -117,6 +117,7 @@ async function loadFoot() {
   if (footBusy) return;
   footBusy = true;
   try {
+    await ensureThumbTok();
     const r = await api("/footage?limit=60&offset=0" + footQuery());
     allFoot = Array.isArray(r) ? r : (r.items || []);
     footTotal = Array.isArray(r) ? allFoot.length : (r.total || 0);

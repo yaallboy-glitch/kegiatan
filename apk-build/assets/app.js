@@ -42,8 +42,21 @@ async function fetchBlob(path) {
   return r.blob();
 }
 // URL thumbnail untuk <img src>. Worker balas Cache-Control immutable, jadi browser
-// cukup minta sekali per foto. Token lewat query karena <img> tidak bisa kirim header.
-const thumbUrl = (id, px) => API + "/footage/thumb?id=" + encodeURIComponent(id) + (px ? "&s=" + px : "") + "&t=" + encodeURIComponent(tok() || "");
+// cukup minta sekali per foto. <img> tak bisa kirim header -> pakai thumb token
+// (umur 1 jam, hanya boleh baca thumbnail). Di-cache di memori 50 menit.
+let _thumbTok = "", _thumbTokAt = 0;
+async function ensureThumbTok() {
+  if (_thumbTok && Date.now() - _thumbTokAt < 50 * 60 * 1000) return _thumbTok;
+  try {
+    const r = await fetch(API + "/auth/thumb-token", { headers: { Authorization: "Bearer " + tok() } });
+    if (!r.ok) return _thumbTok;
+    _thumbTok = (await r.json()).thumb_token || "";
+    _thumbTokAt = Date.now();
+  } catch {}
+  return _thumbTok;
+}
+const thumbUrl = (id, px) => API + "/footage/thumb?id=" + encodeURIComponent(id)
+  + (px ? "&s=" + px : "") + (_thumbTok ? "&t=" + encodeURIComponent(_thumbTok) : "");
 
 /* ---- helpers ---- */
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
