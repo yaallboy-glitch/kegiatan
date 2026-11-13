@@ -189,6 +189,33 @@ async function verifyAuthHeader(env, request, allowQueryToken = false) {
   return { username, nama, role: row.role };
 }
 
+// Batas harian upload per user: mencegah satu akun menghabiskan kuota Drive.
+const UPLOAD_MAX_SIZE = 100 * 1024 * 1024;          // 100 MB per file
+const UPLOAD_DAILY_FILES = 40;                       // maks 40 file/hari/user
+const UPLOAD_DAILY_BYTES = 500 * 1024 * 1024;        // maks 500 MB/hari/user
+
+function requireUploadQuota(me, cors) {
+  // rate limit kasar: 20 permintaan mulai-upload per 5 menit
+  if (rateLimit("upstart:" + me.username, 20, 5 * 60 * 1000))
+    return json({ error: "Terlalu banyak memulai upload. Tunggu beberapa menit." }, 429, cors);
+  return null;
+}
+
+async function checkDailyUploadQuota(env, me, size, cors) {
+  const row = await env.DB.prepare(
+    "SELECT COUNT(*) AS n, COALESCE(SUM(size),0) AS bytes FROM footage WHERE uploaded_by=? AND uploaded_at >= datetime('now','-1 day')"
+  ).bind(me.username).first();
+  const n = row ? row.n : 0, bytes = row ? row.bytes : 0;
+  if (n >= UPLOAD_DAILY_FILES)
+    return json({ error: `Batas harian ${UPLOAD_DAILY_FILES} file tercapai. Coba lagi besok.` }, 429, cors);
+  if (bytes + size > UPLOAD_DAILY_BYTES)
+    return json({ error: "Kuota upload harian (500 MB) terlampaui. Coba lagi besok." }, 429, cors);
+  return null;
+}
+
+// Boleh unggah hanya kalau MIME termasuk daftar aman (cegah simpan file sembarang).
+const ALLOWED_UPLOAD_MIME = /^(image\/(jpeg|png|webp|gif|heic|heif)|video\/(mp4|quicktime|webm|x-matroska|3gpp))$/i;
+
 // ================== GOOGLE DRIVE ==================
 let _cachedAccessToken = null;
 let _cachedAccessTokenExpiresAt = 0;
@@ -806,7 +833,8 @@ export default {
         const kategori = (form.get("kategori") || "Umum").toString();
         if (!file || typeof file === "string") return json({ error: "Tidak ada file yang dikirim" }, 400, cors);
         if (file.size <= 0) return json({ error: "File kosong" }, 400, cors);
-        if (file.size > 100 * 1024 * 1024) return json({ error: "Ukuran file maksimal 100 MB" }, 400, cors);
+        if (file.size > UPLOAD_MAX_SIZE) return json({ error: "Ukuran file maksimal 100 MB" }, 400, cors);
+        const fq = requireUploadQuota(me, cors); if (fq) return fq;
         let uploaded;
         try { uploaded = await driveUpload(env, file, env.GOOGLE_FOLDER_FILES); } catch (e) { return json({ error: e.message }, 500, cors); }
         await env.DB.prepare("INSERT INTO files (filename,kategori,size,mime_type,drive_file_id,uploaded_by) VALUES (?,?,?,?,?,?)")
@@ -884,7 +912,11 @@ export default {
         const judul = (form.get("judul") || file?.name || "Tanpa judul").toString();
         if (!file || typeof file === "string") return json({ error: "Tidak ada file yang dikirim" }, 400, cors);
         if (file.size <= 0) return json({ error: "File kosong" }, 400, cors);
-        if (file.size > 100 * 1024 * 1024) return json({ error: "Ukuran file maksimal 100 MB" }, 400, cors);
+        if (file.size > UPLOAD_MAX_SIZE) return json({ error: "Ukuran file maksimal 100 MB" }, 400, cors);
+        if (!ALLOWED_UPLOAD_MIME.test(String(file.type || "")))
+          return json({ error: "Tipe berkas tidak didukung. Gunakan gambar (JPG/PNG/WEBP) atau video (MP4/MOV/WEBM)." }, 415, cors);
+        const q1 = requireUploadQuota(me, cors); if (q1) return q1;
+        const q2 = await checkDailyUploadQuota(env, me, file.size, cors); if (q2) return q2;
         const folderIdRaw = form.get("folder_id");
         const folderId = folderIdRaw ? Number(folderIdRaw) : null;
         const tipe = file.type.startsWith("video/") ? "video" : "foto";
@@ -912,7 +944,11 @@ export default {
         const folderIdRaw = body.folder_id;
         const folderId = folderIdRaw ? Number(folderIdRaw) : null;
         if (!size || size <= 0) return json({ error: "Ukuran file tidak valid" }, 400, cors);
-        if (size > 100 * 1024 * 1024) return json({ error: "Ukuran file maksimal 100 MB" }, 400, cors);
+        if (size > UPLOAD_MAX_SIZE) return json({ error: "Ukuran file maksimal 100 MB" }, 400, cors);
+        if (!ALLOWED_UPLOAD_MIME.test(mimeType))
+          return json({ error: "Tipe berkas tidak didukung. Gunakan gambar (JPG/PNG/WEBP) atau video (MP4/MOV/WEBM)." }, 415, cors);
+        const uq1 = requireUploadQuota(me, cors); if (uq1) return uq1;
+        const uq2 = await checkDailyUploadQuota(env, me, size, cors); if (uq2) return uq2;
         let targetParent;
         try { targetParent = await resolveFolderDriveId(env, folderId); } catch (e) { return json({ error: e.message }, 500, cors); }
         let sessionUri;
@@ -926,6 +962,8 @@ export default {
 
       if (path === "/footage/upload/chunk" && request.method === "PUT") {
         const denied = requireEdit(me, "footage", cors); if (denied) return denied;
+        if (rateLimit("upchunk:" + me.username, 300, 60 * 1000))
+          return json({ error: "Terlalu banyak chunk upload. Tunggu sebentar." }, 429, cors);
         const uploadId = url.searchParams.get("upload_id");
         if (!uploadId) return json({ error: "upload_id wajib diisi" }, 400, cors);
         const session = await env.DB.prepare("SELECT * FROM upload_sessions WHERE id=?").bind(uploadId).first();
@@ -1047,6 +1085,8 @@ export default {
       }
       if (path === "/footage/star" && request.method === "POST") {
         const denied = requireEdit(me, "footage", cors); if (denied) return denied;
+        if (rateLimit("star:" + me.username, 60, 60 * 1000))
+          return json({ error: "Terlalu banyak perubahan bintang. Tunggu sebentar." }, 429, cors);
         const d = await request.json();
         const row = await env.DB.prepare("SELECT * FROM footage WHERE id=?").bind(d.id).first();
         if (!row) return json({ error: "Footage tidak ditemukan" }, 404, cors);
@@ -1082,6 +1122,8 @@ export default {
       }
       if (path === "/footage/move-bulk" && request.method === "POST") {
         const denied = requireEdit(me, "footage", cors); if (denied) return denied;
+        if (rateLimit("bulk:" + me.username, 10, 60 * 1000))
+          return json({ error: "Terlalu banyak aksi massal. Tunggu sebentar." }, 429, cors);
         const d = await request.json();
         const ids = Array.isArray(d.ids) ? d.ids : [];
         const newFolderId = d.folder_id ? Number(d.folder_id) : null;
@@ -1104,6 +1146,8 @@ export default {
       }
       if (path === "/footage/delete-bulk" && request.method === "POST") {
         const denied = requireEdit(me, "footage", cors); if (denied) return denied;
+        if (rateLimit("bulk:" + me.username, 10, 60 * 1000))
+          return json({ error: "Terlalu banyak aksi massal. Tunggu sebentar." }, 429, cors);
         const d = await request.json();
         const ids = Array.isArray(d.ids) ? d.ids : [];
         let deleted = 0;
@@ -1145,6 +1189,9 @@ export default {
 
       if (path === "/footage/sync" && request.method === "POST") {
         const denied = requireEdit(me, "footage", cors); if (denied) return denied;
+        // Sync = daftar seluruh folder Drive. Mahal, jadi maks 2x per 10 menit.
+        if (rateLimit("sync:" + me.username, 2, 10 * 60 * 1000))
+          return json({ error: "Sync terlalu sering. Tunggu beberapa menit." }, 429, cors);
         const folders = await env.DB.prepare("SELECT * FROM footage_folders").all();
         const targets = [{ folder_id: null, drive_folder_id: env.GOOGLE_FOLDER_FOOTAGE }, ...folders.results.map((f) => ({ folder_id: f.id, drive_folder_id: f.drive_folder_id }))];
         const existing = await env.DB.prepare("SELECT drive_file_id FROM footage").all();

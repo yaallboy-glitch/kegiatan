@@ -82,4 +82,12 @@ const sig = thumbToken.split(".")[1];
 const past = Buffer.from("thumb|budi|1|" + (Date.now() - 1000), "binary").toString("base64");
 assert.equal(await fn.verifyThumbToken(env, past + "." + sig), null, "thumb token kedaluwarsa ditolak");
 
+/* ---------- 3. MIME whitelist upload ---------- */
+const mimeSrc = src.match(/const ALLOWED_UPLOAD_MIME = (.*);\n/)[1];
+const ALLOWED = new Function("return " + mimeSrc)();
+for (const ok of ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/quicktime", "video/webm"])
+  assert(ALLOWED.test(ok), "harus lolos: " + ok);
+for (const no of ["", "application/pdf", "text/html", "image/svg+xml", "video/x-msvideo", "application/x-msdownload"])
+  assert(!ALLOWED.test(no), "harus ditolak: " + JSON.stringify(no));
+
 console.log("OK semua assert lolos");
